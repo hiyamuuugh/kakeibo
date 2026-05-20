@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  color        String        @default("#6b7280")
+  icon         String        @default("shopping-cart")
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  date        DateTime
+  amount      Int
+  description String
+  store       String?
+  source      String    @default("manual")
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
+  importId    String?
+
+  @@index([date])
+  @@index([categoryId])
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  month      String
+  amount     Int
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([month, categoryId])
+}
