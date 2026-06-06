@@ -2,15 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: "asc" },
-    });
-    return NextResponse.json(categories);
-  } catch (e) {
-    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  const categories = await prisma.category.findMany({
+    orderBy: { name: "asc" },
+  });
+  return NextResponse.json(categories);
 }
 
 export async function POST(req: Request) {
