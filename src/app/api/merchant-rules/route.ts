@@ -14,13 +14,24 @@ export async function POST(req: NextRequest) {
   if (!merchant || !categoryId) {
     return NextResponse.json({ error: "merchant and categoryId are required" }, { status: 400 });
   }
-  const rule = await prisma.merchantRule.upsert({
-    where: { merchant },
-    update: { categoryId },
-    create: { merchant, categoryId },
-    include: { category: true },
-  });
-  return NextResponse.json(rule, { status: 201 });
+
+  const [rule, { count }] = await prisma.$transaction([
+    prisma.merchantRule.upsert({
+      where: { merchant },
+      update: { categoryId },
+      create: { merchant, categoryId },
+      include: { category: true },
+    }),
+    // 既存取引（description が一致するもの）に一括適用
+    prisma.transaction.updateMany({
+      where: {
+        description: { equals: merchant, mode: "insensitive" },
+      },
+      data: { categoryId },
+    }),
+  ]);
+
+  return NextResponse.json({ ...rule, appliedCount: count }, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {
