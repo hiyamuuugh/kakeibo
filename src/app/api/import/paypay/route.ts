@@ -69,9 +69,9 @@ export async function POST(req: NextRequest) {
   const amountKey =
     headers.find((h) => h.includes("金額") || h.includes("利用金額") || h.toLowerCase().includes("amount")) ?? headers[1];
 
-  // 利用先 = merchant/store name (PayPay CSV の主要列)
+  // 取引先 / 利用先 = merchant/store name (PayPay CSV の主要列)
   const merchantKey =
-    headers.find((h) => h.includes("利用先") || h.includes("店舗名") || h.includes("加盟店")) ??
+    headers.find((h) => h.includes("取引先") || h.includes("利用先") || h.includes("店舗名") || h.includes("加盟店")) ??
     headers.find((h) => h.includes("内容") || h.includes("店舗") || h.toLowerCase().includes("desc")) ??
     headers[2];
 
