@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
+  const memberId = (formData.get("memberId") as string | null) || null;
+
   const text = await file.text();
   let rows: PayPayRow[] = [];
   let parseErrors: Papa.ParseError[] = [];
@@ -142,6 +144,7 @@ export async function POST(req: NextRequest) {
         store: null,
         source: "paypay",
         categoryId,
+        memberId,
       },
     });
 
