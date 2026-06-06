@@ -32,6 +32,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(transactions);
 }
 
+export async function DELETE() {
+  const { count } = await prisma.transaction.deleteMany({});
+  return NextResponse.json({ deleted: count });
+}
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { date, amount, description, store, source, categoryId } = body;
