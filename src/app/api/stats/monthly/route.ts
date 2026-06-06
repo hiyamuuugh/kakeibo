@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const month = searchParams.get("month");
+  const memberId = searchParams.get("memberId");
 
   if (!month) {
     return NextResponse.json({ error: "month required" }, { status: 400 });
@@ -13,8 +14,12 @@ export async function GET(req: NextRequest) {
   const start = new Date(year, m - 1, 1);
   const end = new Date(year, m, 1);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: Record<string, any> = { date: { gte: start, lt: end } };
+  if (memberId && memberId !== "all") where.memberId = memberId;
+
   const transactions = await prisma.transaction.findMany({
-    where: { date: { gte: start, lt: end } },
+    where,
     include: { category: true },
   });
 

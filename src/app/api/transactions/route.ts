@@ -5,6 +5,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const month = searchParams.get("month");
   const categoryId = searchParams.get("categoryId");
+  const memberId = searchParams.get("memberId"); // "all" or specific id
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: Record<string, any> = {};
@@ -22,9 +23,13 @@ export async function GET(req: NextRequest) {
     where.categoryId = categoryId;
   }
 
+  if (memberId && memberId !== "all") {
+    where.memberId = memberId;
+  }
+
   const transactions = await prisma.transaction.findMany({
     where,
-    include: { category: true },
+    include: { category: true, member: true },
     orderBy: { date: "desc" },
     take: 500,
   });
