@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Category {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  color        String        @default("#6b7280")
-  icon         String        @default("shopping-cart")
-  createdAt    DateTime      @default(now())
-  transactions Transaction[]
-  budgets      Budget[]
+  id            String         @id @default(cuid())
+  name          String         @unique
+  color         String         @default("#6b7280")
+  icon          String         @default("shopping-cart")
+  createdAt     DateTime       @default(now())
+  transactions  Transaction[]
+  budgets       Budget[]
+  merchantRules MerchantRule[]
 }
 
 model Transaction {
@@ -31,6 +32,14 @@ model Transaction {
 
   @@index([date])
   @@index([categoryId])
+}
+
+model MerchantRule {
+  id         String   @id @default(cuid())
+  merchant   String   @unique
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime @default(now())
 }
 
 model Budget {

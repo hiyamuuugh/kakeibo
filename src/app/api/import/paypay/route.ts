@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
   const categories = await prisma.category.findMany();
   const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
+  const merchantRules = await prisma.merchantRule.findMany();
+  const ruleMap = new Map(merchantRules.map((r) => [r.merchant.toLowerCase(), r.categoryId]));
+
   const headers = Object.keys(rows[0]);
 
   const dateKey =
@@ -126,8 +129,10 @@ export async function POST(req: NextRequest) {
     // 収入はマイナス値で保存（UI で isIncome 判定に使用）
     const storedAmount = isIncome ? -amount : amount;
 
-    const catName = guessCategory(merchant);
-    const categoryId = catName ? (categoryMap.get(catName) ?? null) : null;
+    // ルール優先、なければキーワード推測
+    const ruleCategory = ruleMap.get(merchant.toLowerCase());
+    const catName = ruleCategory ? undefined : guessCategory(merchant);
+    const categoryId = ruleCategory ?? (catName ? (categoryMap.get(catName) ?? null) : null);
 
     await prisma.transaction.create({
       data: {
