@@ -6,29 +6,41 @@ interface PayPayRow {
   [key: string]: string;
 }
 
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  食費: ["スーパー", "コンビニ", "ファミリーマート", "ファミマ", "ローソン", "セブン", "マクドナルド", "マック", "スタバ", "スターバックス", "すき家", "吉野家", "松屋", "サイゼリヤ", "ガスト", "ドトール", "カフェ", "レストラン", "フード", "食堂", "弁当", "ラーメン", "そば", "うどん", "焼肉", "寿司", "イオン", "西友", "ライフ", "業務スーパー"],
+  交通費: ["交通", "電車", "バス", "タクシー", "Suica", "PASMO", "鉄道", "駅", "モバイルSuica", "JR", "東急", "小田急", "京王", "阪急", "地下鉄"],
+  日用品: ["ドラッグ", "マツキヨ", "ウエルシア", "ツルハ", "ダイソー", "セリア", "ニトリ", "無印", "東急ハンズ", "ホームセンター", "コーナン", "カインズ", "ドン・キホーテ", "ドンキ"],
+  娯楽: ["映画", "カラオケ", "ゲーム", "Netflix", "Spotify", "Disney", "アマゾン", "Amazon", "iTunes", "ブック", "漫画", "遊園地", "ボウリング"],
+  衣類: ["ユニクロ", "GU", "ZARA", "H&M", "しまむら", "アダストリア", "ワークマン", "洋服"],
+  医療: ["病院", "クリニック", "薬局", "歯科", "内科", "外科", "皮膚科", "眼科", "整形", "調剤"],
+  光熱費: ["電気", "ガス", "水道", "東京電力", "関西電力", "東京ガス", "大阪ガス"],
+  通信費: ["ドコモ", "au", "ソフトバンク", "楽天モバイル", "LINE", "通信", "インターネット", "NTT"],
+};
+
+function guessCategory(text: string): string | undefined {
+  const lower = text.toLowerCase();
+  for (const [catName, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw.toLowerCase()))) return catName;
+  }
+  return undefined;
+}
+
 function parsePayPayDate(dateStr: string): Date | null {
-  // PayPay CSV: "2024/01/15 12:34:56" or "2024/01/15"
   const cleaned = dateStr.trim().replace(/\//g, "-");
   const d = new Date(cleaned);
   return isNaN(d.getTime()) ? null : d;
 }
 
 function parseAmount(amountStr: string): number {
-  return Math.abs(parseInt(amountStr.replace(/[^0-9\-]/g, ""), 10) || 0);
+  return Math.abs(parseInt(amountStr.replace(/[^0-9-]/g, ""), 10) || 0);
 }
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
-
-  if (!file) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
-  }
+  if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
   const text = await file.text();
-
-  // Auto-detect encoding issue: PayPay CSV may be Shift-JIS encoded
-  // We parse the text as-is (browser should handle encoding)
   let rows: PayPayRow[] = [];
   let parseErrors: Papa.ParseError[] = [];
 
@@ -42,20 +54,28 @@ export async function POST(req: NextRequest) {
   });
 
   if (parseErrors.length > 0 && rows.length === 0) {
-    return NextResponse.json(
-      { error: "CSV parse failed", details: parseErrors },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "CSV parse failed", details: parseErrors }, { status: 400 });
   }
-  if (rows.length === 0) {
-    return NextResponse.json({ imported: 0, skipped: 0 });
-  }
+  if (rows.length === 0) return NextResponse.json({ imported: 0, skipped: 0 });
 
-  // Detect column names (PayPay CSV headers vary by export type)
+  const categories = await prisma.category.findMany();
+  const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
+
   const headers = Object.keys(rows[0]);
-  const dateKey = headers.find((h) => h.includes("日時") || h.includes("日付") || h.toLowerCase().includes("date")) ?? headers[0];
-  const amountKey = headers.find((h) => h.includes("金額") || h.toLowerCase().includes("amount")) ?? headers[1];
-  const descKey = headers.find((h) => h.includes("内容") || h.includes("店舗") || h.toLowerCase().includes("desc") || h.toLowerCase().includes("name")) ?? headers[2];
+
+  const dateKey =
+    headers.find((h) => h.includes("日時") || h.includes("日付") || h.includes("年月日") || h.toLowerCase().includes("date")) ?? headers[0];
+
+  const amountKey =
+    headers.find((h) => h.includes("金額") || h.includes("利用金額") || h.toLowerCase().includes("amount")) ?? headers[1];
+
+  // 利用先 = merchant/store name (PayPay CSV の主要列)
+  const merchantKey =
+    headers.find((h) => h.includes("利用先") || h.includes("店舗名") || h.includes("加盟店")) ??
+    headers.find((h) => h.includes("内容") || h.includes("店舗") || h.toLowerCase().includes("desc")) ??
+    headers[2];
+
+  const typeKey = headers.find((h) => h.includes("種別") || h.includes("タイプ") || h.toLowerCase().includes("type"));
 
   let imported = 0;
   let skipped = 0;
@@ -63,47 +83,35 @@ export async function POST(req: NextRequest) {
   for (const row of rows) {
     const dateStr = row[dateKey];
     const amountStr = row[amountKey];
-    const description = (row[descKey] ?? "").trim();
+    const merchant = (row[merchantKey] ?? "").trim();
 
-    if (!dateStr || !amountStr) {
-      skipped++;
-      continue;
-    }
+    if (!dateStr || !amountStr) { skipped++; continue; }
 
     const date = parsePayPayDate(dateStr);
-    if (!date) {
-      skipped++;
-      continue;
-    }
+    if (!date) { skipped++; continue; }
 
     const amount = parseAmount(amountStr);
-    if (amount === 0) {
-      skipped++;
-      continue;
-    }
+    if (amount === 0) { skipped++; continue; }
 
-    // Skip income rows (positive values in PayPay are charges TO the account)
-    // PayPay typically shows payments as negative or has a "支払い" type
-    const typeKey = headers.find((h) => h.includes("種別") || h.includes("タイプ") || h.toLowerCase().includes("type"));
     if (typeKey) {
       const type = (row[typeKey] ?? "").trim();
-      if (type.includes("チャージ") || type.includes("受取")) {
+      if (type.includes("チャージ") || type.includes("受取") || type.includes("還元")) {
         skipped++;
         continue;
       }
     }
 
-    // Store name (may be in a separate column)
-    const storeKey = headers.find((h) => h.includes("店") && h !== descKey);
-    const store = storeKey ? (row[storeKey] ?? "").trim() || null : null;
+    const catName = guessCategory(merchant);
+    const categoryId = catName ? (categoryMap.get(catName) ?? null) : null;
 
     await prisma.transaction.create({
       data: {
         date,
         amount,
-        description: description || "PayPay支払い",
-        store,
+        description: merchant || "PayPay支払い",
+        store: null,
         source: "paypay",
+        categoryId,
       },
     });
 
