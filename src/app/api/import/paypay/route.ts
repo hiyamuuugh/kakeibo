@@ -131,8 +131,9 @@ export async function POST(req: NextRequest) {
     // 収入はマイナス値で保存（UI で isIncome 判定に使用）
     const storedAmount = isIncome ? -amount : amount;
 
-    // ルール優先、なければキーワード推測
-    const ruleCategory = ruleMap.get(merchant.toLowerCase());
+    // ルール優先（部分一致）、なければキーワード推測
+    const lower = merchant.toLowerCase();
+    const ruleCategory = [...ruleMap.entries()].find(([key]) => lower.includes(key))?.[1];
     const catName = ruleCategory ? undefined : guessCategory(merchant);
     const categoryId = ruleCategory ?? (catName ? (categoryMap.get(catName) ?? null) : null);
 

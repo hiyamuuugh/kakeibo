@@ -22,10 +22,10 @@ export async function POST(req: NextRequest) {
       create: { merchant, categoryId },
       include: { category: true },
     }),
-    // 既存取引（description が一致するもの）に一括適用
+    // 既存取引（description に merchant が含まれるもの）に一括適用
     prisma.transaction.updateMany({
       where: {
-        description: { equals: merchant, mode: "insensitive" },
+        description: { contains: merchant, mode: "insensitive" },
       },
       data: { categoryId },
     }),
