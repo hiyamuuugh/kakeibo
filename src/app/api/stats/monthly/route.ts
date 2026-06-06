@@ -18,15 +18,19 @@ export async function GET(req: NextRequest) {
     include: { category: true },
   });
 
-  const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const expenses = transactions.filter((t) => t.amount >= 0);
+  const incomes = transactions.filter((t) => t.amount < 0);
 
-  // Group by category
+  const total = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const income = incomes.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  // Group by category (支出のみ)
   const byCategory = new Map<
     string,
     { id: string; name: string; color: string; icon: string; total: number; count: number }
   >();
 
-  for (const t of transactions) {
+  for (const t of expenses) {
     const key = t.categoryId ?? "__uncategorized__";
     const existing = byCategory.get(key);
     if (existing) {
@@ -46,9 +50,9 @@ export async function GET(req: NextRequest) {
 
   const categories = Array.from(byCategory.values()).sort((a, b) => b.total - a.total);
 
-  // Daily totals for line chart
+  // Daily totals for line chart (支出のみ)
   const dailyMap = new Map<string, number>();
-  for (const t of transactions) {
+  for (const t of expenses) {
     const day = t.date.toISOString().slice(0, 10);
     dailyMap.set(day, (dailyMap.get(day) ?? 0) + t.amount);
   }
@@ -56,5 +60,5 @@ export async function GET(req: NextRequest) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, amount]) => ({ date, amount }));
 
-  return NextResponse.json({ month, total, categories, daily, count: transactions.length });
+  return NextResponse.json({ month, total, income, categories, daily, count: expenses.length });
 }

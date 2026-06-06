@@ -66,8 +66,13 @@ export async function POST(req: NextRequest) {
   const dateKey =
     headers.find((h) => h.includes("日時") || h.includes("日付") || h.includes("年月日") || h.toLowerCase().includes("date")) ?? headers[0];
 
+  // 入金・出金が別カラムの場合と、単一金額カラムの場合に対応
+  const incomeKey = headers.find((h) => h.includes("入金金額") || h.includes("入金"));
+  const expenseKey = headers.find((h) => h.includes("出金金額") || h.includes("出金"));
   const amountKey =
-    headers.find((h) => h.includes("金額") || h.includes("利用金額") || h.toLowerCase().includes("amount")) ?? headers[1];
+    (!incomeKey && !expenseKey)
+      ? (headers.find((h) => h.includes("金額") || h.includes("利用金額") || h.toLowerCase().includes("amount")) ?? headers[1])
+      : null;
 
   // 取引先 / 利用先 = merchant/store name (PayPay CSV の主要列)
   const merchantKey =
@@ -82,24 +87,44 @@ export async function POST(req: NextRequest) {
 
   for (const row of rows) {
     const dateStr = row[dateKey];
-    const amountStr = row[amountKey];
     const merchant = (row[merchantKey] ?? "").trim();
 
-    if (!dateStr || !amountStr) { skipped++; continue; }
+    if (!dateStr) { skipped++; continue; }
 
     const date = parsePayPayDate(dateStr);
     if (!date) { skipped++; continue; }
 
-    const amount = parseAmount(amountStr);
-    if (amount === 0) { skipped++; continue; }
+    // 入金・出金カラムが分かれている場合
+    let amount: number;
+    let isIncome = false;
 
-    if (typeKey) {
-      const type = (row[typeKey] ?? "").trim();
-      if (type.includes("チャージ") || type.includes("受取") || type.includes("還元")) {
-        skipped++;
-        continue;
+    if (incomeKey && expenseKey) {
+      const incomeAmt = parseAmount(row[incomeKey] ?? "");
+      const expenseAmt = parseAmount(row[expenseKey] ?? "");
+      if (incomeAmt > 0) { amount = incomeAmt; isIncome = true; }
+      else if (expenseAmt > 0) { amount = expenseAmt; }
+      else { skipped++; continue; }
+    } else if (incomeKey) {
+      amount = parseAmount(row[incomeKey] ?? "");
+      isIncome = true;
+      if (amount === 0) { skipped++; continue; }
+    } else {
+      const amountStr = row[amountKey!] ?? "";
+      if (!amountStr) { skipped++; continue; }
+      amount = parseAmount(amountStr);
+      if (amount === 0) { skipped++; continue; }
+
+      if (typeKey) {
+        const type = (row[typeKey] ?? "").trim();
+        if (type.includes("チャージ") || type.includes("受取") || type.includes("還元")) {
+          skipped++;
+          continue;
+        }
       }
     }
+
+    // 収入はマイナス値で保存（UI で isIncome 判定に使用）
+    const storedAmount = isIncome ? -amount : amount;
 
     const catName = guessCategory(merchant);
     const categoryId = catName ? (categoryMap.get(catName) ?? null) : null;
@@ -107,8 +132,8 @@ export async function POST(req: NextRequest) {
     await prisma.transaction.create({
       data: {
         date,
-        amount,
-        description: merchant || "PayPay支払い",
+        amount: storedAmount,
+        description: merchant || (isIncome ? "PayPay入金" : "PayPay支払い"),
         store: null,
         source: "paypay",
         categoryId,
