@@ -44,7 +44,7 @@ export async function DELETE() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { date, amount, description, store, source, categoryId } = body;
+  const { date, amount, description, store, source, categoryId, memberId } = body;
 
   const transaction = await prisma.transaction.create({
     data: {
@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       store: store ?? null,
       source: source ?? "manual",
       categoryId: categoryId ?? null,
+      memberId: memberId ?? null,
     },
     include: { category: true },
   });
