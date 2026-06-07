@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         amount,
         description: merchant || "楽天カード",
         store: null,
-        source: "credit",
+        source: "rakuten",
         categoryId: ruleCategory,
         memberId,
       },
