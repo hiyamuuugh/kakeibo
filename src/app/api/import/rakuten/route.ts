@@ -6,6 +6,22 @@ interface RakutenRow {
   [key: string]: string;
 }
 
+function decodeBuffer(buffer: ArrayBuffer): string {
+  // UTF-8（BOM付き含む）で試みる
+  const utf8 = new TextDecoder("utf-8").decode(buffer).replace(/^﻿/, "");
+  if (utf8.includes("利用日") || utf8.includes("利用店名")) return utf8;
+
+  // Shift-JIS で試みる
+  try {
+    const sjis = new TextDecoder("shift_jis").decode(buffer);
+    if (sjis.includes("利用日") || sjis.includes("利用店名")) return sjis;
+  } catch {
+    // 未対応環境はスキップ
+  }
+
+  return utf8;
+}
+
 function parseDate(dateStr: string): Date | null {
   const cleaned = dateStr.trim().replace(/\//g, "-");
   const d = new Date(cleaned);
@@ -23,11 +39,18 @@ export async function POST(req: NextRequest) {
 
   const memberId = (formData.get("memberId") as string | null) || null;
 
-  const text = await file.text();
+  const buffer = await file.arrayBuffer();
+  const decoded = decodeBuffer(buffer);
+
+  // 「利用日」を含む行をヘッダーとして自動検出（先頭に説明行がある場合に対応）
+  const lines = decoded.split(/\r?\n/);
+  const headerIdx = lines.findIndex((l) => l.includes("利用日"));
+  const csvText = headerIdx > 0 ? lines.slice(headerIdx).join("\n") : decoded;
+
   let rows: RakutenRow[] = [];
   let parseErrors: Papa.ParseError[] = [];
 
-  Papa.parse<RakutenRow>(text, {
+  Papa.parse<RakutenRow>(csvText, {
     header: true,
     skipEmptyLines: true,
     complete(result) {
@@ -48,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   const dateKey = headers.find((h) => h.includes("利用日")) ?? headers[0];
   const merchantKey = headers.find((h) => h.includes("利用店名") || h.includes("商品名")) ?? headers[1];
-  // 楽天カードは「利用金額(円)」「利用金額」のどちらかの形式
+  // 「利用金額(円)」「利用金額」どちらにも対応
   const amountKey = headers.find((h) => h.includes("利用金額")) ?? headers[4];
 
   let imported = 0;
