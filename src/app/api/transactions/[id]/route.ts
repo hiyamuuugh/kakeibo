@@ -7,11 +7,14 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await req.json();
-  const { categoryId } = body;
+  const { categoryId, memo } = body;
 
   const transaction = await prisma.transaction.update({
     where: { id },
-    data: { categoryId: categoryId ?? null },
+    data: {
+      ...(categoryId !== undefined && { categoryId: categoryId ?? null }),
+      ...(memo !== undefined && { memo: memo || null }),
+    },
     include: { category: true },
   });
 
