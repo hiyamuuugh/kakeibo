@@ -25,6 +25,9 @@ export async function GET(req: NextRequest) {
 
   if (memberId && memberId !== "all") {
     where.memberId = memberId;
+  } else if (!memberId) {
+    // 家族全員取得時は非公開データを除外
+    where.isPrivate = false;
   }
 
   const transactions = await prisma.transaction.findMany({
