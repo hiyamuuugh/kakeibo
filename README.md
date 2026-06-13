@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# kakeibo (Web)
 
-## Getting Started
+PayPay・各種クレジットカード・銀行のCSVをインポートして支出を管理する家計簿アプリのWeb版。
+モバイル版は [kakeibo-app](https://github.com/hiyamuuugh/kakeibo-app)。
 
-First, run the development server:
+- 本番: https://kakeibo-mu-two.vercel.app
+
+## 技術スタック
+
+- Next.js 16 + TypeScript + Tailwind CSS
+- shadcn/ui (base-ui ベース)
+- Prisma 7 + Neon (PostgreSQL)
+- recharts / papaparse / react-dropzone / date-fns
+- テスト: vitest
+
+## 開発
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm test         # vitest
+npm run build    # prisma generate + next build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env` に `DATABASE_URL`（Neon接続文字列）が必要。DBシードは `npm run db:seed`。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## CSV取込
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`/import` から取込。対応: PayPay / PayPayカード / 楽天カード / 三菱UFJ / 三井住友(SMBC)。
+取込ロジックは `src/lib/import/`、APIは `src/app/api/import/<source>/`。
 
-## Learn More
+## デプロイ
 
-To learn more about Next.js, take a look at the following resources:
+`master` への push で Vercel が自動ビルド＆本番デプロイ（production branch = master）。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 開発の進め方（このプロジェクトの運用ルール）
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 機能追加・バグ修正はブランチを切ってPR。master直接コミットは禁止。
+- master へのマージはオーナー承認後。
+- **詰まった点（原因がすぐ分からず切り分けが必要だった事象）は GitHub Issue に「詰まりログ」として記録する。** READMEには概要のみ、詳細はIssueを参照する。
+  - 過去の詰まりログ: [Issues (label: stuck-log)](https://github.com/hiyamuuugh/kakeibo/issues?q=label%3Astuck-log)
+- README は変更で使い方・設定・コマンドが変わったら必ず更新する。
 
-## Deploy on Vercel
+## 開発に使用したAIモデル
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Claude Opus 4.8 (Claude Code) — SMBC/MUFG取込、非公開分の合計算入、テスト基盤・ビルド整備など (2026-06-13)
