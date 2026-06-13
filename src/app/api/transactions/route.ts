@@ -25,10 +25,9 @@ export async function GET(req: NextRequest) {
 
   if (memberId && memberId !== "all") {
     where.memberId = memberId;
-  } else if (!memberId) {
-    // 家族全員取得時は非公開データを除外
-    where.isPrivate = false;
   }
+  // 家族全員取得時も非公開データを返す（合計に算入するため）。
+  // リスト表示での非表示はクライアント側で行う。
 
   const transactions = await prisma.transaction.findMany({
     where,
