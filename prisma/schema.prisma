@@ -9,13 +9,16 @@ datasource db {
 
 model Category {
   id            String         @id @default(cuid())
-  name          String         @unique
+  name          String
+  type          String         @default("expense")
   color         String         @default("#6b7280")
   icon          String         @default("shopping-cart")
   createdAt     DateTime       @default(now())
   transactions  Transaction[]
   budgets       Budget[]
   merchantRules MerchantRule[]
+
+  @@unique([name, type])
 }
 
 model Member {
