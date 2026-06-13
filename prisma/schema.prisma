@@ -41,6 +41,7 @@ model Transaction {
   createdAt   DateTime  @default(now())
   importId    String?
   memo        String?
+  isPrivate   Boolean   @default(false)
 
   @@index([date])
   @@index([categoryId])
