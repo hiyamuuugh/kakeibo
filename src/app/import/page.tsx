@@ -54,6 +54,56 @@ export default function ImportPage() {
     toast.success(`${data.imported}件インポートしました`);
   }
 
+  const [smbcFile, setSmbcFile] = useState<File | null>(null);
+  const [smbcLoading, setSmbcLoading] = useState(false);
+  const [smbcResult, setSmbcResult] = useState<{
+    imported: number;
+    skipped: number;
+  } | null>(null);
+
+  const onDropSmbc = useCallback((files: File[]) => {
+    if (files[0]) {
+      setSmbcFile(files[0]);
+      setSmbcResult(null);
+    }
+  }, []);
+
+  const {
+    getRootProps: getSmbcRootProps,
+    getInputProps: getSmbcInputProps,
+    isDragActive: isSmbcDragActive,
+  } = useDropzone({
+    onDrop: onDropSmbc,
+    accept: { "text/csv": [".csv"] },
+    maxFiles: 1,
+  });
+
+  async function handleSmbcImport() {
+    if (!smbcFile) return;
+    setSmbcLoading(true);
+    setSmbcResult(null);
+
+    const formData = new FormData();
+    formData.append("file", smbcFile);
+
+    const res = await fetch("/api/import/smbc", {
+      method: "POST",
+      body: formData,
+    });
+
+    setSmbcLoading(false);
+
+    if (!res.ok) {
+      const err = await res.json();
+      toast.error(`インポート失敗: ${err.error}`);
+      return;
+    }
+
+    const data = await res.json();
+    setSmbcResult(data);
+    toast.success(`${data.imported}件インポートしました`);
+  }
+
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <h1 className="text-2xl font-bold">CSV取込</h1>
@@ -113,6 +163,65 @@ export default function ImportPage() {
             disabled={!file || loading}
           >
             {loading ? "インポート中…" : "取込開始"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">三井住友銀行 入出金明細CSV</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div
+            {...getSmbcRootProps()}
+            className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors ${
+              isSmbcDragActive
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            <input {...getSmbcInputProps()} />
+            {smbcFile ? (
+              <div>
+                <p className="font-medium">{smbcFile.name}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {(smbcFile.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-500">
+                  CSVファイルをドロップ、またはクリックして選択
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  SMBCダイレクト → 入出金明細 → CSVダウンロード
+                </p>
+              </div>
+            )}
+          </div>
+
+          {smbcLoading && (
+            <div className="space-y-1">
+              <Progress value={null} />
+              <p className="text-sm text-gray-500 text-center">インポート中…</p>
+            </div>
+          )}
+
+          {smbcResult && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
+              <p className="font-medium text-green-800">インポート完了</p>
+              <p className="text-green-700">
+                取込済み: {smbcResult.imported}件 / スキップ: {smbcResult.skipped}件
+              </p>
+            </div>
+          )}
+
+          <Button
+            className="w-full"
+            onClick={handleSmbcImport}
+            disabled={!smbcFile || smbcLoading}
+          >
+            {smbcLoading ? "インポート中…" : "取込開始"}
           </Button>
         </CardContent>
       </Card>
