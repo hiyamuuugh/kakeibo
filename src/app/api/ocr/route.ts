@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
 
   if (!res.ok) {
     const detail = await res.text();
+    // 割り当て超過（無料枠/上限到達）はそのまま429で返し、アプリ側で専用メッセージを出す
+    if (res.status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(detail)) {
+      return NextResponse.json({ error: "quota_exceeded" }, { status: 429 });
+    }
     return NextResponse.json({ error: `Vision API error: ${res.status}`, detail }, { status: 502 });
   }
 
