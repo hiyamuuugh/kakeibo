@@ -26,6 +26,19 @@ npm run db:seed        # デフォルトカテゴリを投入
 
 > Prisma Client の出力先は `src/generated/prisma`（gitignore済み）。`npm run build` で自動生成される。
 
+### レシートOCR（任意・Google Cloud Vision）
+
+レシート撮影の自動入力（`/api/ocr`）は Google Cloud Vision を使う。設定しなくても他機能は動く（未設定時は503）。
+
+1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクト作成 → 「Cloud Vision API」を有効化（請求先＝クレカ登録が必要）
+2. 「APIとサービス → 認証情報」で **APIキー**を発行（APIの制限を Cloud Vision API のみに絞ると安全）
+3. **無料枠超過の防止**:
+   - 「お支払い → 予算とアラート」で予算を作成（例: ¥0/¥100、超えたらメール通知）
+   - 「Cloud Vision API → 割り当てと上限」で 1日あたりのリクエスト上限を低めに設定（超えると API が止まり課金されない）
+4. Vercel の Environment Variables に `GOOGLE_VISION_API_KEY` を登録 → 再デプロイ
+
+> 無料枠は月1,000枚まで。超過時はAPIが429を返し、アプリは「今月の利用上限に達しました」と表示する。
+
 ## フォルダ構成
 
 ```
