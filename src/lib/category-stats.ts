@@ -26,6 +26,7 @@ interface BuildCategoryStatsOptions {
   fallbackColor: string;
   fallbackIcon: string;
   useAbsoluteAmount?: boolean;
+  allowedCategoryNames?: readonly string[];
 }
 
 export const buildCategoryStats = (
@@ -35,7 +36,11 @@ export const buildCategoryStats = (
   const byCategory = new Map<string, CategoryStat>();
 
   for (const t of transactions) {
-    const key = t.categoryId ?? options.fallbackId;
+    const categoryAllowed =
+      t.category !== null &&
+      (options.allowedCategoryNames === undefined ||
+        options.allowedCategoryNames.includes(t.category.name));
+    const key = categoryAllowed ? t.categoryId ?? options.fallbackId : options.fallbackId;
     const amount = options.useAbsoluteAmount ? Math.abs(t.amount) : t.amount;
     const existing = byCategory.get(key);
     if (existing) {
@@ -46,9 +51,9 @@ export const buildCategoryStats = (
 
     byCategory.set(key, {
       id: key,
-      name: t.category?.name ?? options.fallbackName,
-      color: t.category?.color ?? options.fallbackColor,
-      icon: t.category?.icon ?? options.fallbackIcon,
+      name: categoryAllowed ? t.category?.name ?? options.fallbackName : options.fallbackName,
+      color: categoryAllowed ? t.category?.color ?? options.fallbackColor : options.fallbackColor,
+      icon: categoryAllowed ? t.category?.icon ?? options.fallbackIcon : options.fallbackIcon,
       total: amount,
       count: 1,
     });

@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     fallbackColor: "#9ca3af",
     fallbackIcon: "circle-help",
     useAbsoluteAmount: true,
+    allowedCategoryNames: ["給料", "補助金", "その他", "未分類"],
   });
 
   // Daily totals for line chart (支出のみ)
