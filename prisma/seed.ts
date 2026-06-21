@@ -23,6 +23,7 @@ const defaultCategories = [
   { name: "給料",   type: "income",  color: "#22c55e", icon: "banknote" },
   { name: "補助金", type: "income",  color: "#0ea5e9", icon: "hand-coins" },
   { name: "その他", type: "income",  color: "#6b7280", icon: "circle-ellipsis" },
+  { name: "未分類", type: "income",  color: "#9ca3af", icon: "circle-help" },
 ];
 
 async function main() {

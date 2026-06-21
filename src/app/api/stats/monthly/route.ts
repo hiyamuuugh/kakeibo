@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { buildCategoryStats } from "@/lib/category-stats";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -29,31 +30,19 @@ export async function GET(req: NextRequest) {
   const total = expenses.reduce((sum, t) => sum + t.amount, 0);
   const income = incomes.reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  // Group by category (支出のみ)
-  const byCategory = new Map<
-    string,
-    { id: string; name: string; color: string; icon: string; total: number; count: number }
-  >();
-
-  for (const t of expenses) {
-    const key = t.categoryId ?? "__uncategorized__";
-    const existing = byCategory.get(key);
-    if (existing) {
-      existing.total += t.amount;
-      existing.count += 1;
-    } else {
-      byCategory.set(key, {
-        id: key,
-        name: t.category?.name ?? "未分類",
-        color: t.category?.color ?? "#9ca3af",
-        icon: t.category?.icon ?? "circle-ellipsis",
-        total: t.amount,
-        count: 1,
-      });
-    }
-  }
-
-  const categories = Array.from(byCategory.values()).sort((a, b) => b.total - a.total);
+  const categories = buildCategoryStats(expenses, {
+    fallbackId: "__uncategorized__",
+    fallbackName: "未分類",
+    fallbackColor: "#9ca3af",
+    fallbackIcon: "circle-ellipsis",
+  });
+  const incomeCategories = buildCategoryStats(incomes, {
+    fallbackId: "__income_uncategorized__",
+    fallbackName: "未分類",
+    fallbackColor: "#9ca3af",
+    fallbackIcon: "circle-help",
+    useAbsoluteAmount: true,
+  });
 
   // Daily totals for line chart (支出のみ)
   const dailyMap = new Map<string, number>();
@@ -65,5 +54,5 @@ export async function GET(req: NextRequest) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, amount]) => ({ date, amount }));
 
-  return NextResponse.json({ month, total, income, categories, daily, count: expenses.length });
+  return NextResponse.json({ month, total, income, categories, incomeCategories, daily, count: expenses.length });
 }
