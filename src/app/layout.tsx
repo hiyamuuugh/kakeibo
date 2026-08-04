@@ -1,14 +1,24 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Navigation } from "@/components/navigation";
 
-const geist = Geist({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "家計簿",
-  description: "PayPay・クレジットカード対応の家計簿アプリ",
+  title: "kakeibo",
+  description: "家族で使うためのブラウザ家計簿アプリ",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "kakeibo",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -18,9 +28,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={`${geist.className} bg-gray-50 min-h-screen`}>
+      <body className="min-h-screen bg-slate-50 text-slate-950">
         <Navigation />
-        <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 md:px-6 md:pb-10 md:pt-6">
+          {children}
+        </main>
         <Toaster richColors position="top-right" />
       </body>
     </html>
