@@ -87,7 +87,11 @@ export function LoginForm({ nextPath, setupMode }: LoginFormProps) {
               />
             </div>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            <Button className="h-11 w-full" disabled={loading || password.length === 0}>
+            <Button
+              type="submit"
+              className="h-11 w-full"
+              disabled={loading || password.length === 0}
+            >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <LoaderCircle className="h-4 w-4 animate-spin" />
