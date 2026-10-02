@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#f9fafb",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -28,9 +28,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="min-h-screen bg-slate-50 text-slate-950">
+      <body className="min-h-screen bg-[#f9fafb] text-[#1f2937]">
         <Navigation />
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-5 md:px-6 md:pb-10 md:pt-6">
+        <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 md:px-6 md:pb-10 md:pt-6">
           {children}
         </main>
         <Toaster richColors position="top-right" />

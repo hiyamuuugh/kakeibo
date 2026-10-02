@@ -82,24 +82,24 @@ export default function Dashboard() {
   const diff = stats && prevStats ? stats.total - prevStats.total : null;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">家族のお金の流れ</p>
-          <h1 className="text-2xl font-semibold text-slate-950">ダッシュボード</h1>
+          <p className="text-xs font-semibold text-[#6b7280]">家族のお金の流れ</p>
+          <h1 className="text-xl font-bold text-[#1f2937]">ダッシュボード</h1>
         </div>
         <MonthPicker value={month} onChange={handleMonthChange} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
+            <CardTitle className="text-[11px] font-medium text-[#6b7280]">
               {format(new Date(`${month}-01`), "M月", { locale: ja })}の支出合計
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold tracking-tight">
+            <p className="text-3xl font-extrabold tracking-tight text-[#1f2937]">
               {loading ? "..." : formatYen(stats?.total ?? 0)}
             </p>
             {diff !== null ? (
@@ -112,27 +112,27 @@ export default function Dashboard() {
             ) : null}
           </CardContent>
         </Card>
-        <Card className="border-slate-200 shadow-sm">
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
+            <CardTitle className="text-[11px] font-medium text-[#6b7280]">
               取引件数
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold tracking-tight">
+            <p className="text-3xl font-extrabold tracking-tight text-[#1f2937]">
               {loading ? "..." : stats?.count ?? 0}
               <span className="ml-1 text-base font-normal text-slate-500">件</span>
             </p>
           </CardContent>
         </Card>
-        <Card className="border-slate-200 shadow-sm">
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
+            <CardTitle className="text-[11px] font-medium text-[#6b7280]">
               1日平均
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold tracking-tight">
+            <p className="text-3xl font-extrabold tracking-tight text-[#1f2937]">
               {loading || !stats
                 ? "..."
                 : formatYen(
@@ -145,10 +145,10 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Card className="border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base">カテゴリ別の支出</CardTitle>
+            <CardTitle className="text-sm font-semibold">カテゴリ別の支出</CardTitle>
           </CardHeader>
           <CardContent>
             {!loading && stats && stats.categories.length > 0 ? (
@@ -182,14 +182,14 @@ export default function Dashboard() {
                       key={category.id}
                       className="flex items-center justify-between gap-3 text-sm"
                     >
-                      <span className="flex min-w-0 items-center gap-2 text-slate-600">
+                      <span className="flex min-w-0 items-center gap-2 text-[#374151]">
                         <span
                           className="h-2.5 w-2.5 shrink-0 rounded-full"
                           style={{ background: category.color }}
                         />
                         <span className="truncate">{category.name}</span>
                       </span>
-                      <span className="shrink-0 font-medium text-slate-900">
+                      <span className="shrink-0 font-semibold text-[#1f2937]">
                         {formatYen(category.total)}
                       </span>
                     </div>
@@ -197,16 +197,16 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <p className="py-10 text-center text-sm text-slate-400">
+              <p className="py-10 text-center text-sm text-[#9ca3af]">
                 データがありません
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 shadow-sm">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base">日別の支出</CardTitle>
+            <CardTitle className="text-sm font-semibold">日別の支出</CardTitle>
           </CardHeader>
           <CardContent>
             {!loading && stats && stats.daily.length > 0 ? (
@@ -227,12 +227,12 @@ export default function Dashboard() {
                         typeof value === "number" ? formatYen(value) : String(value)
                       }
                     />
-                    <Bar dataKey="amount" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="amount" fill="#3b82f6" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="py-10 text-center text-sm text-slate-400">
+              <p className="py-10 text-center text-sm text-[#9ca3af]">
                 データがありません
               </p>
             )}

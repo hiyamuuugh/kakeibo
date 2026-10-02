@@ -87,18 +87,21 @@ export default function BudgetsPage() {
     stats.find((s) => s.id === catId)?.total ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">予算管理</h1>
+        <div>
+          <p className="text-xs font-semibold text-[#6b7280]">カテゴリ別</p>
+          <h1 className="text-xl font-bold text-[#1f2937]">予算管理</h1>
+        </div>
         <input
           type="month"
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="border rounded-md px-3 py-1.5 text-sm"
+          className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {categories.map((cat) => {
           const budget = getBudget(cat.id);
           const spent = getSpent(cat.id);
@@ -126,11 +129,11 @@ export default function BudgetsPage() {
                     onChange={(e) =>
                       setInputs((prev) => ({ ...prev, [cat.id]: e.target.value }))
                     }
-                    className="h-8 text-sm"
+                    className="h-10 text-sm"
                   />
                   <Button
                     size="sm"
-                    className="h-8"
+                    className="h-10"
                     onClick={() => saveBudget(cat.id)}
                     disabled={saving === cat.id}
                   >
@@ -140,13 +143,13 @@ export default function BudgetsPage() {
 
                 {limit > 0 && (
                   <div className="space-y-1">
-                    <div className="relative h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-[#f3f4f6]">
                       <div
-                        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-blue-500"}`}
+                        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-[#3b82f6]"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between text-xs text-[#6b7280]">
                       <span>使用: {formatYen(spent)}</span>
                       <span className={over ? "text-red-500 font-medium" : ""}>
                         {over
@@ -158,7 +161,7 @@ export default function BudgetsPage() {
                 )}
 
                 {limit === 0 && spent > 0 && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-[#9ca3af]">
                     今月の支出: {formatYen(spent)}（予算未設定）
                   </p>
                 )}
