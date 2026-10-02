@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -47,6 +48,10 @@ export async function DELETE() {
 export async function POST(req: Request) {
   const body = await req.json();
   const { date, amount, description, store, source, categoryId, memberId } = body;
+  const rules = categoryId ? [] : await prisma.merchantRule.findMany();
+  const matchedCategoryId = categoryId
+    ? categoryId
+    : findMatchingRuleCategoryId([description, store].filter(Boolean).join(" "), rules);
 
   const transaction = await prisma.transaction.create({
     data: {
@@ -55,7 +60,7 @@ export async function POST(req: Request) {
       description,
       store: store ?? null,
       source: source ?? "manual",
-      categoryId: categoryId ?? null,
+      categoryId: matchedCategoryId,
       memberId: memberId ?? null,
     },
     include: { category: true },

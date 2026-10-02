@@ -41,6 +41,14 @@ interface Transaction {
   source: string;
   categoryId: string | null;
   category: Category | null;
+  memberId: string | null;
+  member: Member | null;
+}
+
+interface Member {
+  id: string;
+  name: string;
+  color: string;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -64,8 +72,12 @@ const getFilterLabel = (value: string, categories: Category[]) => {
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [filterCat, setFilterCat] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  const [filterSource, setFilterSource] = useState("all");
+  const [filterMember, setFilterMember] = useState("all");
   const [loading, setLoading] = useState(true);
 
   const loadTransactions = useCallback(() => {
@@ -74,6 +86,9 @@ export default function TransactionsPage() {
     if (filterCat !== "all") {
       params.set("categoryId", filterCat);
     }
+    if (filterMember !== "all") {
+      params.set("memberId", filterMember);
+    }
 
     fetch(`/api/transactions?${params}`)
       .then((response) => response.json())
@@ -81,12 +96,15 @@ export default function TransactionsPage() {
         setTransactions(data);
         setLoading(false);
       });
-  }, [filterCat, month]);
+  }, [filterCat, filterMember, month]);
 
   useEffect(() => {
     fetch("/api/categories")
       .then((response) => response.json())
       .then(setCategories);
+    fetch("/api/members")
+      .then((response) => response.json())
+      .then(setMembers);
   }, []);
 
   useEffect(() => {
@@ -101,6 +119,11 @@ export default function TransactionsPage() {
   const handleFilterChange = (value: string) => {
     setLoading(true);
     setFilterCat(value);
+  };
+
+  const handleMemberFilterChange = (value: string) => {
+    setLoading(true);
+    setFilterMember(value);
   };
 
   const updateCategory = async (transactionId: string, categoryId: string) => {
@@ -135,9 +158,16 @@ export default function TransactionsPage() {
     }
   };
 
-  const total = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const displayedTransactions = transactions.filter((transaction) => {
+    if (filterType === "expense" && transaction.amount < 0) return false;
+    if (filterType === "income" && transaction.amount >= 0) return false;
+    if (filterSource !== "all" && transaction.source !== filterSource) return false;
+    return true;
+  });
+  const total = displayedTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
   const expenseCategories = getCategoriesByKind(categories, "expense");
   const incomeCategories = getCategoriesByKind(categories, "income");
+  const sourceOptions = Array.from(new Set(transactions.map((transaction) => transaction.source))).sort();
 
   const categoryPicker = (
     <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
@@ -170,19 +200,65 @@ export default function TransactionsPage() {
           <p className="text-xs font-semibold text-[#6b7280]">月ごとの明細</p>
           <h1 className="text-xl font-bold text-[#1f2937]">取引一覧</h1>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto,12rem]">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto,9rem,9rem,9rem,12rem]">
           <input
             type="month"
             value={month}
             onChange={(event) => handleMonthChange(event.target.value)}
             className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
           />
+          <Select value={filterType} onValueChange={(value) => setFilterType(value ?? "all")}>
+            <SelectTrigger className="h-10 w-full bg-white">
+              <SelectValue>
+                {filterType === "all" ? "収支すべて" : filterType === "expense" ? "支出" : "収入"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">収支すべて</SelectItem>
+              <SelectItem value="expense">支出</SelectItem>
+              <SelectItem value="income">収入</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
+            <SelectTrigger className="h-10 w-full bg-white">
+              <SelectValue>
+                {filterSource === "all"
+                  ? "取込元すべて"
+                  : SOURCE_LABELS[filterSource] ?? filterSource}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">取込元すべて</SelectItem>
+              {sourceOptions.map((source) => (
+                <SelectItem key={source} value={source}>
+                  {SOURCE_LABELS[source] ?? source}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterMember} onValueChange={(value) => handleMemberFilterChange(value ?? "all")}>
+            <SelectTrigger className="h-10 w-full bg-white">
+              <SelectValue>
+                {filterMember === "all"
+                  ? "アカウントすべて"
+                  : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">アカウントすべて</SelectItem>
+              {members.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {categoryPicker}
         </div>
       </div>
 
       <div className="flex flex-col gap-1 rounded-[10px] bg-[#f9fafb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-[#6b7280]">{transactions.length}件</p>
+        <p className="text-xs text-[#6b7280]">{displayedTransactions.length}件</p>
         <p className="text-base font-bold text-[#1f2937]">{formatYen(total)}</p>
       </div>
 
@@ -205,23 +281,23 @@ export default function TransactionsPage() {
                   <LoadingSpinner />
                 </TableCell>
               </TableRow>
-            ) : transactions.length === 0 ? (
+            ) : displayedTransactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-slate-400">
                   取引データがありません
                 </TableCell>
               </TableRow>
             ) : (
-              transactions.map((transaction) => (
+              displayedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="whitespace-nowrap text-sm text-[#6b7280]">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
                   <TableCell>
                     <div className="font-medium text-sm">{transaction.description}</div>
-                    {transaction.store ? (
-                      <div className="text-xs text-[#9ca3af]">{transaction.store}</div>
-                    ) : null}
+                    <div className="text-xs text-[#9ca3af]">
+                      {[transaction.store, transaction.member?.name].filter(Boolean).join(" / ")}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">
@@ -262,12 +338,12 @@ export default function TransactionsPage() {
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             <LoadingSpinner />
           </div>
-        ) : transactions.length === 0 ? (
+        ) : displayedTransactions.length === 0 ? (
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             取引データがありません
           </div>
         ) : (
-          transactions.map((transaction) => (
+          displayedTransactions.map((transaction) => (
             <div
               key={transaction.id}
               className="space-y-3 rounded-[10px] bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
@@ -279,7 +355,9 @@ export default function TransactionsPage() {
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
-                    {transaction.store ? ` / ${transaction.store}` : ""}
+                    {[transaction.store, transaction.member?.name].filter(Boolean).length > 0
+                      ? ` / ${[transaction.store, transaction.member?.name].filter(Boolean).join(" / ")}`
+                      : ""}
                   </p>
                 </div>
                 <p className="shrink-0 text-base font-semibold text-slate-900">
