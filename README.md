@@ -1,6 +1,6 @@
 # kakeibo
 
-家族で使うためのブラウザ家計簿アプリです。取引一覧、直接入力、月別ダッシュボード、CSV 取込、予算管理、カテゴリマッピングを Web でまとめて扱います。
+家族で使うためのブラウザ家計簿アプリです。取引一覧、直接入力、月別ダッシュボード、CSV 取込、カテゴリマッピングを Web でまとめて扱います。
 
 - 本番: https://kakeibo-mu-two.vercel.app
 - モバイル版リポジトリ: https://github.com/hiyamuuugh/kakeibo-app
@@ -36,7 +36,7 @@ npm run db:seed
 src/
 ├── app/                  # App Router と API Route
 │   ├── api/              # transactions, stats, import, auth など
-│   ├── budgets/          # 予算画面
+│   ├── budgets/          # 予算画面（メニュー非表示）
 │   ├── import/           # CSV 取込画面（PayPay / PayPayカード / 楽天カード / MUFG / SMBC）
 │   ├── login/            # 家族用ログイン画面
 │   ├── settings/         # カテゴリマッピング

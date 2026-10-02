@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCategoriesByKind } from "@/lib/category-options";
+import { getCategoriesByKind, getChartCategoryNames } from "@/lib/category-options";
 
 const categories = [
   { id: "daily", name: "日用品", type: "expense" },
@@ -29,5 +29,30 @@ describe("getCategoriesByKind", () => {
       "その他",
       "未分類",
     ]);
+  });
+});
+
+describe("getChartCategoryNames", () => {
+  it("収入は指定カテゴリだけを返す", () => {
+    const totals = new Map([
+      ["日用品", 1000],
+      ["給料", 200000],
+    ]);
+
+    expect(getChartCategoryNames(totals, "income")).toEqual([
+      "給料",
+      "補助金",
+      "その他",
+      "未分類",
+    ]);
+  });
+
+  it("支出は未分類を最後にする", () => {
+    const totals = new Map([
+      ["未分類", 1000],
+      ["食費", 2000],
+    ]);
+
+    expect(getChartCategoryNames(totals, "expense").at(-1)).toBe("未分類");
   });
 });

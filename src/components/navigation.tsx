@@ -4,14 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChartNoAxesCombined,
-  CircleDollarSign,
   FolderInput,
   PlusCircle,
   ReceiptText,
   Settings,
 } from "lucide-react";
 import { InstallButton } from "@/components/install-button";
-import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -19,7 +17,6 @@ const links = [
   { href: "/transactions", label: "取引", icon: ReceiptText },
   { href: "/transactions/new", label: "入力", icon: PlusCircle },
   { href: "/import", label: "取込", icon: FolderInput },
-  { href: "/budgets", label: "予算", icon: CircleDollarSign },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 
@@ -69,7 +66,6 @@ export function Navigation() {
           </div>
           <div className="flex items-center gap-2">
             <InstallButton />
-            <LogoutButton />
           </div>
         </div>
       </header>
@@ -96,7 +92,6 @@ export function Navigation() {
               </Link>
             );
           })}
-          <LogoutButton mobile />
         </div>
       </nav>
     </>
