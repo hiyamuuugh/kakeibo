@@ -1,6 +1,6 @@
 # kakeibo
 
-家族で使うためのブラウザ家計簿アプリです。取引一覧、月別ダッシュボード、CSV 取込、予算管理を Web でまとめて扱います。
+家族で使うためのブラウザ家計簿アプリです。取引一覧、直接入力、月別ダッシュボード、CSV 取込、予算管理、カテゴリマッピングを Web でまとめて扱います。
 
 - 本番: https://kakeibo-mu-two.vercel.app
 - モバイル版リポジトリ: https://github.com/hiyamuuugh/kakeibo-app
@@ -37,8 +37,9 @@ src/
 ├── app/                  # App Router と API Route
 │   ├── api/              # transactions, stats, import, auth など
 │   ├── budgets/          # 予算画面
-│   ├── import/           # CSV 取込画面
+│   ├── import/           # CSV 取込画面（PayPay / PayPayカード / 楽天カード / MUFG / SMBC）
 │   ├── login/            # 家族用ログイン画面
+│   ├── settings/         # カテゴリマッピング
 │   └── transactions/     # 取引一覧
 ├── components/           # UI / ナビゲーション / ログインフォーム
 ├── lib/                  # Prisma, import, auth, 集計ロジック
@@ -84,6 +85,12 @@ Vercel の Environment Variables に同じ値を設定してください。
 
 オフライン対応までは入れていません。主目的はスマホからアプリっぽく開きやすくすることです。
 
+### 取込・入力
+
+- CSV 取込: PayPay、PayPayカード、楽天カード、三菱UFJ銀行、三井住友銀行
+- 直接入力: 支出 / 収入の切替、レシートOCR、カテゴリ選択
+- カテゴリマッピング: 店舗名ルールの追加、削除、既存取引への再適用
+
 ### OCR
 
 `/api/ocr` は Google Cloud Vision を使います。`GOOGLE_VISION_API_KEY` 未設定時は `503` を返します。
@@ -93,6 +100,7 @@ Vercel の Environment Variables に同じ値を設定してください。
 切り分けに時間がかかった内容は `stuck-log` ラベル付きの GitHub Issue に残します。README には概要だけを書き、詳細は Issue を見ます。
 
 - [Issues (label: stuck-log)](https://github.com/hiyamuuugh/kakeibo/issues?q=label%3Astuck-log)
+- [#18 Web版にアプリ同等の入力・取込・カテゴリマッピングを追加](https://github.com/hiyamuuugh/kakeibo/issues/18)
 
 ## 開発の進め方
 
