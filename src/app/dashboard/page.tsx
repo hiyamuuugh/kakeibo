@@ -9,6 +9,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Pie,
   PieChart,
   ReferenceLine,
@@ -24,6 +25,7 @@ import {
   getChartCategoryNames,
   INCOME_CATEGORY_ORDER,
 } from "@/lib/category-options";
+import { formatShortYen, getSharePercent } from "@/lib/chart-format";
 import { buildMonthlyReport, MonthlyReport } from "@/lib/monthly-report";
 
 interface CategoryStat {
@@ -127,6 +129,69 @@ const ChartTooltip = ({
     <div className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-xs shadow">
       <p className="font-semibold text-[#374151]">{label}</p>
       <p className="mt-1 font-bold text-[#1f2937]">{formatBalance(payload[0].value)}</p>
+    </div>
+  );
+};
+
+const toNumber = (value: unknown) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value);
+  return Number.NaN;
+};
+
+const BarValueLabel = (props: unknown) => {
+  const { x, y, width, value } = props as {
+    x?: number | string;
+    y?: number | string;
+    width?: number | string;
+    value?: number | string;
+  };
+  const labelX = toNumber(x);
+  const labelY = toNumber(y);
+  const labelWidth = toNumber(width);
+  const amount = toNumber(value);
+
+  if (
+    !Number.isFinite(labelX) ||
+    !Number.isFinite(labelY) ||
+    !Number.isFinite(labelWidth) ||
+    !Number.isFinite(amount) ||
+    amount === 0
+  ) {
+    return null;
+  }
+
+  return (
+    <text
+      x={labelX + labelWidth / 2}
+      y={amount < 0 ? labelY + 14 : labelY - 5}
+      textAnchor="middle"
+      className="fill-[#374151] text-[10px] font-bold"
+    >
+      {amount < 0 ? `-${formatShortYen(amount)}` : formatShortYen(amount)}
+    </text>
+  );
+};
+
+const PieTooltip = ({
+  active,
+  payload,
+  total,
+}: {
+  active?: boolean;
+  payload?: { name?: string; value?: number }[];
+  total: number;
+}) => {
+  if (!active || !payload?.[0] || typeof payload[0].value !== "number") {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-xs shadow">
+      <p className="font-semibold text-[#374151]">{payload[0].name}</p>
+      <p className="mt-1 font-bold text-[#1f2937]">
+        {formatYen(payload[0].value)} / {getSharePercent(payload[0].value, total)}%
+      </p>
     </div>
   );
 };
@@ -338,35 +403,13 @@ export default function Dashboard() {
     pieMode === "income"
       ? filterIncomeCategories(stats?.incomeCategories ?? [])
       : stats?.categories ?? [];
+  const pieTotal = pieTabData.reduce((sum, category) => sum + category.total, 0);
 
   const goToPrevMonth = () => setMonth(format(subMonths(new Date(`${month}-01`), 1), "yyyy-MM"));
   const goToNextMonth = () => setMonth(format(addMonths(new Date(`${month}-01`), 1), "yyyy-MM"));
 
   return (
     <div className="mx-auto max-w-xl space-y-3">
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={goToPrevMonth}
-          className="px-2 text-3xl font-light text-[#3b82f6]"
-        >
-          ‹
-        </button>
-        <input
-          type="month"
-          value={month}
-          onChange={(event) => setMonth(event.target.value)}
-          className="h-10 rounded-lg border-0 bg-transparent px-3 text-center text-xl font-bold text-[#1f2937] outline-none"
-        />
-        <button
-          type="button"
-          onClick={goToNextMonth}
-          className="px-2 text-3xl font-light text-[#3b82f6]"
-        >
-          ›
-        </button>
-      </div>
-
       {statsLoading || stats === null ? (
         <LoadingSpinner className="py-16" />
       ) : (
@@ -396,6 +439,29 @@ export default function Dashboard() {
                 <p className="text-xl font-bold text-[#ef4444]">{formatYen(stats?.total ?? 0)}</p>
               </CardContent>
             </Card>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={goToPrevMonth}
+              className="px-2 text-3xl font-light text-[#3b82f6]"
+            >
+              ‹
+            </button>
+            <input
+              type="month"
+              value={month}
+              onChange={(event) => setMonth(event.target.value)}
+              className="h-10 rounded-lg border-0 bg-transparent px-3 text-center text-xl font-bold text-[#1f2937] outline-none"
+            />
+            <button
+              type="button"
+              onClick={goToNextMonth}
+              className="px-2 text-3xl font-light text-[#3b82f6]"
+            >
+              ›
+            </button>
           </div>
 
           {report && reportStyle && ReportIcon ? (
@@ -514,7 +580,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="h-full min-w-[560px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ left: -20, right: 8, top: 18, bottom: 0 }}>
+                      <BarChart data={chartData} margin={{ left: -20, right: 8, top: 28, bottom: 0 }}>
                         <CartesianGrid vertical={false} stroke="#f3f4f6" />
                         <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} />
                         <YAxis
@@ -525,6 +591,7 @@ export default function Dashboard() {
                         {chartMode === "balance" ? <ReferenceLine y={0} stroke="#d1d5db" /> : null}
                         <Tooltip content={<ChartTooltip />} />
                         <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+                          <LabelList dataKey="value" content={BarValueLabel} />
                           {chartData.map((item) => (
                             <Cell
                               key={item.month}
@@ -624,11 +691,7 @@ export default function Dashboard() {
                             <Cell key={category.id} fill={category.color} />
                           ))}
                         </Pie>
-                        <Tooltip
-                          formatter={(value) =>
-                            typeof value === "number" ? formatYen(value) : String(value)
-                          }
-                        />
+                        <Tooltip content={<PieTooltip total={pieTotal} />} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -642,8 +705,11 @@ export default function Dashboard() {
                           />
                           <span className="truncate">{category.name}</span>
                         </span>
-                        <span className="shrink-0 font-semibold text-[#1f2937]">
+                        <span className="shrink-0 text-right font-semibold text-[#1f2937]">
                           {formatYen(category.total)}
+                          <span className="ml-1 text-xs text-[#6b7280]">
+                            {getSharePercent(category.total, pieTotal)}%
+                          </span>
                         </span>
                       </div>
                     ))}

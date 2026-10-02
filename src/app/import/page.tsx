@@ -16,6 +16,7 @@ interface ImportSource {
   endpoint: string;
   color: string;
   linkUrl: string;
+  appUrl?: string;
   linkLabel: string;
   steps: string[];
 }
@@ -32,11 +33,12 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "PayPayアプリの利用履歴CSV",
     endpoint: "/api/import/paypay",
     color: "#ef4444",
-    linkUrl: "https://www.paypay.ne.jp/",
+    linkUrl: "https://apps.apple.com/jp/app/paypay/id1435783608",
+    appUrl: "paypay://",
     linkLabel: "PayPayを開く",
     steps: [
       "PayPayアプリを開く",
-      "ウォレットから利用履歴を開く",
+      "利用履歴から明細をダウンロード",
       "明細をダウンロードしたCSVを選択",
     ],
   },
@@ -46,11 +48,12 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "PayPayカードの利用明細CSV",
     endpoint: "/api/import/paypay-card",
     color: "#f59e0b",
-    linkUrl: "https://www.paypay-card.co.jp/",
-    linkLabel: "会員メニューを開く",
+    linkUrl: "https://apps.apple.com/jp/app/paypay/id1435783608",
+    appUrl: "paypay://",
+    linkLabel: "PayPayを開く",
     steps: [
-      "PayPayカード会員メニューを開く",
-      "利用明細を表示する",
+      "PayPayカードを開く",
+      "利用明細を表示してCSVをダウンロード",
       "CSVをダウンロードして選択",
     ],
   },
@@ -64,7 +67,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     linkLabel: "楽天e-NAVIを開く",
     steps: [
       "楽天e-NAVIを開く",
-      "利用明細を表示する",
+      "PC版に切替して利用明細を表示",
       "CSV形式でダウンロードして選択",
     ],
   },
@@ -78,7 +81,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     linkLabel: "三菱UFJダイレクトを開く",
     steps: [
       "三菱UFJダイレクトを開く",
-      "入出金明細を表示する",
+      "PC版に切替して入出金明細を表示",
       "CSVをダウンロードして選択",
     ],
   },
@@ -174,6 +177,10 @@ function ImportSourceCard({
     toast.success(`${data.imported}件インポートしました`);
   };
 
+  const openSource = () => {
+    window.location.href = source.appUrl ?? source.linkUrl;
+  };
+
   return (
     <Card className="overflow-hidden">
       <button
@@ -196,15 +203,14 @@ function ImportSourceCard({
 
       {open ? (
         <CardContent className="space-y-4 border-t border-[#f3f4f6] pt-4">
-          <a
-            href={source.linkUrl}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={openSource}
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
           >
             <ExternalLink className="h-4 w-4" />
             {source.linkLabel}
-          </a>
+          </button>
 
           <div
             {...getRootProps()}

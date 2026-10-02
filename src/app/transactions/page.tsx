@@ -78,6 +78,7 @@ export default function TransactionsPage() {
   const [filterType, setFilterType] = useState("all");
   const [filterSource, setFilterSource] = useState("all");
   const [filterMember, setFilterMember] = useState("all");
+  const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
 
   const loadTransactions = useCallback(() => {
@@ -92,7 +93,7 @@ export default function TransactionsPage() {
 
     fetch(`/api/transactions?${params}`)
       .then((response) => response.json())
-      .then((data) => {
+      .then((data: Transaction[]) => {
         setTransactions(data);
         setLoading(false);
       });
@@ -153,15 +154,31 @@ export default function TransactionsPage() {
 
     if (response.ok) {
       setLoading(true);
-      toast.success("取引を削除しました");
+      toast.success("削除しました");
       loadTransactions();
     }
   };
 
   const displayedTransactions = transactions.filter((transaction) => {
+    const searchText = keyword.trim().toLowerCase();
+
     if (filterType === "expense" && transaction.amount < 0) return false;
     if (filterType === "income" && transaction.amount >= 0) return false;
     if (filterSource !== "all" && transaction.source !== filterSource) return false;
+    if (
+      searchText &&
+      ![
+        transaction.description,
+        transaction.store,
+        transaction.member?.name,
+        transaction.category?.name,
+        SOURCE_LABELS[transaction.source] ?? transaction.source,
+      ]
+        .filter((value): value is string => Boolean(value))
+        .some((value) => value.toLowerCase().includes(searchText))
+    ) {
+      return false;
+    }
     return true;
   });
   const total = displayedTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
@@ -200,7 +217,14 @@ export default function TransactionsPage() {
           <p className="text-xs font-semibold text-[#6b7280]">月ごとの明細</p>
           <h1 className="text-xl font-bold text-[#1f2937]">取引一覧</h1>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto,9rem,9rem,9rem,12rem]">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(10rem,1fr),auto,9rem,9rem,9rem,12rem]">
+          <input
+            type="search"
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            placeholder="キーワード検索"
+            className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+          />
           <input
             type="month"
             value={month}
