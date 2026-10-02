@@ -63,10 +63,21 @@ const SOURCE_LABELS: Record<string, string> = {
 
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
 
+const formatSignedYen = (amount: number) => {
+  if (amount === 0) return "¥0";
+  return `${amount > 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
+};
+
 const getFilterLabel = (value: string, categories: Category[]) => {
   if (value === "all") return "すべて";
   if (value === "uncategorized") return "未分類";
   return categories.find((category) => category.id === value)?.name ?? "カテゴリ";
+};
+
+const getTotalColor = (amount: number) => {
+  if (amount > 0) return "text-[#16a34a]";
+  if (amount < 0) return "text-[#dc2626]";
+  return "text-[#1f2937]";
 };
 
 export default function TransactionsPage() {
@@ -186,104 +197,118 @@ export default function TransactionsPage() {
   const incomeCategories = getCategoriesByKind(categories, "income");
   const sourceOptions = Array.from(new Set(transactions.map((transaction) => transaction.source))).sort();
 
+  const filterShellClass =
+    "flex min-w-0 items-center rounded-lg border border-[#e5e7eb] bg-white";
+  const filterLabelClass =
+    "shrink-0 border-r border-[#e5e7eb] px-2.5 text-[11px] font-bold text-[#6b7280]";
+
   const categoryPicker = (
-    <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
-      <SelectTrigger className="h-10 w-full bg-white sm:w-44">
-        <span data-slot="select-value" className="flex flex-1 text-left">
-          {getFilterLabel(filterCat, categories)}
-        </span>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">すべて</SelectItem>
-        <SelectItem value="uncategorized">未分類</SelectItem>
-        {expenseCategories.map((category) => (
-          <SelectItem key={category.id} value={category.id}>
-            支出: {category.name}
-          </SelectItem>
-        ))}
-        {incomeCategories.map((category) => (
-          <SelectItem key={category.id} value={category.id}>
-            収入: {category.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className={filterShellClass}>
+      <span className={filterLabelClass}>カテゴリ</span>
+      <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
+        <SelectTrigger className="h-9 min-w-32 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+          <span data-slot="select-value" className="flex flex-1 text-left">
+            {getFilterLabel(filterCat, categories)}
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">すべて</SelectItem>
+          <SelectItem value="uncategorized">未分類</SelectItem>
+          {expenseCategories.map((category) => (
+            <SelectItem key={category.id} value={category.id}>
+              支出: {category.name}
+            </SelectItem>
+          ))}
+          {incomeCategories.map((category) => (
+            <SelectItem key={category.id} value={category.id}>
+              収入: {category.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-semibold text-[#6b7280]">月ごとの明細</p>
+      <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl font-bold text-[#1f2937]">取引一覧</h1>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="month"
+              value={month}
+              onChange={(event) => handleMonthChange(event.target.value)}
+              className="h-9 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
+            />
+            <p className={`text-right text-lg font-extrabold ${getTotalColor(total)}`}>
+              {formatSignedYen(total)}
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(10rem,1fr),auto,9rem,9rem,9rem,12rem]">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="キーワード検索"
-            className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+            className="h-9 min-w-44 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none sm:flex-none"
           />
-          <input
-            type="month"
-            value={month}
-            onChange={(event) => handleMonthChange(event.target.value)}
-            className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
-          />
-          <Select value={filterType} onValueChange={(value) => setFilterType(value ?? "all")}>
-            <SelectTrigger className="h-10 w-full bg-white">
-              <SelectValue>
-                {filterType === "all" ? "収支すべて" : filterType === "expense" ? "支出" : "収入"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">収支すべて</SelectItem>
-              <SelectItem value="expense">支出</SelectItem>
-              <SelectItem value="income">収入</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
-            <SelectTrigger className="h-10 w-full bg-white">
-              <SelectValue>
-                {filterSource === "all"
-                  ? "取込元すべて"
-                  : SOURCE_LABELS[filterSource] ?? filterSource}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">取込元すべて</SelectItem>
-              {sourceOptions.map((source) => (
-                <SelectItem key={source} value={source}>
-                  {SOURCE_LABELS[source] ?? source}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterMember} onValueChange={(value) => handleMemberFilterChange(value ?? "all")}>
-            <SelectTrigger className="h-10 w-full bg-white">
-              <SelectValue>
-                {filterMember === "all"
-                  ? "アカウントすべて"
-                  : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">アカウントすべて</SelectItem>
-              {members.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className={filterShellClass}>
+            <span className={filterLabelClass}>収支</span>
+            <Select value={filterType} onValueChange={(value) => setFilterType(value ?? "all")}>
+              <SelectTrigger className="h-9 min-w-24 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                <SelectValue>
+                  {filterType === "all" ? "すべて" : filterType === "expense" ? "支出" : "収入"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべて</SelectItem>
+                <SelectItem value="expense">支出</SelectItem>
+                <SelectItem value="income">収入</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={filterShellClass}>
+            <span className={filterLabelClass}>取込元</span>
+            <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
+              <SelectTrigger className="h-9 min-w-28 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                <SelectValue>
+                  {filterSource === "all" ? "すべて" : SOURCE_LABELS[filterSource] ?? filterSource}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべて</SelectItem>
+                {sourceOptions.map((source) => (
+                  <SelectItem key={source} value={source}>
+                    {SOURCE_LABELS[source] ?? source}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className={filterShellClass}>
+            <span className={filterLabelClass}>アカウント</span>
+            <Select value={filterMember} onValueChange={(value) => handleMemberFilterChange(value ?? "all")}>
+              <SelectTrigger className="h-9 min-w-28 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                <SelectValue>
+                  {filterMember === "all"
+                    ? "すべて"
+                    : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべて</SelectItem>
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {categoryPicker}
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1 rounded-[10px] bg-[#f9fafb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-[#6b7280]">{displayedTransactions.length}件</p>
-        <p className="text-base font-bold text-[#1f2937]">{formatYen(total)}</p>
       </div>
 
       <div className="hidden overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.05)] md:block">
