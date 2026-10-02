@@ -6,6 +6,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Progress } from "@/components/ui/progress";
 
 interface ImportSource {
@@ -16,6 +17,7 @@ interface ImportSource {
   color: string;
   linkUrl: string;
   linkLabel: string;
+  steps: string[];
 }
 
 interface ImportResult {
@@ -32,6 +34,11 @@ const IMPORT_SOURCES: ImportSource[] = [
     color: "#ef4444",
     linkUrl: "https://www.paypay.ne.jp/",
     linkLabel: "PayPayを開く",
+    steps: [
+      "PayPayアプリを開く",
+      "ウォレットから利用履歴を開く",
+      "明細をダウンロードしたCSVを選択",
+    ],
   },
   {
     id: "paypay-card",
@@ -41,6 +48,11 @@ const IMPORT_SOURCES: ImportSource[] = [
     color: "#f59e0b",
     linkUrl: "https://www.paypay-card.co.jp/",
     linkLabel: "会員メニューを開く",
+    steps: [
+      "PayPayカード会員メニューを開く",
+      "利用明細を表示する",
+      "CSVをダウンロードして選択",
+    ],
   },
   {
     id: "rakuten",
@@ -50,6 +62,11 @@ const IMPORT_SOURCES: ImportSource[] = [
     color: "#bf0000",
     linkUrl: "https://www.rakuten-card.co.jp/e-navi/members/statement/index.xhtml",
     linkLabel: "楽天e-NAVIを開く",
+    steps: [
+      "楽天e-NAVIを開く",
+      "利用明細を表示する",
+      "CSV形式でダウンロードして選択",
+    ],
   },
   {
     id: "mufg",
@@ -59,6 +76,11 @@ const IMPORT_SOURCES: ImportSource[] = [
     color: "#dc2626",
     linkUrl: "https://direct.bk.mufg.jp/",
     linkLabel: "三菱UFJダイレクトを開く",
+    steps: [
+      "三菱UFJダイレクトを開く",
+      "入出金明細を表示する",
+      "CSVをダウンロードして選択",
+    ],
   },
   {
     id: "smbc",
@@ -68,6 +90,11 @@ const IMPORT_SOURCES: ImportSource[] = [
     color: "#16a34a",
     linkUrl: "https://direct.smbc.co.jp/",
     linkLabel: "SMBCダイレクトを開く",
+    steps: [
+      "SMBCダイレクトを開く",
+      "入出金明細を表示する",
+      "CSVをダウンロードして選択",
+    ],
   },
 ];
 
@@ -208,7 +235,7 @@ function ImportSourceCard({
           {loading ? (
             <div className="space-y-1">
               <Progress value={null} />
-              <p className="text-center text-sm text-[#6b7280]">インポート中...</p>
+              <LoadingSpinner label="インポート中..." />
             </div>
           ) : null}
 
@@ -224,6 +251,15 @@ function ImportSourceCard({
           <Button className="w-full" onClick={handleImport} disabled={!file || loading}>
             {loading ? "インポート中..." : "取込開始"}
           </Button>
+
+          <div className="rounded-[10px] bg-[#f9fafb] p-4">
+            <p className="mb-2 text-sm font-bold text-[#1f2937]">CSVの取得手順</p>
+            <ol className="list-inside list-decimal space-y-1 text-sm text-[#6b7280]">
+              {source.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
         </CardContent>
       ) : null}
     </Card>

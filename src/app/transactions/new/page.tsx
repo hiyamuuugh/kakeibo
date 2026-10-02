@@ -6,6 +6,7 @@ import { Camera, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   CategoryKind,
   CategoryOption,
@@ -25,12 +26,14 @@ export default function NewTransactionPage() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/categories")
       .then((response) => response.json())
-      .then((data: CategoryOption[]) => setCategories(data));
+      .then((data: CategoryOption[]) => setCategories(data))
+      .finally(() => setCategoriesLoading(false));
   }, []);
 
   const visibleCategories = useMemo(
@@ -219,6 +222,9 @@ export default function NewTransactionPage() {
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-[#6b7280]">カテゴリ</label>
+            {categoriesLoading ? (
+              <LoadingSpinner className="py-3" />
+            ) : (
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -246,6 +252,7 @@ export default function NewTransactionPage() {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
           <Button className="h-12 w-full gap-2" onClick={handleSave} disabled={saving}>

@@ -5,6 +5,7 @@ import { RotateCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   CategoryKind,
   CategoryOption,
@@ -27,6 +28,7 @@ export default function SettingsPage() {
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
   const [reapplying, setReapplying] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const visibleCategories = useMemo(
     () => getCategoriesByKind(categories, kind),
@@ -48,6 +50,7 @@ export default function SettingsPage() {
     ]);
     setCategories((await categoryResponse.json()) as CategoryOption[]);
     setRules((await ruleResponse.json()) as MerchantRule[]);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -56,7 +59,8 @@ export default function SettingsPage() {
         setCategories((await categoryResponse.json()) as CategoryOption[]);
         setRules((await ruleResponse.json()) as MerchantRule[]);
       })
-      .catch(() => toast.error("設定を読み込めませんでした"));
+      .catch(() => toast.error("設定を読み込めませんでした"))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -151,6 +155,10 @@ export default function SettingsPage() {
           <CardTitle className="text-sm font-semibold">ルール追加</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {loading ? (
+            <LoadingSpinner className="py-4" />
+          ) : (
+          <>
           <input
             value={merchant}
             onChange={(event) => setMerchant(event.target.value)}
@@ -177,6 +185,8 @@ export default function SettingsPage() {
             <Save className="h-4 w-4" />
             {saving ? "保存中..." : "ルールを保存"}
           </Button>
+          </>
+          )}
         </CardContent>
       </Card>
 
@@ -196,7 +206,13 @@ export default function SettingsPage() {
       </div>
 
       <div className="space-y-2">
-        {visibleRules.length === 0 ? (
+        {loading ? (
+          <Card>
+            <CardContent className="py-8">
+              <LoadingSpinner />
+            </CardContent>
+          </Card>
+        ) : visibleRules.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-[#9ca3af]">
               ルールがありません
