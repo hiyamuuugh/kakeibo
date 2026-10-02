@@ -105,20 +105,23 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">CSV取込</h1>
+    <div className="mx-auto max-w-lg space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-[#6b7280]">データ追加</p>
+        <h1 className="text-xl font-bold text-[#1f2937]">CSV取込</h1>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">PayPay 利用履歴CSV</CardTitle>
+          <CardTitle className="text-sm font-semibold">PayPay 利用履歴CSV</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors ${
+            className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
               isDragActive
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 hover:border-gray-400"
+                ? "border-[#93c5fd] bg-[#eff6ff]"
+                : "border-[#e5e7eb] bg-[#f9fafb] hover:border-[#d1d5db]"
             }`}
           >
             <input {...getInputProps()} />
@@ -131,10 +134,10 @@ export default function ImportPage() {
               </div>
             ) : (
               <div>
-                <p className="text-gray-500">
+                <p className="text-[#6b7280]">
                   CSVファイルをドロップ、またはクリックして選択
                 </p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="mt-2 text-xs text-[#9ca3af]">
                   PayPay アプリ → 利用履歴 → エクスポート
                 </p>
               </div>
@@ -144,12 +147,12 @@ export default function ImportPage() {
           {loading && (
             <div className="space-y-1">
               <Progress value={null} />
-              <p className="text-sm text-gray-500 text-center">インポート中…</p>
+              <p className="text-center text-sm text-[#6b7280]">インポート中…</p>
             </div>
           )}
 
           {result && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm">
               <p className="font-medium text-green-800">インポート完了</p>
               <p className="text-green-700">
                 取込済み: {result.imported}件 / スキップ: {result.skipped}件
@@ -169,15 +172,15 @@ export default function ImportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">三井住友銀行 入出金明細CSV</CardTitle>
+          <CardTitle className="text-sm font-semibold">三井住友銀行 入出金明細CSV</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div
             {...getSmbcRootProps()}
-            className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors ${
+            className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
               isSmbcDragActive
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 hover:border-gray-400"
+                ? "border-[#93c5fd] bg-[#eff6ff]"
+                : "border-[#e5e7eb] bg-[#f9fafb] hover:border-[#d1d5db]"
             }`}
           >
             <input {...getSmbcInputProps()} />
@@ -190,10 +193,10 @@ export default function ImportPage() {
               </div>
             ) : (
               <div>
-                <p className="text-gray-500">
+                <p className="text-[#6b7280]">
                   CSVファイルをドロップ、またはクリックして選択
                 </p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="mt-2 text-xs text-[#9ca3af]">
                   SMBCダイレクト → 入出金明細 → CSVダウンロード
                 </p>
               </div>
@@ -203,7 +206,7 @@ export default function ImportPage() {
           {smbcLoading && (
             <div className="space-y-1">
               <Progress value={null} />
-              <p className="text-sm text-gray-500 text-center">インポート中…</p>
+              <p className="text-center text-sm text-[#6b7280]">インポート中…</p>
             </div>
           )}
 
@@ -228,10 +231,10 @@ export default function ImportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">PayPay CSVの取得方法</CardTitle>
+          <CardTitle className="text-sm font-semibold">PayPay CSVの取得方法</CardTitle>
         </CardHeader>
         <CardContent>
-          <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+          <ol className="list-inside list-decimal space-y-2 text-sm text-[#6b7280]">
             <li>PayPayアプリを開く</li>
             <li>右下の「ウォレット」をタップ</li>
             <li>「PayPay残高」→「利用履歴」を開く</li>

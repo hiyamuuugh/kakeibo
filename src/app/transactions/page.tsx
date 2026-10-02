@@ -142,29 +142,29 @@ export default function TransactionsPage() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-3">
+      <div className="flex flex-col gap-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">月ごとの明細</p>
-          <h1 className="text-2xl font-semibold text-slate-950">取引一覧</h1>
+          <p className="text-xs font-semibold text-[#6b7280]">月ごとの明細</p>
+          <h1 className="text-xl font-bold text-[#1f2937]">取引一覧</h1>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto,12rem]">
           <input
             type="month"
             value={month}
             onChange={(event) => handleMonthChange(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
+            className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
           />
           {categoryPicker}
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-500">{transactions.length}件</p>
-        <p className="text-base font-semibold text-slate-900">{formatYen(total)}</p>
+      <div className="flex flex-col gap-1 rounded-[10px] bg-[#f9fafb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-[#6b7280]">{transactions.length}件</p>
+        <p className="text-base font-bold text-[#1f2937]">{formatYen(total)}</p>
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:block">
+      <div className="hidden overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.05)] md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -192,13 +192,13 @@ export default function TransactionsPage() {
             ) : (
               transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="whitespace-nowrap text-sm text-slate-500">
+                  <TableCell className="whitespace-nowrap text-sm text-[#6b7280]">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
                   <TableCell>
                     <div className="font-medium text-sm">{transaction.description}</div>
                     {transaction.store ? (
-                      <div className="text-xs text-slate-400">{transaction.store}</div>
+                      <div className="text-xs text-[#9ca3af]">{transaction.store}</div>
                     ) : null}
                   </TableCell>
                   <TableCell>
@@ -221,7 +221,7 @@ export default function TransactionsPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-red-600"
+                      className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
                       onClick={() => deleteTransaction(transaction.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -237,18 +237,18 @@ export default function TransactionsPage() {
 
       <div className="space-y-3 md:hidden">
         {loading ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400 shadow-sm">
+          <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             読み込み中...
           </div>
         ) : transactions.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400 shadow-sm">
+          <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             取引データがありません
           </div>
         ) : (
           transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="space-y-3 rounded-[10px] bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -261,7 +261,7 @@ export default function TransactionsPage() {
                   </p>
                 </div>
                 <p className="shrink-0 text-base font-semibold text-slate-900">
-                  {formatYen(transaction.amount)}
+                    {formatYen(transaction.amount)}
                 </p>
               </div>
 
@@ -273,7 +273,7 @@ export default function TransactionsPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-slate-400 hover:text-red-600"
+                  className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
                   onClick={() => deleteTransaction(transaction.id)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -308,7 +308,7 @@ function CategorySelect({
       value={transaction.categoryId ?? "none"}
       onValueChange={(value) => onChange(transaction.id, value ?? "none")}
     >
-      <SelectTrigger className="h-9 w-full bg-white text-xs sm:w-36">
+      <SelectTrigger className="h-9 w-full rounded-lg border-[#e5e7eb] bg-white text-xs sm:w-36">
         <SelectValue>
           {transaction.category ? (
             <span className="flex items-center gap-2">
@@ -319,7 +319,7 @@ function CategorySelect({
               <span>{transaction.category.name}</span>
             </span>
           ) : (
-            <span className="text-slate-400">未分類</span>
+            <span className="text-[#9ca3af]">未分類</span>
           )}
         </SelectValue>
       </SelectTrigger>
