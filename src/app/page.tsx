@@ -5,15 +5,15 @@ import { format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
   Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
 
 interface CategoryStat {
@@ -32,25 +32,23 @@ interface MonthlyStats {
   count: number;
 }
 
+const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
+
 function MonthPicker({
   value,
   onChange,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
 }) {
   return (
     <input
       type="month"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border rounded-md px-3 py-1.5 text-sm"
+      onChange={(event) => onChange(event.target.value)}
+      className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
     />
   );
-}
-
-function formatYen(n: number) {
-  return `¥${n.toLocaleString("ja-JP")}`;
 }
 
 export default function Dashboard() {
@@ -60,75 +58,85 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    const prevMonth = format(subMonths(new Date(month + "-01"), 1), "yyyy-MM");
+    const prevMonth = format(subMonths(new Date(`${month}-01`), 1), "yyyy-MM");
+
     Promise.all([
-      fetch(`/api/stats/monthly?month=${month}`).then((r) => r.json()),
-      fetch(`/api/stats/monthly?month=${prevMonth}`).then((r) => r.json()),
-    ]).then(([cur, prev]) => {
-      setStats(cur);
-      setPrevStats(prev);
+      fetch(`/api/stats/monthly?month=${month}`).then((response) =>
+        response.json()
+      ),
+      fetch(`/api/stats/monthly?month=${prevMonth}`).then((response) =>
+        response.json()
+      ),
+    ]).then(([current, previous]) => {
+      setStats(current);
+      setPrevStats(previous);
       setLoading(false);
     });
   }, [month]);
 
-  const diff =
-    stats && prevStats ? stats.total - prevStats.total : null;
+  const handleMonthChange = (value: string) => {
+    setLoading(true);
+    setMonth(value);
+  };
+
+  const diff = stats && prevStats ? stats.total - prevStats.total : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">ダッシュボード</h1>
-        <MonthPicker value={month} onChange={setMonth} />
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">家族のお金の流れ</p>
+          <h1 className="text-2xl font-semibold text-slate-950">ダッシュボード</h1>
+        </div>
+        <MonthPicker value={month} onChange={handleMonthChange} />
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
-              {format(new Date(month + "-01"), "M月", { locale: ja })}の支出合計
+            <CardTitle className="text-sm font-medium text-slate-500">
+              {format(new Date(`${month}-01`), "M月", { locale: ja })}の支出合計
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">
-              {loading ? "…" : formatYen(stats?.total ?? 0)}
+            <p className="text-3xl font-semibold tracking-tight">
+              {loading ? "..." : formatYen(stats?.total ?? 0)}
             </p>
-            {diff !== null && (
+            {diff !== null ? (
               <p
-                className={`text-sm mt-1 ${diff > 0 ? "text-red-500" : "text-green-600"}`}
+                className={`mt-2 text-sm ${diff > 0 ? "text-red-500" : "text-emerald-600"}`}
               >
                 前月比 {diff > 0 ? "+" : ""}
                 {formatYen(diff)}
               </p>
-            )}
+            ) : null}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-medium text-slate-500">
               取引件数
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">
-              {loading ? "…" : stats?.count ?? 0}
-              <span className="text-base font-normal text-gray-500 ml-1">件</span>
+            <p className="text-3xl font-semibold tracking-tight">
+              {loading ? "..." : stats?.count ?? 0}
+              <span className="ml-1 text-base font-normal text-slate-500">件</span>
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-medium text-slate-500">
               1日平均
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">
+            <p className="text-3xl font-semibold tracking-tight">
               {loading || !stats
-                ? "…"
+                ? "..."
                 : formatYen(
-                    stats.daily.length
+                    stats.daily.length > 0
                       ? Math.round(stats.total / stats.daily.length)
                       : 0
                   )}
@@ -137,85 +145,95 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Category pie chart */}
-        <Card>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card className="border-slate-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base">カテゴリ別支出</CardTitle>
+            <CardTitle className="text-base">カテゴリ別の支出</CardTitle>
           </CardHeader>
           <CardContent>
             {!loading && stats && stats.categories.length > 0 ? (
               <div className="flex flex-col gap-4">
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={stats.categories}
-                      dataKey="total"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                    >
-                      {stats.categories.map((cat) => (
-                        <Cell key={cat.id} fill={cat.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v) => typeof v === "number" ? formatYen(v) : String(v)}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-1">
-                  {stats.categories.slice(0, 6).map((cat) => (
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.categories}
+                        dataKey="total"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={78}
+                      >
+                        {stats.categories.map((category) => (
+                          <Cell key={category.id} fill={category.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) =>
+                          typeof value === "number" ? formatYen(value) : String(value)
+                        }
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2">
+                  {stats.categories.slice(0, 6).map((category) => (
                     <div
-                      key={cat.id}
-                      className="flex items-center justify-between text-sm"
+                      key={category.id}
+                      className="flex items-center justify-between gap-3 text-sm"
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex min-w-0 items-center gap-2 text-slate-600">
                         <span
-                          className="w-2.5 h-2.5 rounded-full inline-block"
-                          style={{ background: cat.color }}
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ background: category.color }}
                         />
-                        {cat.name}
+                        <span className="truncate">{category.name}</span>
                       </span>
-                      <span className="font-medium">{formatYen(cat.total)}</span>
+                      <span className="shrink-0 font-medium text-slate-900">
+                        {formatYen(category.total)}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <p className="text-gray-400 text-sm text-center py-8">
-                データなし
+              <p className="py-10 text-center text-sm text-slate-400">
+                データがありません
               </p>
             )}
           </CardContent>
         </Card>
 
-        {/* Daily bar chart */}
-        <Card>
+        <Card className="border-slate-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base">日別支出</CardTitle>
+            <CardTitle className="text-base">日別の支出</CardTitle>
           </CardHeader>
           <CardContent>
             {!loading && stats && stats.daily.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={stats.daily} margin={{ left: -20 }}>
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(v) => String(new Date(v).getDate())}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis
-                    tickFormatter={(v) => `¥${(v / 1000).toFixed(0)}k`}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip formatter={(v) => typeof v === "number" ? formatYen(v) : String(v)} />
-                  <Bar dataKey="amount" fill="#3b82f6" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.daily} margin={{ left: -28, right: 8, top: 8 }}>
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(value) => String(new Date(value).getDate())}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis
+                      tickFormatter={(value) => `¥${Math.round(value / 1000)}k`}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <Tooltip
+                      formatter={(value) =>
+                        typeof value === "number" ? formatYen(value) : String(value)
+                      }
+                    />
+                    <Bar dataKey="amount" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
-              <p className="text-gray-400 text-sm text-center py-8">
-                データなし
+              <p className="py-10 text-center text-sm text-slate-400">
+                データがありません
               </p>
             )}
           </CardContent>

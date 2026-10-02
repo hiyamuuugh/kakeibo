@@ -1,89 +1,101 @@
-# kakeibo (Web)
+# kakeibo
 
-PayPay・各種クレジットカード・銀行のCSVをインポートして支出を管理する家計簿アプリのWeb版。
-モバイル版は [kakeibo-app](https://github.com/hiyamuuugh/kakeibo-app)。
+家族で使うためのブラウザ家計簿アプリです。取引一覧、月別ダッシュボード、CSV 取込、予算管理を Web でまとめて扱います。
 
 - 本番: https://kakeibo-mu-two.vercel.app
-
-## 技術スタック
-
-| 分類 | 採用技術 |
-|------|----------|
-| フレームワーク | Next.js 16 (App Router) + TypeScript |
-| スタイル | Tailwind CSS + shadcn/ui (base-ui ベース) |
-| DB / ORM | Neon (PostgreSQL) + Prisma 7 |
-| グラフ / CSV | recharts / papaparse / react-dropzone |
-| 日付 | date-fns |
-| テスト | vitest |
+- モバイル版リポジトリ: https://github.com/hiyamuuugh/kakeibo-app
 
 ## セットアップ
 
 ```bash
 npm install
-cp .env.example .env   # 無ければ手動作成。DATABASE_URL(Neon接続文字列)を設定
-npm run db:seed        # デフォルトカテゴリを投入
+copy .env.example .env
+npm run db:seed
 ```
 
-> Prisma Client の出力先は `src/generated/prisma`（gitignore済み）。`npm run build` で自動生成される。
+`.env` では少なくとも次を設定します。
 
-### レシートOCR（任意・Google Cloud Vision）
+- `DATABASE_URL`: Neon / PostgreSQL 接続先
+- `APP_PASSWORD`: 家族共通のログインパスワード
+- `APP_SESSION_SECRET`: セッション署名用の長いランダム文字列
+- `GOOGLE_VISION_API_KEY`: レシート OCR を使う場合のみ
 
-レシート撮影の自動入力（`/api/ocr`）は Google Cloud Vision を使う。設定しなくても他機能は動く（未設定時は503）。
+## 技術スタック
 
-1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクト作成 → 「Cloud Vision API」を有効化（請求先＝クレカ登録が必要）
-2. 「APIとサービス → 認証情報」で **APIキー**を発行（APIの制限を Cloud Vision API のみに絞ると安全）
-3. **無料枠超過の防止**:
-   - 「お支払い → 予算とアラート」で予算を作成（例: ¥0/¥100、超えたらメール通知）
-   - 「Cloud Vision API → 割り当てと上限」で 1日あたりのリクエスト上限を低めに設定（超えると API が止まり課金されない）
-4. Vercel の Environment Variables に `GOOGLE_VISION_API_KEY` を登録 → 再デプロイ
-
-> 無料枠は月1,000枚まで。超過時はAPIが429を返し、アプリは「今月の利用上限に達しました」と表示する。
+| 分類 | 採用技術 |
+|------|----------|
+| フレームワーク | Next.js 16 (App Router) / React / TypeScript |
+| UI | Tailwind CSS / shadcn/ui / lucide-react |
+| DB / ORM | Neon (PostgreSQL) / Prisma 7 |
+| グラフ / CSV | recharts / papaparse / react-dropzone |
+| テスト | Vitest |
 
 ## フォルダ構成
 
-```
+```text
 src/
-├── app/                  # App Router
-│   ├── api/              # APIルート (transactions, import, stats, members, categories ...)
-│   ├── import/           # CSV取込画面
-│   ├── transactions/     # 取引一覧
-│   └── budgets/          # 予算
-├── components/           # UIコンポーネント
-├── lib/
-│   ├── import/           # CSV取込パーサ (paypay/rakuten/mufg/smbc ...)
-│   ├── normalize.ts      # 摘要の正規化
-│   └── prisma.ts         # Prismaクライアント
-└── generated/prisma/     # Prisma生成物 (gitignore)
+├── app/                  # App Router と API Route
+│   ├── api/              # transactions, stats, import, auth など
+│   ├── budgets/          # 予算画面
+│   ├── import/           # CSV 取込画面
+│   ├── login/            # 家族用ログイン画面
+│   └── transactions/     # 取引一覧
+├── components/           # UI / ナビゲーション / ログインフォーム
+├── lib/                  # Prisma, import, auth, 集計ロジック
+└── generated/prisma/     # Prisma 生成物
 ```
 
 ## ローカルでの確認方法
 
 ```bash
-npm run dev        # http://localhost:3000
-npm test           # vitest
-npx tsc --noEmit   # 型チェック
-npm run lint       # ESLint
-npm run build      # prisma generate + next build (本番と同等)
+npm run dev
+npm test
+npx tsc --noEmit
+npm run lint
+npm run build
 ```
 
-## デプロイ
+開発 URL は `http://localhost:3000` です。
 
-`master` への push で Vercel が自動ビルド＆本番デプロイ（production branch = master）。
-`DATABASE_URL` 等の機密は Vercel/GitHub の環境変数・Secrets で管理する。
+## デプロイ関連
+
+`master` への反映で Vercel がデプロイされます。アプリはブラウザ利用前提で、iOS アプリ配布は行いません。
+
+### 身内のみアクセス
+
+認証はアプリ内ログイン画面で行います。未ログイン状態では画面と API の両方を `middleware` でブロックします。
+
+本番で必要な環境変数:
+
+- `APP_PASSWORD`
+- `APP_SESSION_SECRET`
+- `DATABASE_URL`
+- `GOOGLE_VISION_API_KEY`（OCR を使う場合）
+
+Vercel の Environment Variables に同じ値を設定してください。
+
+### PWA
+
+このアプリはブラウザ版をホーム画面追加しやすいようにしてあります。
+
+- `manifest.webmanifest` を配信
+- `appleWebApp` / `themeColor` を設定
+- `ホーム画面に追加` ボタンを対応ブラウザで表示
+
+オフライン対応までは入れていません。主目的はスマホからアプリっぽく開きやすくすることです。
+
+### OCR
+
+`/api/ocr` は Google Cloud Vision を使います。`GOOGLE_VISION_API_KEY` 未設定時は `503` を返します。
 
 ## ハマったこと
 
-原因がすぐ分からず切り分けが必要だった事象は GitHub Issue に「詰まりログ」として記録する。
-詳細は各Issueを参照。
+切り分けに時間がかかった内容は `stuck-log` ラベル付きの GitHub Issue に残します。README には概要だけを書き、詳細は Issue を見ます。
 
 - [Issues (label: stuck-log)](https://github.com/hiyamuuugh/kakeibo/issues?q=label%3Astuck-log)
 
 ## 開発の進め方
 
-- 機能追加・バグ修正はブランチを切ってPR。master直接コミットは禁止、マージはオーナー承認後。
-- 詰まった点は上記のとおり stuck-log Issue に記録する（READMEには概要のみ）。
-- 使い方・設定・コマンドが変わったら README を必ず更新する。
-
-## 開発に使用したAIモデル
-
-- Claude Opus 4.8 (Claude Code) — SMBC/MUFG取込、非公開分の合計算入、テスト・ビルド整備など (2026-06-13)
+- 使い方、設定、画面仕様が変わったら README も更新する
+- 詰まった内容は `stuck-log` Issue に記録する
+- 機能追加とバグ修正ではテストを追加・更新する
