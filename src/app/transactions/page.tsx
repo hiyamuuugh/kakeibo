@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getCategoriesByKind } from "@/lib/category-options";
 import {
   Table,
   TableBody,
@@ -26,6 +27,7 @@ import {
 interface Category {
   id: string;
   name: string;
+  type: string;
   color: string;
 }
 
@@ -42,6 +44,10 @@ interface Transaction {
 
 const SOURCE_LABELS: Record<string, string> = {
   paypay: "PayPay",
+  paypay_card: "PayPayカード",
+  rakuten: "楽天カード",
+  mufg: "三菱UFJ",
+  smbc: "三井住友",
   manual: "手入力",
   credit: "クレカ",
 };
@@ -123,6 +129,8 @@ export default function TransactionsPage() {
   };
 
   const total = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const expenseCategories = getCategoriesByKind(categories, "expense");
+  const incomeCategories = getCategoriesByKind(categories, "income");
 
   const categoryPicker = (
     <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
@@ -132,9 +140,14 @@ export default function TransactionsPage() {
       <SelectContent>
         <SelectItem value="all">すべて</SelectItem>
         <SelectItem value="uncategorized">未分類</SelectItem>
-        {categories.map((category) => (
+        {expenseCategories.map((category) => (
           <SelectItem key={category.id} value={category.id}>
-            {category.name}
+            支出: {category.name}
+          </SelectItem>
+        ))}
+        {incomeCategories.map((category) => (
+          <SelectItem key={category.id} value={category.id}>
+            収入: {category.name}
           </SelectItem>
         ))}
       </SelectContent>
@@ -303,6 +316,11 @@ function CategorySelect({
   transaction: Transaction;
   onChange: (transactionId: string, categoryId: string) => Promise<void>;
 }) {
+  const selectableCategories = getCategoriesByKind(
+    categories,
+    transaction.amount < 0 ? "income" : "expense"
+  );
+
   return (
     <Select
       value={transaction.categoryId ?? "none"}
@@ -325,7 +343,7 @@ function CategorySelect({
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="none">未分類</SelectItem>
-        {categories.map((category) => (
+        {selectableCategories.map((category) => (
           <SelectItem key={category.id} value={category.id}>
             {category.name}
           </SelectItem>

@@ -1,25 +1,117 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
+import { ExternalLink, Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
+interface ImportSource {
+  id: string;
+  title: string;
+  description: string;
+  endpoint: string;
+  color: string;
+  linkUrl: string;
+  linkLabel: string;
+}
+
+interface ImportResult {
+  imported: number;
+  skipped: number;
+}
+
+const IMPORT_SOURCES: ImportSource[] = [
+  {
+    id: "paypay",
+    title: "PayPay",
+    description: "PayPayアプリの利用履歴CSV",
+    endpoint: "/api/import/paypay",
+    color: "#ef4444",
+    linkUrl: "https://www.paypay.ne.jp/",
+    linkLabel: "PayPayを開く",
+  },
+  {
+    id: "paypay-card",
+    title: "PayPayカード",
+    description: "PayPayカードの利用明細CSV",
+    endpoint: "/api/import/paypay-card",
+    color: "#f59e0b",
+    linkUrl: "https://www.paypay-card.co.jp/",
+    linkLabel: "会員メニューを開く",
+  },
+  {
+    id: "rakuten",
+    title: "楽天カード",
+    description: "楽天e-NAVIの利用明細CSV",
+    endpoint: "/api/import/rakuten",
+    color: "#bf0000",
+    linkUrl: "https://www.rakuten-card.co.jp/e-navi/members/statement/index.xhtml",
+    linkLabel: "楽天e-NAVIを開く",
+  },
+  {
+    id: "mufg",
+    title: "三菱UFJ銀行",
+    description: "三菱UFJダイレクトの入出金明細CSV",
+    endpoint: "/api/import/mufg",
+    color: "#dc2626",
+    linkUrl: "https://direct.bk.mufg.jp/",
+    linkLabel: "三菱UFJダイレクトを開く",
+  },
+  {
+    id: "smbc",
+    title: "三井住友銀行",
+    description: "SMBCダイレクトの入出金明細CSV",
+    endpoint: "/api/import/smbc",
+    color: "#16a34a",
+    linkUrl: "https://direct.smbc.co.jp/",
+    linkLabel: "SMBCダイレクトを開く",
+  },
+];
+
 export default function ImportPage() {
+  const [openId, setOpenId] = useState(IMPORT_SOURCES[0].id);
+
+  return (
+    <div className="mx-auto max-w-xl space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-[#6b7280]">データ追加</p>
+        <h1 className="text-xl font-bold text-[#1f2937]">CSV取込</h1>
+      </div>
+
+      <div className="space-y-3">
+        {IMPORT_SOURCES.map((source) => (
+          <ImportSourceCard
+            key={source.id}
+            source={source}
+            open={openId === source.id}
+            onToggle={() => setOpenId((current) => (current === source.id ? "" : source.id))}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ImportSourceCard({
+  source,
+  open,
+  onToggle,
+}: {
+  source: ImportSource;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{
-    imported: number;
-    skipped: number;
-  } | null>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
 
   const onDrop = useCallback((files: File[]) => {
-    if (files[0]) {
-      setFile(files[0]);
-      setResult(null);
-    }
+    if (!files[0]) return;
+    setFile(files[0]);
+    setResult(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -28,97 +120,68 @@ export default function ImportPage() {
     maxFiles: 1,
   });
 
-  async function handleImport() {
+  const handleImport = async () => {
     if (!file) return;
+
     setLoading(true);
     setResult(null);
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/import/paypay", {
+    const response = await fetch(source.endpoint, {
       method: "POST",
       body: formData,
     });
 
     setLoading(false);
 
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(`インポート失敗: ${err.error}`);
+    if (!response.ok) {
+      const error = (await response.json()) as { error?: string };
+      toast.error(`インポート失敗: ${error.error ?? "CSVを確認してください"}`);
       return;
     }
 
-    const data = await res.json();
+    const data = (await response.json()) as ImportResult;
     setResult(data);
     toast.success(`${data.imported}件インポートしました`);
-  }
-
-  const [smbcFile, setSmbcFile] = useState<File | null>(null);
-  const [smbcLoading, setSmbcLoading] = useState(false);
-  const [smbcResult, setSmbcResult] = useState<{
-    imported: number;
-    skipped: number;
-  } | null>(null);
-
-  const onDropSmbc = useCallback((files: File[]) => {
-    if (files[0]) {
-      setSmbcFile(files[0]);
-      setSmbcResult(null);
-    }
-  }, []);
-
-  const {
-    getRootProps: getSmbcRootProps,
-    getInputProps: getSmbcInputProps,
-    isDragActive: isSmbcDragActive,
-  } = useDropzone({
-    onDrop: onDropSmbc,
-    accept: { "text/csv": [".csv"] },
-    maxFiles: 1,
-  });
-
-  async function handleSmbcImport() {
-    if (!smbcFile) return;
-    setSmbcLoading(true);
-    setSmbcResult(null);
-
-    const formData = new FormData();
-    formData.append("file", smbcFile);
-
-    const res = await fetch("/api/import/smbc", {
-      method: "POST",
-      body: formData,
-    });
-
-    setSmbcLoading(false);
-
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(`インポート失敗: ${err.error}`);
-      return;
-    }
-
-    const data = await res.json();
-    setSmbcResult(data);
-    toast.success(`${data.imported}件インポートしました`);
-  }
+  };
 
   return (
-    <div className="mx-auto max-w-lg space-y-3">
-      <div>
-        <p className="text-xs font-semibold text-[#6b7280]">データ追加</p>
-        <h1 className="text-xl font-bold text-[#1f2937]">CSV取込</h1>
-      </div>
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+      >
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-white"
+          style={{ backgroundColor: source.color }}
+        >
+          <Upload className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold text-[#1f2937]">{source.title}</span>
+          <span className="block truncate text-xs text-[#6b7280]">{source.description}</span>
+        </span>
+        <span className="text-lg font-semibold text-[#9ca3af]">{open ? "-" : "+"}</span>
+      </button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">PayPay 利用履歴CSV</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {open ? (
+        <CardContent className="space-y-4 border-t border-[#f3f4f6] pt-4">
+          <a
+            href={source.linkUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
+          >
+            <ExternalLink className="h-4 w-4" />
+            {source.linkLabel}
+          </a>
+
           <div
             {...getRootProps()}
-            className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
+            className={`cursor-pointer rounded-[10px] border-2 border-dashed p-8 text-center transition-colors ${
               isDragActive
                 ? "border-[#93c5fd] bg-[#eff6ff]"
                 : "border-[#e5e7eb] bg-[#f9fafb] hover:border-[#d1d5db]"
@@ -127,122 +190,42 @@ export default function ImportPage() {
             <input {...getInputProps()} />
             {file ? (
               <div>
-                <p className="font-medium">{file.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="font-medium text-[#1f2937]">{file.name}</p>
+                <p className="mt-1 text-sm text-[#6b7280]">
                   {(file.size / 1024).toFixed(1)} KB
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-[#6b7280]">
+                <p className="text-sm text-[#6b7280]">
                   CSVファイルをドロップ、またはクリックして選択
                 </p>
-                <p className="mt-2 text-xs text-[#9ca3af]">
-                  PayPay アプリ → 利用履歴 → エクスポート
-                </p>
+                <p className="mt-2 text-xs text-[#9ca3af]">{source.description}</p>
               </div>
             )}
           </div>
 
-          {loading && (
+          {loading ? (
             <div className="space-y-1">
               <Progress value={null} />
-              <p className="text-center text-sm text-[#6b7280]">インポート中…</p>
+              <p className="text-center text-sm text-[#6b7280]">インポート中...</p>
             </div>
-          )}
+          ) : null}
 
-          {result && (
+          {result ? (
             <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm">
               <p className="font-medium text-green-800">インポート完了</p>
               <p className="text-green-700">
                 取込済み: {result.imported}件 / スキップ: {result.skipped}件
               </p>
             </div>
-          )}
+          ) : null}
 
-          <Button
-            className="w-full"
-            onClick={handleImport}
-            disabled={!file || loading}
-          >
-            {loading ? "インポート中…" : "取込開始"}
+          <Button className="w-full" onClick={handleImport} disabled={!file || loading}>
+            {loading ? "インポート中..." : "取込開始"}
           </Button>
         </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">三井住友銀行 入出金明細CSV</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div
-            {...getSmbcRootProps()}
-            className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
-              isSmbcDragActive
-                ? "border-[#93c5fd] bg-[#eff6ff]"
-                : "border-[#e5e7eb] bg-[#f9fafb] hover:border-[#d1d5db]"
-            }`}
-          >
-            <input {...getSmbcInputProps()} />
-            {smbcFile ? (
-              <div>
-                <p className="font-medium">{smbcFile.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {(smbcFile.size / 1024).toFixed(1)} KB
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-[#6b7280]">
-                  CSVファイルをドロップ、またはクリックして選択
-                </p>
-                <p className="mt-2 text-xs text-[#9ca3af]">
-                  SMBCダイレクト → 入出金明細 → CSVダウンロード
-                </p>
-              </div>
-            )}
-          </div>
-
-          {smbcLoading && (
-            <div className="space-y-1">
-              <Progress value={null} />
-              <p className="text-center text-sm text-[#6b7280]">インポート中…</p>
-            </div>
-          )}
-
-          {smbcResult && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
-              <p className="font-medium text-green-800">インポート完了</p>
-              <p className="text-green-700">
-                取込済み: {smbcResult.imported}件 / スキップ: {smbcResult.skipped}件
-              </p>
-            </div>
-          )}
-
-          <Button
-            className="w-full"
-            onClick={handleSmbcImport}
-            disabled={!smbcFile || smbcLoading}
-          >
-            {smbcLoading ? "インポート中…" : "取込開始"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">PayPay CSVの取得方法</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="list-inside list-decimal space-y-2 text-sm text-[#6b7280]">
-            <li>PayPayアプリを開く</li>
-            <li>右下の「ウォレット」をタップ</li>
-            <li>「PayPay残高」→「利用履歴」を開く</li>
-            <li>右上のメニューから「明細をダウンロード」を選択</li>
-            <li>ダウンロードしたCSVをここにアップロード</li>
-          </ol>
-        </CardContent>
-      </Card>
-    </div>
+      ) : null}
+    </Card>
   );
 }

@@ -6,7 +6,9 @@ import {
   ChartNoAxesCombined,
   CircleDollarSign,
   FolderInput,
+  PlusCircle,
   ReceiptText,
+  Settings,
 } from "lucide-react";
 import { InstallButton } from "@/components/install-button";
 import { LogoutButton } from "@/components/logout-button";
@@ -15,8 +17,10 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/", label: "ダッシュボード", icon: ChartNoAxesCombined },
   { href: "/transactions", label: "取引", icon: ReceiptText },
+  { href: "/transactions/new", label: "入力", icon: PlusCircle },
   { href: "/import", label: "取込", icon: FolderInput },
   { href: "/budgets", label: "予算", icon: CircleDollarSign },
+  { href: "/settings", label: "設定", icon: Settings },
 ];
 
 export function Navigation() {
