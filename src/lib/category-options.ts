@@ -22,6 +22,7 @@ export const EXPENSE_CATEGORY_ORDER = [
 export const INCOME_CATEGORY_ORDER = ["給料", "補助金", "その他", "未分類"];
 
 const INCOME_CATEGORY_NAMES = new Set(INCOME_CATEGORY_ORDER);
+const UNCATEGORIZED = "未分類";
 
 const getOrderIndex = (name: string, order: string[]) => {
   const index = order.indexOf(name);
@@ -54,4 +55,24 @@ export const getCategoriesByKind = (
       : categories.filter(isExpenseCategory);
 
   return sortCategories(filtered, kind);
+};
+
+export const getChartCategoryNames = (
+  totals: Map<string, number>,
+  kind: CategoryKind
+) => {
+  if (kind === "income") {
+    return [...INCOME_CATEGORY_ORDER];
+  }
+
+  const extras = [...totals.entries()]
+    .filter(([name]) => !EXPENSE_CATEGORY_ORDER.includes(name) && name !== UNCATEGORIZED)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name]) => name);
+
+  return [
+    ...EXPENSE_CATEGORY_ORDER.filter((name) => name !== UNCATEGORIZED),
+    ...extras,
+    UNCATEGORIZED,
+  ];
 };
