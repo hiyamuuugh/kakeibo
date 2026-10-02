@@ -37,10 +37,11 @@ src/
 ├── app/                  # App Router と API Route
 │   ├── api/              # transactions, stats, import, auth など
 │   ├── budgets/          # 予算画面（メニュー非表示）
+│   ├── dashboard/        # ダッシュボード
 │   ├── import/           # CSV 取込画面（PayPay / PayPayカード / 楽天カード / MUFG / SMBC）
 │   ├── login/            # 家族用ログイン画面
 │   ├── settings/         # カテゴリマッピング
-│   └── transactions/     # 取引一覧
+│   └── transactions/     # 取引一覧 / 直接入力
 ├── components/           # UI / ナビゲーション / ログインフォーム
 ├── lib/                  # Prisma, import, auth, 集計ロジック
 └── generated/prisma/     # Prisma 生成物
@@ -57,6 +58,8 @@ npm run build
 ```
 
 開発 URL は `http://localhost:3000` です。
+
+トップページ `/` は直接入力画面 `/transactions/new` に遷移します。ダッシュボードは `/dashboard` です。
 
 ## デプロイ関連
 

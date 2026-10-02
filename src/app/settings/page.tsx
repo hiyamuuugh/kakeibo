@@ -83,7 +83,7 @@ export default function SettingsPage() {
     }
 
     const data = (await response.json()) as MerchantRule & { appliedCount?: number };
-    toast.success(`${data.appliedCount ?? 0}件に適用しました`);
+    toast.success(`ルールを登録しました（${data.appliedCount ?? 0}件に適用）`);
     setMerchant("");
     setCategoryId("");
     await loadData();
