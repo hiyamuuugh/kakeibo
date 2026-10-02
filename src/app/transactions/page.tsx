@@ -7,6 +7,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   Select,
   SelectContent,
@@ -53,6 +54,12 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
+
+const getFilterLabel = (value: string, categories: Category[]) => {
+  if (value === "all") return "すべて";
+  if (value === "uncategorized") return "未分類";
+  return categories.find((category) => category.id === value)?.name ?? "カテゴリ";
+};
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -135,7 +142,9 @@ export default function TransactionsPage() {
   const categoryPicker = (
     <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
       <SelectTrigger className="h-10 w-full bg-white sm:w-44">
-        <SelectValue placeholder="カテゴリ" />
+        <span data-slot="select-value" className="flex flex-1 text-left">
+          {getFilterLabel(filterCat, categories)}
+        </span>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">すべて</SelectItem>
@@ -193,7 +202,7 @@ export default function TransactionsPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-slate-400">
-                  読み込み中...
+                  <LoadingSpinner />
                 </TableCell>
               </TableRow>
             ) : transactions.length === 0 ? (
@@ -251,7 +260,7 @@ export default function TransactionsPage() {
       <div className="space-y-3 md:hidden">
         {loading ? (
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
-            読み込み中...
+            <LoadingSpinner />
           </div>
         ) : transactions.length === 0 ? (
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
 import { AlertCircle, CheckCircle2, ChevronDown, Info, TrendingUp } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   CategoryKind,
   getChartCategoryNames,
@@ -113,18 +114,26 @@ export default function Dashboard() {
   const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [stats, setStats] = useState<MonthlyStats | null>(null);
   const [monthBars, setMonthBars] = useState<MonthBar[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
   const [chartMode, setChartMode] = useState<ChartMode>("expense");
+  const [pieMode, setPieMode] = useState<Extract<ChartMode, "expense" | "income">>("expense");
   const [rangeMode, setRangeMode] = useState<RangeMode>("monthly");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedCatName, setSelectedCatName] = useState<string | null>(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const loadedRef = useRef(false);
+  const loadedMonthRef = useRef(month);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
-      setLoading(true);
+      const monthChanged = loadedRef.current && loadedMonthRef.current !== month;
+      if (!loadedRef.current || monthChanged) {
+        setStatsLoading(true);
+      }
+      setChartLoading(true);
       const now = new Date();
       const current = await fetchMonthly(month);
 
@@ -148,7 +157,10 @@ export default function Dashboard() {
             incomeCategories: toCategoryMap(filterIncomeCategories(result.incomeCategories)),
           }))
         );
-        setLoading(false);
+        loadedMonthRef.current = month;
+        loadedRef.current = true;
+        setStatsLoading(false);
+        setChartLoading(false);
         return;
       }
 
@@ -235,7 +247,10 @@ export default function Dashboard() {
         );
       }
 
-      setLoading(false);
+      loadedMonthRef.current = month;
+      loadedRef.current = true;
+      setStatsLoading(false);
+      setChartLoading(false);
     };
 
     void load();
@@ -288,8 +303,6 @@ export default function Dashboard() {
     chartMode === "balance"
       ? [-maxAbs, maxAbs]
       : [0, Math.max(...chartData.map((item) => item.value), 1)];
-  const pieMode: Extract<ChartMode, "expense" | "income"> =
-    chartMode === "income" ? "income" : "expense";
   const pieTabData =
     pieMode === "income"
       ? filterIncomeCategories(stats?.incomeCategories ?? [])
@@ -323,8 +336,8 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {loading ? (
-        <div className="py-16 text-center text-sm text-[#9ca3af]">読み込み中...</div>
+      {statsLoading || stats === null ? (
+        <LoadingSpinner className="py-16" />
       ) : (
         <>
           <Card>
@@ -465,41 +478,45 @@ export default function Dashboard() {
               </div>
 
               <div className="h-48 overflow-x-auto">
-                <div className="h-full min-w-[560px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ left: -20, right: 8, top: 18, bottom: 0 }}>
-                      <CartesianGrid vertical={false} stroke="#f3f4f6" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                      <YAxis
-                        domain={yDomain}
-                        tickFormatter={(value) => `¥${Math.round(Number(value) / 1000)}k`}
-                        tick={{ fontSize: 10, fill: "#9ca3af" }}
-                      />
-                      {chartMode === "balance" ? <ReferenceLine y={0} stroke="#d1d5db" /> : null}
-                      <Tooltip
-                        formatter={(value) =>
-                          typeof value === "number" ? formatBalance(value) : String(value)
-                        }
-                      />
-                      <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                        {chartData.map((item) => (
-                          <Cell
-                            key={item.month}
-                            fill={
-                              chartMode === "balance"
-                                ? item.value < 0
-                                  ? "#ef4444"
-                                  : "#22c55e"
-                                : item.active
-                                  ? CHART_CONFIGS[chartMode].active
-                                  : CHART_CONFIGS[chartMode].inactive
-                            }
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {chartLoading ? (
+                  <LoadingSpinner className="h-full" />
+                ) : (
+                  <div className="h-full min-w-[560px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ left: -20, right: 8, top: 18, bottom: 0 }}>
+                        <CartesianGrid vertical={false} stroke="#f3f4f6" />
+                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                        <YAxis
+                          domain={yDomain}
+                          tickFormatter={(value) => `¥${Math.round(Number(value) / 1000)}k`}
+                          tick={{ fontSize: 10, fill: "#9ca3af" }}
+                        />
+                        {chartMode === "balance" ? <ReferenceLine y={0} stroke="#d1d5db" /> : null}
+                        <Tooltip
+                          formatter={(value) =>
+                            typeof value === "number" ? formatBalance(value) : String(value)
+                          }
+                        />
+                        <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+                          {chartData.map((item) => (
+                            <Cell
+                              key={item.month}
+                              fill={
+                                chartMode === "balance"
+                                  ? item.value < 0
+                                    ? "#ef4444"
+                                    : "#22c55e"
+                                  : item.active
+                                    ? CHART_CONFIGS[chartMode].active
+                                    : CHART_CONFIGS[chartMode].inactive
+                              }
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
 
               {categoryEnabled ? (
@@ -553,7 +570,7 @@ export default function Dashboard() {
                     <button
                       key={mode}
                       type="button"
-                      onClick={() => setChartMode(mode)}
+                      onClick={() => setPieMode(mode)}
                       className={`rounded-md px-3.5 py-1.5 text-xs font-bold ${
                         pieMode === mode ? "bg-[#3b82f6] text-white" : "text-[#6b7280]"
                       }`}

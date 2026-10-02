@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 interface Category {
   id: string;
@@ -39,15 +40,19 @@ export default function BudgetsPage() {
   const [stats, setStats] = useState<CategoryStat[]>([]);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/categories")
       .then((r) => r.json())
-      .then(setCategories);
+      .then(setCategories)
+      .finally(() => setCategoriesLoading(false));
   }, []);
 
-  const load = useCallback(() => {
-    Promise.all([
+  const reload = useCallback(() => {
+    setLoading(true);
+    return Promise.all([
       fetch(`/api/budgets?month=${month}`).then((r) => r.json()),
       fetch(`/api/stats/monthly?month=${month}`).then((r) => r.json()),
     ]).then(([b, s]) => {
@@ -58,12 +63,32 @@ export default function BudgetsPage() {
         init[budget.categoryId] = String(budget.amount);
       });
       setInputs(init);
+      setLoading(false);
     });
   }, [month]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+
+    Promise.all([
+      fetch(`/api/budgets?month=${month}`).then((r) => r.json()),
+      fetch(`/api/stats/monthly?month=${month}`).then((r) => r.json()),
+    ]).then(([b, s]) => {
+      if (!active) return;
+      setBudgets(b);
+      setStats(s.categories ?? []);
+      const init: Record<string, string> = {};
+      (b as Budget[]).forEach((budget) => {
+        init[budget.categoryId] = String(budget.amount);
+      });
+      setInputs(init);
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [month]);
 
   async function saveBudget(categoryId: string) {
     const amount = parseInt(inputs[categoryId] ?? "0", 10);
@@ -77,7 +102,7 @@ export default function BudgetsPage() {
     setSaving(null);
     if (res.ok) {
       toast.success("予算を保存しました");
-      load();
+      reload();
     }
   }
 
@@ -96,13 +121,22 @@ export default function BudgetsPage() {
         <input
           type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(e) => {
+            setLoading(true);
+            setMonth(e.target.value);
+          }}
           className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {categories.map((cat) => {
+        {loading || categoriesLoading ? (
+          <Card className="sm:col-span-2">
+            <CardContent className="py-10">
+              <LoadingSpinner />
+            </CardContent>
+          </Card>
+        ) : categories.map((cat) => {
           const budget = getBudget(cat.id);
           const spent = getSpent(cat.id);
           const limit = budget?.amount ?? 0;
