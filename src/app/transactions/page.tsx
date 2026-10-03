@@ -510,7 +510,7 @@ export default function TransactionsPage() {
             type="button"
             onClick={() => handleViewModeChange("personal")}
             className={`rounded-md py-1.5 text-xs font-bold ${
-              viewMode === "personal" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+              viewMode === "personal" ? "bg-[#dbeafe] text-[#2563eb] shadow-sm" : "text-[#6b7280]"
             }`}
           >
             自分
@@ -519,7 +519,7 @@ export default function TransactionsPage() {
             type="button"
             onClick={() => handleViewModeChange("family")}
             className={`rounded-md py-1.5 text-xs font-bold ${
-              viewMode === "family" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+              viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#6b7280]"
             }`}
           >
             家族全員

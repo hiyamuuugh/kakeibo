@@ -468,7 +468,7 @@ export default function Dashboard() {
           type="button"
           onClick={() => setViewMode("personal")}
           className={`rounded-md py-1.5 text-xs font-bold ${
-            viewMode === "personal" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+            viewMode === "personal" ? "bg-[#dbeafe] text-[#2563eb] shadow-sm" : "text-[#6b7280]"
           }`}
         >
           自分
@@ -477,7 +477,7 @@ export default function Dashboard() {
           type="button"
           onClick={() => setViewMode("family")}
           className={`rounded-md py-1.5 text-xs font-bold ${
-            viewMode === "family" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+            viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#6b7280]"
           }`}
         >
           家族全員
