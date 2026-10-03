@@ -329,7 +329,6 @@ export default function SettingsPage() {
                     : { borderColor: `${category.color ?? "#9ca3af"}66` }
                 }
               >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color ?? "#9ca3af" }} />
                 {category.name}
               </button>
             ))}
