@@ -90,7 +90,8 @@ export default function SettingsPage() {
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
   const exclusionPageCount = Math.max(Math.ceil(importExclusions.length / 10), 1);
   const safeExclusionPage = Math.min(exclusionPage, exclusionPageCount - 1);
-  const pageExclusions = importExclusions.slice(safeExclusionPage * 10, safeExclusionPage * 10 + 10);
+  const sortedImportExclusions = [...importExclusions].sort((a, b) => a.name.localeCompare(b.name, "ja"));
+  const pageExclusions = sortedImportExclusions.slice(safeExclusionPage * 10, safeExclusionPage * 10 + 10);
 
   const loadData = async () => {
     const [categoryResponse, ruleResponse, memberResponse, exclusionResponse] = await Promise.all([
