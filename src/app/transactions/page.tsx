@@ -521,7 +521,7 @@ export default function TransactionsPage() {
             className="h-9 min-w-0 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
           />
           <div className="flex h-9 w-28 shrink-0 items-center rounded-lg border border-[#e5e7eb] bg-white">
-            <span className="px-2 text-sm text-[#6b7280]">⇅</span>
+            <span className="flex h-5 items-center border-r border-[#d1d5db] px-2 text-sm text-[#6b7280]">⇅</span>
             <Select value={sortOrder} onValueChange={(value) => setSortOrder((value ?? "newest") as SortOrder)}>
               <SelectTrigger className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-xs shadow-none focus:ring-0">
                 <SelectValue>
@@ -542,22 +542,6 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
-          {viewMode === "personal" ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 shrink-0 gap-1 px-2"
-              disabled={selectionMode && selectedTransactionIds.size === 0}
-              onClick={() => {
-                if (selectionMode) void deleteSelectedTransactions();
-                else setSelectionMode(true);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              {selectionMode ? "削除" : "選択"}
-            </Button>
-          ) : null}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className={filterShellClass}>
@@ -597,8 +581,8 @@ export default function TransactionsPage() {
             </Select>
           </div>
         </div>
-        <div className={viewMode === "family" ? "grid grid-cols-2 gap-2" : "grid grid-cols-1 gap-2"}>
-          {categoryPicker}
+        <div className={viewMode === "family" ? "grid grid-cols-2 gap-2" : "flex items-center gap-2"}>
+          <div className="min-w-0 flex-1">{categoryPicker}</div>
           {viewMode === "family" ? (
           <div className={filterShellClass}>
             <span className={filterLabelClass}>アカウント</span>
@@ -623,8 +607,47 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
-          ) : null}
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 shrink-0 bg-white px-3"
+              onClick={() => {
+                setSelectionMode((current) => !current);
+                if (selectionMode) setSelectedTransactionIds(new Set());
+              }}
+            >
+              {selectionMode ? "解除" : "選択"}
+            </Button>
+          )}
         </div>
+        {viewMode === "personal" && selectionMode ? (
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" className="h-8 bg-white" onClick={toggleSelectAll}>
+              一括選択
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 bg-white"
+              onClick={() => setSelectedTransactionIds(new Set())}
+            >
+              一括解除
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="h-8"
+              disabled={selectedTransactionIds.size === 0}
+              onClick={() => void deleteSelectedTransactions()}
+            >
+              削除
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="hidden overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.05)] md:block">
@@ -803,7 +826,7 @@ export default function TransactionsPage() {
                     </Badge>
                   ) : null}
                 </div>
-                <div className="ml-1 w-28 shrink-0">
+                <div className="ml-1 w-20 shrink-0">
                   <CategorySelect
                     categories={categories}
                     transaction={transaction}
@@ -878,7 +901,7 @@ function CategorySelect({
       value={transaction.categoryId ?? "none"}
       onValueChange={(value) => onChange(transaction.id, value ?? "none")}
     >
-      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-36">
+      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-24">
         <SelectValue>
           {transaction.category ? (
             <span className="flex items-center gap-2">
