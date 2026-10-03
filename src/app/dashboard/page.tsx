@@ -25,7 +25,7 @@ import {
   getChartCategoryNames,
   INCOME_CATEGORY_ORDER,
 } from "@/lib/category-options";
-import { formatShortYen, getSharePercent } from "@/lib/chart-format";
+import { formatShortAmount, getSharePercent } from "@/lib/chart-format";
 import { buildMonthlyReport, MonthlyReport } from "@/lib/monthly-report";
 
 interface CategoryStat {
@@ -168,7 +168,7 @@ const BarValueLabel = (props: unknown) => {
       textAnchor="middle"
       className="fill-[#374151] text-[10px] font-bold"
     >
-      {amount < 0 ? `-${formatShortYen(amount)}` : formatShortYen(amount)}
+      {amount < 0 ? `-${formatShortAmount(amount)}` : formatShortAmount(amount)}
     </text>
   );
 };
@@ -410,6 +410,29 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-xl space-y-3">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={goToPrevMonth}
+          className="px-2 text-3xl font-light text-[#3b82f6]"
+        >
+          ‹
+        </button>
+        <input
+          type="month"
+          value={month}
+          onChange={(event) => setMonth(event.target.value)}
+          className="h-10 rounded-lg border-0 bg-transparent px-3 text-center text-xl font-bold text-[#1f2937] outline-none"
+        />
+        <button
+          type="button"
+          onClick={goToNextMonth}
+          className="px-2 text-3xl font-light text-[#3b82f6]"
+        >
+          ›
+        </button>
+      </div>
+
       {statsLoading || stats === null ? (
         <LoadingSpinner className="py-16" />
       ) : (
@@ -439,29 +462,6 @@ export default function Dashboard() {
                 <p className="text-xl font-bold text-[#ef4444]">{formatYen(stats?.total ?? 0)}</p>
               </CardContent>
             </Card>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={goToPrevMonth}
-              className="px-2 text-3xl font-light text-[#3b82f6]"
-            >
-              ‹
-            </button>
-            <input
-              type="month"
-              value={month}
-              onChange={(event) => setMonth(event.target.value)}
-              className="h-10 rounded-lg border-0 bg-transparent px-3 text-center text-xl font-bold text-[#1f2937] outline-none"
-            />
-            <button
-              type="button"
-              onClick={goToNextMonth}
-              className="px-2 text-3xl font-light text-[#3b82f6]"
-            >
-              ›
-            </button>
           </div>
 
           {report && reportStyle && ReportIcon ? (
@@ -585,7 +585,7 @@ export default function Dashboard() {
                         <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} />
                         <YAxis
                           domain={yDomain}
-                          tickFormatter={(value) => `¥${Math.round(Number(value) / 1000)}k`}
+                          tickFormatter={(value) => formatShortAmount(Number(value))}
                           tick={{ fontSize: 10, fill: "#9ca3af" }}
                         />
                         {chartMode === "balance" ? <ReferenceLine y={0} stroke="#d1d5db" /> : null}

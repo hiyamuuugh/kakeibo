@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatShortYen, getSharePercent } from "@/lib/chart-format";
+import { formatShortAmount, getSharePercent } from "@/lib/chart-format";
 
 describe("chart-format", () => {
-  it("formats yen values for compact chart labels", () => {
-    expect(formatShortYen(0)).toBe("¥0");
-    expect(formatShortYen(980)).toBe("¥980");
-    expect(formatShortYen(12345)).toBe("¥1.2万");
-    expect(formatShortYen(-98765)).toBe("¥9.9万");
+  it("formats values for compact chart labels", () => {
+    expect(formatShortAmount(0)).toBe("0");
+    expect(formatShortAmount(980)).toBe("980");
+    expect(formatShortAmount(12345)).toBe("1.2万");
+    expect(formatShortAmount(-98765)).toBe("9.9万");
   });
 
   it("calculates rounded share percentages", () => {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Trash2 } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,8 @@ interface Transaction {
   source: string;
   categoryId: string | null;
   category: Category | null;
+  memo: string | null;
+  isPrivate: boolean;
   memberId: string | null;
   member: Member | null;
 }
@@ -61,6 +63,8 @@ const SOURCE_LABELS: Record<string, string> = {
   credit: "クレカ",
 };
 
+const SOURCE_ORDER = ["paypay", "rakuten", "paypay_card", "mufg", "smbc", "manual"];
+
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
 
 const formatSignedYen = (amount: number) => {
@@ -80,11 +84,19 @@ const getTotalColor = (amount: number) => {
   return "text-[#1f2937]";
 };
 
+const getTransactionAmountColor = (amount: number) =>
+  amount < 0 ? "text-[#16a34a]" : "text-[#dc2626]";
+
+const formatTransactionAmount = (amount: number) =>
+  `${amount < 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
+  const [viewMode, setViewMode] = useState<"personal" | "family">("personal");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [filterCat, setFilterCat] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [filterSource, setFilterSource] = useState("all");
@@ -98,8 +110,8 @@ export default function TransactionsPage() {
     if (filterCat !== "all") {
       params.set("categoryId", filterCat);
     }
-    if (filterMember !== "all") {
-      params.set("memberId", filterMember);
+    if (viewMode === "personal" && selectedMemberId) {
+      params.set("memberId", selectedMemberId);
     }
 
     fetch(`/api/transactions?${params}`)
@@ -108,7 +120,7 @@ export default function TransactionsPage() {
         setTransactions(data);
         setLoading(false);
       });
-  }, [filterCat, filterMember, month]);
+  }, [filterCat, month, selectedMemberId, viewMode]);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -116,7 +128,10 @@ export default function TransactionsPage() {
       .then(setCategories);
     fetch("/api/members")
       .then((response) => response.json())
-      .then(setMembers);
+      .then((data: Member[]) => {
+        setMembers(data);
+        setSelectedMemberId((current) => current || data[0]?.id || "");
+      });
   }, []);
 
   useEffect(() => {
@@ -134,8 +149,13 @@ export default function TransactionsPage() {
   };
 
   const handleMemberFilterChange = (value: string) => {
-    setLoading(true);
     setFilterMember(value);
+  };
+
+  const handleViewModeChange = (mode: "personal" | "family") => {
+    setViewMode(mode);
+    setFilterMember("all");
+    setLoading(true);
   };
 
   const updateCategory = async (transactionId: string, categoryId: string) => {
@@ -170,17 +190,42 @@ export default function TransactionsPage() {
     }
   };
 
+  const togglePrivate = async (transaction: Transaction) => {
+    const response = await fetch(`/api/transactions/${transaction.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPrivate: !transaction.isPrivate }),
+    });
+
+    if (response.ok) {
+      setLoading(true);
+      toast.success(transaction.isPrivate ? "表示しました" : "非表示にしました");
+      loadTransactions();
+    }
+  };
+
   const displayedTransactions = transactions.filter((transaction) => {
     const searchText = keyword.trim().toLowerCase();
 
     if (filterType === "expense" && transaction.amount < 0) return false;
     if (filterType === "income" && transaction.amount >= 0) return false;
-    if (filterSource !== "all" && transaction.source !== filterSource) return false;
+    if (
+      filterSource !== "all" &&
+      !(filterSource === "rakuten"
+        ? transaction.source === "rakuten" || transaction.source === "credit"
+        : transaction.source === filterSource)
+    ) {
+      return false;
+    }
+    if (viewMode === "family" && filterMember !== "all" && transaction.memberId !== filterMember) {
+      return false;
+    }
     if (
       searchText &&
       ![
         transaction.description,
         transaction.store,
+        transaction.memo,
         transaction.member?.name,
         transaction.category?.name,
         SOURCE_LABELS[transaction.source] ?? transaction.source,
@@ -192,13 +237,23 @@ export default function TransactionsPage() {
     }
     return true;
   });
-  const total = displayedTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const visibleTransactions =
+    viewMode === "family"
+      ? displayedTransactions.filter((transaction) => !transaction.isPrivate)
+      : displayedTransactions;
+  const total = displayedTransactions.reduce((sum, transaction) => sum - transaction.amount, 0);
   const expenseCategories = getCategoriesByKind(categories, "expense");
   const incomeCategories = getCategoriesByKind(categories, "income");
-  const sourceOptions = Array.from(new Set(transactions.map((transaction) => transaction.source))).sort();
+  const sourceOptions = [
+    ...SOURCE_ORDER,
+    ...Array.from(new Set(transactions.map((transaction) => transaction.source))).filter(
+      (source) => !SOURCE_ORDER.includes(source)
+    ),
+  ];
+  const monthLabel = format(new Date(`${month}-01`), "yyyy年M月", { locale: ja });
 
   const filterShellClass =
-    "flex min-w-0 items-center rounded-lg border border-[#e5e7eb] bg-white";
+    "flex min-w-0 flex-1 items-center rounded-lg border border-[#e5e7eb] bg-white";
   const filterLabelClass =
     "shrink-0 border-r border-[#e5e7eb] px-2.5 text-[11px] font-bold text-[#6b7280]";
 
@@ -206,7 +261,7 @@ export default function TransactionsPage() {
     <div className={filterShellClass}>
       <span className={filterLabelClass}>カテゴリ</span>
       <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
-        <SelectTrigger className="h-9 min-w-32 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+        <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
           <span data-slot="select-value" className="flex flex-1 text-left">
             {getFilterLabel(filterCat, categories)}
           </span>
@@ -216,12 +271,12 @@ export default function TransactionsPage() {
           <SelectItem value="uncategorized">未分類</SelectItem>
           {expenseCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
-              支出: {category.name}
+              {category.name}
             </SelectItem>
           ))}
           {incomeCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
-              収入: {category.name}
+              {category.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -232,32 +287,53 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-3">
       <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl font-bold text-[#1f2937]">取引一覧</h1>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2">
+          <h1 className="shrink-0 text-xl font-bold text-[#1f2937]">取引一覧</h1>
+          <label className="relative shrink-0 cursor-pointer text-sm font-bold text-[#3b82f6]">
+            <span>{monthLabel}</span>
             <input
               type="month"
               value={month}
               onChange={(event) => handleMonthChange(event.target.value)}
-              className="h-9 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
-            <p className={`text-right text-lg font-extrabold ${getTotalColor(total)}`}>
-              {formatSignedYen(total)}
-            </p>
-          </div>
+          </label>
+          <p className={`ml-auto shrink-0 text-lg font-extrabold ${getTotalColor(total)}`}>
+            {formatSignedYen(total)}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
+          <button
+            type="button"
+            onClick={() => handleViewModeChange("personal")}
+            className={`rounded-md py-1.5 text-xs font-bold ${
+              viewMode === "personal" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+            }`}
+          >
+            自分
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewModeChange("family")}
+            className={`rounded-md py-1.5 text-xs font-bold ${
+              viewMode === "family" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+            }`}
+          >
+            家族全員
+          </button>
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr),8rem] gap-2">
           <input
             type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="キーワード検索"
-            className="h-9 min-w-44 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none sm:flex-none"
+            className="h-9 min-w-0 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
           />
           <div className={filterShellClass}>
             <span className={filterLabelClass}>収支</span>
             <Select value={filterType} onValueChange={(value) => setFilterType(value ?? "all")}>
-              <SelectTrigger className="h-9 min-w-24 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+              <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
                   {filterType === "all" ? "すべて" : filterType === "expense" ? "支出" : "収入"}
                 </SelectValue>
@@ -269,10 +345,12 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
           <div className={filterShellClass}>
             <span className={filterLabelClass}>取込元</span>
             <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
-              <SelectTrigger className="h-9 min-w-28 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+              <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
                   {filterSource === "all" ? "すべて" : SOURCE_LABELS[filterSource] ?? filterSource}
                 </SelectValue>
@@ -289,16 +367,28 @@ export default function TransactionsPage() {
           </div>
           <div className={filterShellClass}>
             <span className={filterLabelClass}>アカウント</span>
-            <Select value={filterMember} onValueChange={(value) => handleMemberFilterChange(value ?? "all")}>
-              <SelectTrigger className="h-9 min-w-28 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+            <Select
+              value={viewMode === "personal" ? selectedMemberId : filterMember}
+              onValueChange={(value) => {
+                if (viewMode === "personal") {
+                  setSelectedMemberId(value ?? "");
+                  setLoading(true);
+                  return;
+                }
+                handleMemberFilterChange(value ?? "all");
+              }}
+            >
+              <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
-                  {filterMember === "all"
-                    ? "すべて"
-                    : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
+                  {viewMode === "personal"
+                    ? members.find((member) => member.id === selectedMemberId)?.name ?? "選択"
+                    : filterMember === "all"
+                      ? "すべて"
+                      : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">すべて</SelectItem>
+                {viewMode === "family" ? <SelectItem value="all">すべて</SelectItem> : null}
                 {members.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     {member.name}
@@ -330,50 +420,66 @@ export default function TransactionsPage() {
                   <LoadingSpinner />
                 </TableCell>
               </TableRow>
-            ) : displayedTransactions.length === 0 ? (
+            ) : visibleTransactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-slate-400">
                   取引データがありません
                 </TableCell>
               </TableRow>
             ) : (
-              displayedTransactions.map((transaction) => (
+              visibleTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="whitespace-nowrap text-sm text-[#6b7280]">
+                  <TableCell className="whitespace-nowrap py-2 text-xs text-[#6b7280]">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-sm">{transaction.description}</div>
+                  <TableCell className="py-2">
+                    <div className="text-sm font-medium">{transaction.description}</div>
                     <div className="text-xs text-[#9ca3af]">
-                      {[transaction.store, transaction.member?.name].filter(Boolean).join(" / ")}
+                      {[transaction.store, viewMode === "family" ? transaction.member?.name : null, transaction.memo]
+                        .filter(Boolean)
+                        .join(" / ")}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <Badge variant="secondary">
                       {SOURCE_LABELS[transaction.source] ?? transaction.source}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <CategorySelect
                       categories={categories}
                       transaction={transaction}
                       onChange={updateCategory}
                     />
                   </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatYen(transaction.amount)}
+                  <TableCell className={`py-2 text-right font-bold ${getTransactionAmountColor(transaction.amount)}`}>
+                    {formatTransactionAmount(transaction.amount)}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
-                      onClick={() => deleteTransaction(transaction.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">削除</span>
-                    </Button>
+                  <TableCell className="py-2 text-right">
+                    <div className="flex justify-end gap-1">
+                      {viewMode === "personal" ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-[#d1d5db] hover:text-[#3b82f6]"
+                          onClick={() => togglePrivate(transaction)}
+                        >
+                          {transaction.isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <span className="sr-only">非表示</span>
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-[#d1d5db] hover:text-red-600"
+                        onClick={() => deleteTransaction(transaction.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">削除</span>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -387,47 +493,64 @@ export default function TransactionsPage() {
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             <LoadingSpinner />
           </div>
-        ) : displayedTransactions.length === 0 ? (
+        ) : visibleTransactions.length === 0 ? (
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             取引データがありません
           </div>
         ) : (
-          displayedTransactions.map((transaction) => (
+          visibleTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="space-y-3 rounded-[10px] bg-white p-3 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+              className="space-y-2 rounded-[10px] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-semibold text-slate-900">
                     {transaction.description}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
-                    {[transaction.store, transaction.member?.name].filter(Boolean).length > 0
-                      ? ` / ${[transaction.store, transaction.member?.name].filter(Boolean).join(" / ")}`
+                    {[transaction.store, viewMode === "family" ? transaction.member?.name : null].filter(Boolean).length > 0
+                      ? ` / ${[transaction.store, viewMode === "family" ? transaction.member?.name : null].filter(Boolean).join(" / ")}`
                       : ""}
                   </p>
                 </div>
-                <p className="shrink-0 text-base font-semibold text-slate-900">
-                    {formatYen(transaction.amount)}
+                <p className={`shrink-0 text-base font-bold ${getTransactionAmountColor(transaction.amount)}`}>
+                  {formatTransactionAmount(transaction.amount)}
                 </p>
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <Badge variant="secondary">
-                  {SOURCE_LABELS[transaction.source] ?? transaction.source}
-                </Badge>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
-                  onClick={() => deleteTransaction(transaction.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">削除</span>
-                </Button>
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <Badge variant="secondary">{SOURCE_LABELS[transaction.source] ?? transaction.source}</Badge>
+                  {transaction.memo ? (
+                    <span className="truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  {viewMode === "personal" ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-[#d1d5db] hover:text-[#3b82f6]"
+                      onClick={() => togglePrivate(transaction)}
+                    >
+                      {transaction.isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">非表示</span>
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-[#d1d5db] hover:text-red-600"
+                    onClick={() => deleteTransaction(transaction.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">削除</span>
+                  </Button>
+                </div>
               </div>
 
               <CategorySelect
