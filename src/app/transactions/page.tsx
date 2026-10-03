@@ -7,7 +7,6 @@ import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   Select,
   SelectContent,
@@ -442,7 +441,7 @@ export default function TransactionsPage() {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-slate-400">
-                  <LoadingSpinner />
+                  読み込み中...
                 </TableCell>
               </TableRow>
             ) : visibleTransactions.length === 0 ? (
@@ -516,7 +515,7 @@ export default function TransactionsPage() {
       <div className="space-y-3 md:hidden">
         {loading ? (
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
-            <LoadingSpinner />
+            読み込み中...
           </div>
         ) : visibleTransactions.length === 0 ? (
           <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
@@ -526,18 +525,12 @@ export default function TransactionsPage() {
           visibleTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="space-y-2 rounded-[10px] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+              className="space-y-1.5 rounded-[10px] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
                     {transaction.description}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
-                    {[transaction.store, viewMode === "family" ? transaction.member?.name : null].filter(Boolean).length > 0
-                      ? ` / ${[transaction.store, viewMode === "family" ? transaction.member?.name : null].filter(Boolean).join(" / ")}`
-                      : ""}
                   </p>
                 </div>
                 <p className={`shrink-0 text-base font-bold ${getTransactionAmountColor(transaction.amount)}`}>
@@ -545,44 +538,59 @@ export default function TransactionsPage() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="shrink-0">
+                  {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
+                </span>
+                <div className="min-w-0 flex-1">
                   <Badge variant="secondary">{SOURCE_LABELS[transaction.source] ?? transaction.source}</Badge>
-                  {transaction.memo ? (
-                    <span className="truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
-                  ) : null}
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  {viewMode === "personal" ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-[#d1d5db] hover:text-[#3b82f6]"
-                      onClick={() => togglePrivate(transaction)}
-                    >
-                      {transaction.isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      <span className="sr-only">非表示</span>
-                    </Button>
-                  ) : null}
+                <div className="w-28 shrink-0">
+                  <CategorySelect
+                    categories={categories}
+                    transaction={transaction}
+                    onChange={updateCategory}
+                  />
+                </div>
+                {viewMode === "personal" ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-[#d1d5db] hover:text-red-600"
-                    onClick={() => deleteTransaction(transaction.id)}
+                    className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-[#3b82f6]"
+                    onClick={() => togglePrivate(transaction)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">削除</span>
+                    {transaction.isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <span className="sr-only">非表示</span>
                   </Button>
-                </div>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-red-600"
+                  onClick={() => deleteTransaction(transaction.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">削除</span>
+                </Button>
               </div>
 
-              <CategorySelect
-                categories={categories}
-                transaction={transaction}
-                onChange={updateCategory}
-              />
+              {[transaction.store, viewMode === "family" ? transaction.member?.name : null, transaction.memo]
+                .filter(Boolean).length > 0 ? (
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  {transaction.store || viewMode === "family" ? (
+                    <span className="truncate text-xs text-[#9ca3af]">
+                      {[transaction.store, viewMode === "family" ? transaction.member?.name : null]
+                        .filter(Boolean)
+                        .join(" / ")}
+                    </span>
+                  ) : null}
+                  {transaction.memo ? (
+                    <span className="truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ))
         )}
@@ -610,7 +618,7 @@ function CategorySelect({
       value={transaction.categoryId ?? "none"}
       onValueChange={(value) => onChange(transaction.id, value ?? "none")}
     >
-      <SelectTrigger className="h-9 w-full rounded-lg border-[#e5e7eb] bg-white text-xs sm:w-36">
+      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-36">
         <SelectValue>
           {transaction.category ? (
             <span className="flex items-center gap-2">

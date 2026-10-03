@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 
@@ -8,8 +9,7 @@ export async function GET(req: NextRequest) {
   const categoryId = searchParams.get("categoryId");
   const memberId = searchParams.get("memberId"); // "all" or specific id
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: Record<string, any> = {};
+  const where: Prisma.TransactionWhereInput = {};
 
   if (month) {
     const [year, m] = month.split("-").map(Number);
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (memberId && memberId !== "all") {
-    where.memberId = memberId;
+    where.OR = [{ memberId }, { memberId: null }];
   }
   // 家族全員取得時も非公開データを返す（合計に算入するため）。
   // リスト表示での非表示はクライアント側で行う。

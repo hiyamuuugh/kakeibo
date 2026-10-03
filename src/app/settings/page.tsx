@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, RotateCw, Save, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +70,9 @@ export default function SettingsPage() {
     }
     const order = new Map(visibleCategories.map((category, index) => [category.name, index]));
     return Array.from(groups.values()).sort((a, b) => {
-      const byOrder = (order.get(a.category.name) ?? 999) - (order.get(b.category.name) ?? 999);
+      const aOrder = order.has(a.category.name) ? order.get(a.category.name)! : 999;
+      const bOrder = order.has(b.category.name) ? order.get(b.category.name)! : 999;
+      const byOrder = aOrder - bOrder;
       if (byOrder !== 0) return byOrder;
       return a.category.name.localeCompare(b.category.name, "ja");
     });
@@ -314,28 +316,6 @@ export default function SettingsPage() {
         </button>
         {mappingOpen ? (
         <CardContent className="space-y-4 border-t border-[#f3f4f6]">
-      <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e5e7eb] p-1">
-        {(["expense", "income"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => {
-              setKind(value);
-              setCategoryId("");
-            }}
-            className={`h-10 rounded-lg text-sm font-bold ${
-              kind === value
-                ? value === "expense"
-                  ? "bg-[#ef4444] text-white"
-                  : "bg-[#22c55e] text-white"
-                : "text-[#6b7280]"
-            }`}
-          >
-            {value === "expense" ? "支出" : "収入"}
-          </button>
-        ))}
-      </div>
-
       <Card className="border-[#f3f4f6] shadow-none">
         <CardHeader className="px-0">
           <CardTitle className="text-sm font-semibold">ルール追加</CardTitle>
@@ -345,6 +325,27 @@ export default function SettingsPage() {
             <LoadingSpinner className="py-4" />
           ) : (
           <>
+          <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e5e7eb] p-1">
+            {(["expense", "income"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  setKind(value);
+                  setCategoryId("");
+                }}
+                className={`h-10 rounded-lg text-sm font-bold ${
+                  kind === value
+                    ? value === "expense"
+                      ? "bg-[#ef4444] text-white"
+                      : "bg-[#22c55e] text-white"
+                    : "text-[#6b7280]"
+                }`}
+              >
+                {value === "expense" ? "支出" : "収入"}
+              </button>
+            ))}
+          </div>
           <input
             value={merchant}
             onChange={(event) => setMerchant(event.target.value)}
@@ -367,9 +368,8 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
-          <Button className="h-11 w-full gap-2" onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4" />
-            {saving ? "保存中..." : "ルールを保存"}
+          <Button className="h-11 w-full" onClick={handleSave} disabled={saving}>
+            {saving ? "保存中..." : "追加"}
           </Button>
           </>
           )}
