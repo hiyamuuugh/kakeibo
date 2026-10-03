@@ -48,10 +48,10 @@ export async function DELETE() {
 export async function POST(req: Request) {
   const body = await req.json();
   const { date, amount, description, store, source, categoryId, memberId } = body;
-  const rules = categoryId ? [] : await prisma.merchantRule.findMany();
+  const rules = categoryId ? [] : await prisma.merchantRule.findMany({ include: { category: true } });
   const matchedCategoryId = categoryId
     ? categoryId
-    : findMatchingRuleCategoryId([description, store].filter(Boolean).join(" "), rules);
+    : findMatchingRuleCategoryId([description, store].filter(Boolean).join(" "), rules, Number(amount));
 
   const transaction = await prisma.transaction.create({
     data: {

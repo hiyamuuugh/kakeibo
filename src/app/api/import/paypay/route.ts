@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 import Papa from "papaparse";
 
 interface PayPayRow {
@@ -63,8 +64,7 @@ export async function POST(req: NextRequest) {
   const categories = await prisma.category.findMany();
   const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
-  const merchantRules = await prisma.merchantRule.findMany();
-  const ruleMap = new Map(merchantRules.map((r) => [r.merchant.toLowerCase(), r.categoryId]));
+  const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
 
   const headers = Object.keys(rows[0]);
 
@@ -138,8 +138,7 @@ export async function POST(req: NextRequest) {
     if (existing) { skipped++; continue; }
 
     // ルール優先（部分一致）、なければキーワード推測
-    const lower = merchant.toLowerCase();
-    const ruleCategory = [...ruleMap.entries()].find(([key]) => lower.includes(key))?.[1];
+    const ruleCategory = findMatchingRuleCategoryId(merchant, merchantRules, storedAmount);
     const catName = ruleCategory ? undefined : guessCategory(merchant);
     const categoryId = ruleCategory ?? (catName ? (categoryMap.get(catName) ?? null) : null);
 
