@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
   const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
   const [accountOpen, setAccountOpen] = useState(false);
-  const [mappingOpen, setMappingOpen] = useState(false);
+  const [mappingOpen, setMappingOpen] = useState(true);
   const [merchant, setMerchant] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
