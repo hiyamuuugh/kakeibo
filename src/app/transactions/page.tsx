@@ -409,7 +409,7 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-3">
       <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="grid grid-cols-[32px,1fr,32px] items-center gap-2">
+        <div className="grid grid-cols-[40px,1fr,40px] items-center gap-2">
           <button
             type="button"
             onClick={goToPrevMonth}
@@ -418,7 +418,7 @@ export default function TransactionsPage() {
             〈
           </button>
           <div className="min-w-0 text-center">
-            <label className="relative inline-block cursor-pointer text-base font-bold text-[#1f2937]">
+            <label className="relative inline-flex h-10 items-center justify-center cursor-pointer text-xl font-bold text-[#1f2937]">
               <span>{monthLabel}</span>
               <input
                 type="month"
@@ -567,7 +567,7 @@ export default function TransactionsPage() {
                   <TableCell className="whitespace-nowrap py-2 text-xs text-[#6b7280]">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
-                  <TableCell className="py-2">
+                  <TableCell className="py-2 pl-3">
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">{transaction.description}</div>
                       {transaction.memo ? (
@@ -589,11 +589,11 @@ export default function TransactionsPage() {
                     </div>
                   </TableCell>
                   <TableCell className="py-2">
-                    <CategorySelect
+                      <CategorySelect
                       categories={categories}
                       transaction={transaction}
                       onChange={updateCategory}
-                    />
+                      />
                   </TableCell>
                   <TableCell className={`py-2 text-right font-bold ${getTransactionAmountColor(transaction.amount)}`}>
                     {formatTransactionAmount(transaction.amount)}
@@ -622,16 +622,18 @@ export default function TransactionsPage() {
                           <span className="sr-only">非表示</span>
                         </Button>
                       ) : null}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-[#d1d5db] hover:text-red-600"
-                        onClick={() => deleteTransaction(transaction.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">削除</span>
-                      </Button>
+                      {viewMode === "personal" ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-[#d1d5db] hover:text-red-600"
+                          onClick={() => deleteTransaction(transaction.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">削除</span>
+                        </Button>
+                      ) : null}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -682,7 +684,7 @@ export default function TransactionsPage() {
                     </Badge>
                   ) : null}
                 </div>
-                <div className="w-28 shrink-0">
+                <div className="ml-1 w-28 shrink-0">
                   <CategorySelect
                     categories={categories}
                     transaction={transaction}
@@ -711,16 +713,18 @@ export default function TransactionsPage() {
                     <span className="sr-only">非表示</span>
                   </Button>
                 ) : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-red-600"
-                  onClick={() => deleteTransaction(transaction.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">削除</span>
-                </Button>
+                {viewMode === "personal" ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-red-600"
+                    onClick={() => deleteTransaction(transaction.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">削除</span>
+                  </Button>
+                ) : null}
               </div>
 
               {transaction.store ? (
