@@ -299,6 +299,30 @@ export default function TransactionsPage() {
   const total = displayedTransactions.reduce((sum, transaction) => sum - transaction.amount, 0);
   const expenseCategories = getCategoriesByKind(categories, "expense");
   const incomeCategories = getCategoriesByKind(categories, "income");
+  const filterCategories =
+    filterType === "expense"
+      ? expenseCategories
+      : filterType === "income"
+        ? incomeCategories
+        : [...expenseCategories, ...incomeCategories];
+  const handleFilterTypeChange = (value: string) => {
+    const nextType = value === "expense" || value === "income" ? value : "all";
+    setFilterType(nextType);
+    if (
+      filterCat !== "all" &&
+      filterCat !== "uncategorized" &&
+      !filterCategoriesForType(nextType).some((category) => category.id === filterCat)
+    ) {
+      setFilterCat("all");
+    }
+  };
+
+  const filterCategoriesForType = (type: string) =>
+    type === "expense"
+      ? expenseCategories
+      : type === "income"
+        ? incomeCategories
+        : [...expenseCategories, ...incomeCategories];
   const sourceOptions = [
     ...SOURCE_ORDER,
     ...Array.from(new Set(transactions.map((transaction) => transaction.source))).filter(
@@ -324,12 +348,7 @@ export default function TransactionsPage() {
         <SelectContent>
           <SelectItem value="all">すべて</SelectItem>
           <SelectItem value="uncategorized">未分類</SelectItem>
-          {expenseCategories.map((category) => (
-            <SelectItem key={category.id} value={category.id}>
-              {category.name}
-            </SelectItem>
-          ))}
-          {incomeCategories.map((category) => (
+          {filterCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               {category.name}
             </SelectItem>
@@ -404,7 +423,7 @@ export default function TransactionsPage() {
         <div className="grid grid-cols-2 gap-2">
           <div className={filterShellClass}>
             <span className={filterLabelClass}>収支</span>
-            <Select value={filterType} onValueChange={(value) => setFilterType(value ?? "all")}>
+            <Select value={filterType} onValueChange={(value) => handleFilterTypeChange(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
                   {filterType === "all" ? "すべて" : filterType === "expense" ? "支出" : "収入"}
