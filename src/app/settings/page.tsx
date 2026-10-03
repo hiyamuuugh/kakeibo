@@ -132,12 +132,26 @@ export default function SettingsPage() {
     setMemberColor(member.color);
   };
 
-  const handleSwitchMember = () => {
+  const handleSwitchMember = async () => {
     if (!selectedMember) {
       toast.error("アカウントを選択してください");
       return;
     }
 
+    const response = await fetch(`/api/members/${selectedMember.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ color: memberColor }),
+    });
+    if (!response.ok) {
+      toast.error("アカウント情報を保存できませんでした");
+      return;
+    }
+
+    const updatedMember = (await response.json()) as Member;
+    setMembers((current) =>
+      current.map((member) => (member.id === updatedMember.id ? updatedMember : member))
+    );
     localStorage.setItem(SELECTED_MEMBER_ID_KEY, selectedMember.id);
     toast.success("アカウントを切り替えました");
   };
@@ -269,7 +283,6 @@ export default function SettingsPage() {
                   onChange={(event) => setMemberName(event.target.value)}
                   placeholder="名前"
                   className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
-                  disabled
                 />
                 <div className="flex items-center gap-2">
                   <input
@@ -277,7 +290,6 @@ export default function SettingsPage() {
                     value={memberColor}
                     onChange={(event) => setMemberColor(event.target.value)}
                     className="h-10 w-12 rounded-lg border border-[#e5e7eb] bg-white p-1"
-                    disabled
                   />
                   <Button type="button" className="h-10 flex-1" onClick={handleSwitchMember}>
                     切り替え
