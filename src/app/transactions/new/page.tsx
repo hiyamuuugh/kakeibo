@@ -196,7 +196,7 @@ export default function NewTransactionPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <div className="space-y-2">
               <label className="text-xs font-semibold text-[#6b7280]">日付</label>
               <input
@@ -226,12 +226,13 @@ export default function NewTransactionPage() {
               <button
                 type="button"
                 onClick={() => setCategoryId(null)}
-                className={`rounded-full border px-3 py-2 text-sm font-semibold ${
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                   categoryId === null
                     ? "border-[#3b82f6] bg-[#eff6ff] text-[#2563eb]"
                     : "border-[#e5e7eb] bg-white text-[#6b7280]"
                 }`}
               >
+                <span className="h-2 w-2 rounded-full bg-[#9ca3af]" />
                 未分類
               </button>
               {inputCategories.map((category) => (
@@ -239,12 +240,18 @@ export default function NewTransactionPage() {
                   key={category.id}
                   type="button"
                   onClick={() => setCategoryId(category.id)}
-                  className={`rounded-full border px-3 py-2 text-sm font-semibold ${
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                     categoryId === category.id
                       ? "border-[#3b82f6] bg-[#eff6ff] text-[#2563eb]"
                       : "border-[#e5e7eb] bg-white text-[#6b7280]"
                   }`}
+                  style={
+                    categoryId === category.id
+                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#9ca3af"}20` }
+                      : { borderColor: `${category.color ?? "#9ca3af"}66` }
+                  }
                 >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color ?? "#9ca3af" }} />
                   {category.name}
                 </button>
               ))}

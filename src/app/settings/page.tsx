@@ -33,8 +33,6 @@ export default function SettingsPage() {
   const [rules, setRules] = useState<MerchantRule[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
-  const [memberName, setMemberName] = useState("");
-  const [memberColor, setMemberColor] = useState("#3b82f6");
   const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
   const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
   const [accountOpen, setAccountOpen] = useState(false);
@@ -98,8 +96,6 @@ export default function SettingsPage() {
       null;
     if (nextMember) {
       setSelectedMemberId(nextMember.id);
-      setMemberName(nextMember.name);
-      setMemberColor(nextMember.color);
       localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMember.id);
     }
     setLoading(false);
@@ -117,8 +113,6 @@ export default function SettingsPage() {
           memberData.find((member) => member.id === savedMemberId) ?? memberData[0] ?? null;
         if (nextMember) {
           setSelectedMemberId(nextMember.id);
-          setMemberName(nextMember.name);
-          setMemberColor(nextMember.color);
           localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMember.id);
         }
       })
@@ -128,30 +122,14 @@ export default function SettingsPage() {
 
   const handleSelectMember = (member: Member) => {
     setSelectedMemberId(member.id);
-    setMemberName(member.name);
-    setMemberColor(member.color);
   };
 
-  const handleSwitchMember = async () => {
+  const handleSwitchMember = () => {
     if (!selectedMember) {
       toast.error("アカウントを選択してください");
       return;
     }
 
-    const response = await fetch(`/api/members/${selectedMember.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ color: memberColor }),
-    });
-    if (!response.ok) {
-      toast.error("アカウント情報を保存できませんでした");
-      return;
-    }
-
-    const updatedMember = (await response.json()) as Member;
-    setMembers((current) =>
-      current.map((member) => (member.id === updatedMember.id ? updatedMember : member))
-    );
     localStorage.setItem(SELECTED_MEMBER_ID_KEY, selectedMember.id);
     toast.success("アカウントを切り替えました");
   };
@@ -250,7 +228,7 @@ export default function SettingsPage() {
           )}
         </button>
         {accountOpen ? (
-        <CardContent className="space-y-4 border-t border-[#f3f4f6]">
+        <CardContent className="space-y-4 border-t border-[#f3f4f6] pt-2">
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : members.length === 0 ? (
@@ -277,25 +255,9 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
-              <div className="space-y-3 rounded-[10px] bg-[#f9fafb] p-3">
-                <input
-                  value={memberName}
-                  onChange={(event) => setMemberName(event.target.value)}
-                  placeholder="名前"
-                  className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
-                />
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={memberColor}
-                    onChange={(event) => setMemberColor(event.target.value)}
-                    className="h-10 w-12 rounded-lg border border-[#e5e7eb] bg-white p-1"
-                  />
-                  <Button type="button" className="h-10 flex-1" onClick={handleSwitchMember}>
-                    切り替え
-                  </Button>
-                </div>
-              </div>
+              <Button type="button" className="h-10 w-full" onClick={handleSwitchMember}>
+                切り替え
+              </Button>
             </>
           )}
         </CardContent>
@@ -317,7 +279,7 @@ export default function SettingsPage() {
         </button>
         {mappingOpen ? (
         <CardContent className="space-y-4 border-t border-[#f3f4f6]">
-      <div className="space-y-4">
+      <div className="space-y-4 pt-3">
         <p className="text-sm font-semibold text-[#1f2937]">ルール追加</p>
           {loading ? (
             <LoadingSpinner className="py-4" />
@@ -356,12 +318,18 @@ export default function SettingsPage() {
                 key={category.id}
                 type="button"
                 onClick={() => setCategoryId(category.id)}
-                className={`rounded-full border px-3 py-2 text-sm font-semibold ${
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                   categoryId === category.id
                     ? "border-[#3b82f6] bg-[#eff6ff] text-[#2563eb]"
                     : "border-[#e5e7eb] bg-white text-[#6b7280]"
                 }`}
+                style={
+                  categoryId === category.id
+                    ? { borderColor: category.color ?? "#9ca3af", backgroundColor: `${category.color ?? "#9ca3af"}20` }
+                    : { borderColor: `${category.color ?? "#9ca3af"}66` }
+                }
               >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color ?? "#9ca3af" }} />
                 {category.name}
               </button>
             ))}

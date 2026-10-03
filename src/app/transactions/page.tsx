@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Eye, EyeOff, Trash2 } from "lucide-react";
+import { Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,25 @@ const SOURCE_LABELS: Record<string, string> = {
   smbc: "三井住友",
   manual: "手入力",
   credit: "クレカ",
+};
+
+const SOURCE_COLORS: Record<string, string> = {
+  paypay: "#ef4444",
+  paypay_card: "#f59e0b",
+  rakuten: "#bf0000",
+  mufg: "#dc2626",
+  smbc: "#16a34a",
+  manual: "#64748b",
+  credit: "#8b5cf6",
+};
+
+const getSourceStyle = (source: string) => {
+  const color = SOURCE_COLORS[source] ?? "#64748b";
+  return {
+    color,
+    backgroundColor: `${color}18`,
+    borderColor: `${color}55`,
+  };
 };
 
 const SOURCE_SEARCH_ALIASES: Record<string, string[]> = {
@@ -266,6 +285,26 @@ export default function TransactionsPage() {
     }
   };
 
+  const updateMemo = async (transaction: Transaction) => {
+    const nextMemo = window.prompt("メモ", transaction.memo ?? "");
+    if (nextMemo === null) return;
+
+    const response = await fetch(`/api/transactions/${transaction.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memo: nextMemo.trim() || null }),
+    });
+
+    if (response.ok) {
+      setTransactions((current) =>
+        current.map((item) =>
+          item.id === transaction.id ? { ...item, memo: nextMemo.trim() || null } : item
+        )
+      );
+      toast.success(nextMemo.trim() ? "メモを保存しました" : "メモを削除しました");
+    }
+  };
+
   const displayedTransactions = transactions.filter((transaction) => {
     const searchText = normalizeSearchText(keyword.trim());
 
@@ -365,7 +404,7 @@ export default function TransactionsPage() {
           <button
             type="button"
             onClick={goToPrevMonth}
-            className="flex h-8 w-8 items-center justify-center justify-self-start text-2xl font-light leading-none text-[#3b82f6]"
+            className="flex h-10 w-8 items-center justify-center justify-self-start text-3xl font-light leading-none text-[#3b82f6]"
           >
             ‹
           </button>
@@ -386,7 +425,7 @@ export default function TransactionsPage() {
           <button
             type="button"
             onClick={goToNextMonth}
-            className="flex h-8 w-8 items-center justify-center justify-self-end text-2xl font-light leading-none text-[#3b82f6]"
+            className="flex h-10 w-8 items-center justify-center justify-self-end text-3xl font-light leading-none text-[#3b82f6]"
           >
             ›
           </button>
@@ -448,7 +487,10 @@ export default function TransactionsPage() {
                 <SelectItem value="all">すべて</SelectItem>
                 {sourceOptions.map((source) => (
                   <SelectItem key={source} value={source}>
-                    {SOURCE_LABELS[source] ?? source}
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: SOURCE_COLORS[source] ?? "#64748b" }} />
+                      {SOURCE_LABELS[source] ?? source}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -518,16 +560,23 @@ export default function TransactionsPage() {
                   </TableCell>
                   <TableCell className="py-2">
                     <div className="text-sm font-medium">{transaction.description}</div>
-                    <div className="text-xs text-[#9ca3af]">
-                      {[transaction.store, viewMode === "family" ? transaction.member?.name ?? "未設定" : null, transaction.memo]
-                        .filter(Boolean)
-                        .join(" / ")}
-                    </div>
+                    {transaction.store ? <div className="text-xs text-[#9ca3af]">{transaction.store}</div> : null}
                   </TableCell>
                   <TableCell className="py-2">
-                    <Badge variant="secondary">
-                      {SOURCE_LABELS[transaction.source] ?? transaction.source}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="secondary" style={getSourceStyle(transaction.source)}>
+                        {SOURCE_LABELS[transaction.source] ?? transaction.source}
+                      </Badge>
+                      {viewMode === "family" ? (
+                        <span className="flex max-w-24 items-center gap-1 truncate text-xs text-[#6b7280]">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: transaction.member?.color ?? "#9ca3af" }}
+                          />
+                          {transaction.member?.name ?? "未設定"}
+                        </span>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="py-2">
                     <CategorySelect
@@ -541,6 +590,16 @@ export default function TransactionsPage() {
                   </TableCell>
                   <TableCell className="py-2 text-right">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-[#d1d5db] hover:text-[#3b82f6]"
+                        onClick={() => updateMemo(transaction)}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="sr-only">メモ</span>
+                      </Button>
                       {viewMode === "personal" ? (
                         <Button
                           type="button"
@@ -599,11 +658,21 @@ export default function TransactionsPage() {
               </div>
 
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span className="shrink-0">
-                  {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <Badge variant="secondary">{SOURCE_LABELS[transaction.source] ?? transaction.source}</Badge>
+                <div className="flex shrink-0 flex-col items-start leading-tight">
+                  <span>{format(new Date(transaction.date), "M/d(E)", { locale: ja })}</span>
+                  {transaction.memo ? <span className="max-w-16 truncate text-[10px] text-[#9ca3af]">{transaction.memo}</span> : null}
+                </div>
+                <div className="flex min-w-0 flex-1 items-center gap-1">
+                  <Badge variant="secondary" style={getSourceStyle(transaction.source)}>{SOURCE_LABELS[transaction.source] ?? transaction.source}</Badge>
+                  {viewMode === "family" ? (
+                    <span className="flex max-w-20 items-center gap-1 truncate text-[10px] text-[#6b7280]">
+                      <span
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: transaction.member?.color ?? "#9ca3af" }}
+                      />
+                      {transaction.member?.name ?? "未設定"}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="w-28 shrink-0">
                   <CategorySelect
@@ -612,6 +681,16 @@ export default function TransactionsPage() {
                     onChange={updateCategory}
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-[#3b82f6]"
+                  onClick={() => updateMemo(transaction)}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="sr-only">メモ</span>
+                </Button>
                 {viewMode === "personal" ? (
                   <Button
                     type="button"
@@ -636,7 +715,7 @@ export default function TransactionsPage() {
                 </Button>
               </div>
 
-              {[transaction.store, viewMode === "family" ? transaction.member?.name ?? "未設定" : null, transaction.memo]
+              {[transaction.store, viewMode === "family" ? transaction.member?.name ?? "未設定" : null]
                 .filter(Boolean).length > 0 ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                   {transaction.store || viewMode === "family" ? (
@@ -645,9 +724,6 @@ export default function TransactionsPage() {
                         .filter(Boolean)
                         .join(" / ")}
                     </span>
-                  ) : null}
-                  {transaction.memo ? (
-                    <span className="truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
                   ) : null}
                 </div>
               ) : null}
