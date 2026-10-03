@@ -90,7 +90,8 @@ export default function SettingsPage() {
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
   const exclusionPageCount = Math.max(Math.ceil(importExclusions.length / 10), 1);
   const safeExclusionPage = Math.min(exclusionPage, exclusionPageCount - 1);
-  const pageExclusions = importExclusions.slice(safeExclusionPage * 10, safeExclusionPage * 10 + 10);
+  const sortedImportExclusions = [...importExclusions].sort((a, b) => a.name.localeCompare(b.name, "ja"));
+  const pageExclusions = sortedImportExclusions.slice(safeExclusionPage * 10, safeExclusionPage * 10 + 10);
 
   const loadData = async () => {
     const [categoryResponse, ruleResponse, memberResponse, exclusionResponse] = await Promise.all([
@@ -330,7 +331,7 @@ export default function SettingsPage() {
         </button>
         {exclusionOpen ? (
           <CardContent className="space-y-3 border-t border-[#f3f4f6]">
-            <div className="flex gap-2">
+            <div className="mt-2 flex gap-2">
               <input
                 value={exclusionName}
                 onChange={(event) => setExclusionName(event.target.value)}
@@ -441,7 +442,7 @@ export default function SettingsPage() {
             placeholder="例: コープ"
             className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
           />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {visibleCategories.map((category) => (
               <button
                 key={category.id}
