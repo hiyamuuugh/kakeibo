@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, MessageSquare, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -168,6 +168,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [selectionMode, setSelectionMode] = useState(false);
+  const [memoEditingTransaction, setMemoEditingTransaction] = useState<Transaction | null>(null);
+  const [memoDraft, setMemoDraft] = useState("");
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
 
   const loadTransactions = useCallback(() => {
@@ -342,22 +344,28 @@ export default function TransactionsPage() {
   };
 
   const updateMemo = async (transaction: Transaction) => {
-    const nextMemo = window.prompt("メモ", transaction.memo ?? "");
-    if (nextMemo === null) return;
+    setMemoEditingTransaction(transaction);
+    setMemoDraft(transaction.memo ?? "");
+  };
 
-    const response = await fetch(`/api/transactions/${transaction.id}`, {
+  const saveMemo = async () => {
+    if (!memoEditingTransaction) return;
+    const nextMemo = memoDraft.trim();
+
+    const response = await fetch(`/api/transactions/${memoEditingTransaction.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ memo: nextMemo.trim() || null }),
+      body: JSON.stringify({ memo: nextMemo || null }),
     });
 
     if (response.ok) {
       setTransactions((current) =>
         current.map((item) =>
-          item.id === transaction.id ? { ...item, memo: nextMemo.trim() || null } : item
+          item.id === memoEditingTransaction.id ? { ...item, memo: nextMemo || null } : item
         )
       );
-      toast.success(nextMemo.trim() ? "メモを保存しました" : "メモを削除しました");
+      setMemoEditingTransaction(null);
+      toast.success(nextMemo ? "メモを保存しました" : "メモを削除しました");
     }
   };
 
@@ -488,8 +496,8 @@ export default function TransactionsPage() {
           >
             <ChevronRight className="h-6 w-6" strokeWidth={1.5} />
           </button>
-          <p className={`text-center text-lg font-extrabold leading-tight ${getTotalColor(total)}`}>
-            {formatSignedYen(total)}
+          <p className={`text-center text-lg font-extrabold leading-tight ${loading ? "text-[#9ca3af]" : getTotalColor(total)}`}>
+            {loading ? "読み込み中..." : formatSignedYen(total)}
           </p>
         </div>
         <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
@@ -612,13 +620,13 @@ export default function TransactionsPage() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 shrink-0 bg-white px-3"
+              className="h-9 w-fit justify-self-end bg-white px-3"
               onClick={() => {
                 setSelectionMode((current) => !current);
                 if (selectionMode) setSelectedTransactionIds(new Set());
               }}
             >
-              {selectionMode ? "解除" : "選択"}
+              {selectionMode ? "解除" : "複数選択"}
             </Button>
           )}
         </div>
@@ -819,7 +827,7 @@ export default function TransactionsPage() {
                     </Badge>
                   ) : null}
                 </div>
-                <div className="ml-1 w-20 shrink-0">
+                <div className="ml-1 w-24 shrink-0">
                   <CategorySelect
                     categories={categories}
                     transaction={transaction}
@@ -871,6 +879,52 @@ export default function TransactionsPage() {
           ))
         )}
       </div>
+      {memoEditingTransaction ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-bold text-[#1f2937]">メモ</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-[#9ca3af]"
+                onClick={() => setMemoEditingTransaction(null)}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">閉じる</span>
+              </Button>
+            </div>
+            <div className="relative">
+              <input
+                autoFocus
+                value={memoDraft}
+                onChange={(event) => setMemoDraft(event.target.value)}
+                className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 pr-10 text-sm outline-none focus:border-[#93c5fd]"
+                aria-label="メモ"
+              />
+              {memoDraft ? (
+                <button
+                  type="button"
+                  aria-label="メモを全削除"
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center text-[#9ca3af] hover:text-[#374151]"
+                  onClick={() => setMemoDraft("")}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+            <div className="mt-3 flex justify-end gap-2">
+              <Button type="button" variant="outline" className="bg-white" onClick={() => setMemoEditingTransaction(null)}>
+                キャンセル
+              </Button>
+              <Button type="button" onClick={() => void saveMemo()}>
+                保存
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
