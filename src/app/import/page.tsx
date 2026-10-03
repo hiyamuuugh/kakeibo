@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Progress } from "@/components/ui/progress";
+import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface ImportSource {
   id: string;
@@ -157,6 +158,10 @@ function ImportSourceCard({
 
     const formData = new FormData();
     formData.append("file", file);
+    const selectedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
+    if (selectedMemberId) {
+      formData.append("memberId", selectedMemberId);
+    }
 
     const response = await fetch(source.endpoint, {
       method: "POST",

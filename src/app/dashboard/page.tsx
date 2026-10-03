@@ -445,10 +445,10 @@ export default function Dashboard() {
       ) : (
         <>
           <Card>
-            <CardContent className="p-3">
-              <p className="text-[11px] text-[#6b7280]">収支</p>
+            <CardContent className="px-3 py-2">
+              <p className="text-[10px] leading-none text-[#6b7280]">収支</p>
               <p
-                className="text-3xl font-extrabold leading-tight"
+                className="text-2xl font-extrabold leading-tight"
                 style={{ color: balance > 0 ? "#22c55e" : balance < 0 ? "#ef4444" : "#1f2937" }}
               >
                 {formatBalance(balance)}
@@ -458,20 +458,21 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-2 gap-2">
             <Card>
-              <CardContent className="p-3">
-                <p className="text-[11px] text-[#6b7280]">収入</p>
-                <p className="text-lg font-bold leading-tight text-[#22c55e]">{formatYen(stats?.income ?? 0)}</p>
+              <CardContent className="px-3 py-2">
+                <p className="text-[10px] leading-none text-[#6b7280]">収入</p>
+                <p className="text-base font-bold leading-tight text-[#22c55e]">{formatYen(stats?.income ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3">
-                <p className="text-[11px] text-[#6b7280]">支出</p>
-                <p className="text-lg font-bold leading-tight text-[#ef4444]">{formatYen(stats?.total ?? 0)}</p>
+              <CardContent className="px-3 py-2">
+                <p className="text-[10px] leading-none text-[#6b7280]">支出</p>
+                <p className="text-base font-bold leading-tight text-[#ef4444]">{formatYen(stats?.total ?? 0)}</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="overflow-visible">
+          <div className="flex flex-col gap-3">
+          <Card className="order-2 overflow-visible">
             <CardContent className="space-y-3 overflow-visible p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-[#1f2937]">推移グラフ</p>
@@ -666,7 +667,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="order-1">
             <CardContent className="space-y-4 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-[#1f2937]">カテゴリ別</p>
@@ -759,14 +760,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <div className="flex items-center justify-center gap-2 pb-2 pt-1 text-xs font-semibold text-[#9ca3af]">
+          <div className="order-3 flex items-center justify-center gap-2 pb-2 pt-1 text-xs font-semibold text-[#9ca3af]">
             <TrendingUp className="h-3.5 w-3.5" />
             {stats?.count ?? 0}件の取引
           </div>
 
           {report && reportStyle && ReportIcon ? (
             <div
-              className="space-y-1.5 rounded-[12px] border p-3.5"
+              className="order-4 space-y-1.5 rounded-[12px] border p-3.5"
               style={{ backgroundColor: reportStyle.bg, borderColor: reportStyle.border }}
             >
               <div className="flex items-center gap-1.5">
@@ -779,6 +780,7 @@ export default function Dashboard() {
               <p className="text-[13px] leading-[19px] text-[#374151]">{report.advice}</p>
             </div>
           ) : null}
+          </div>
         </>
       )}
     </div>

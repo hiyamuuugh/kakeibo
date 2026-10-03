@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   CategoryKind,
@@ -37,8 +37,8 @@ export default function SettingsPage() {
   const [memberColor, setMemberColor] = useState("#3b82f6");
   const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
   const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
-  const [accountOpen, setAccountOpen] = useState(true);
-  const [mappingOpen, setMappingOpen] = useState(true);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [mappingOpen, setMappingOpen] = useState(false);
   const [merchant, setMerchant] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -130,29 +130,16 @@ export default function SettingsPage() {
     setSelectedMemberId(member.id);
     setMemberName(member.name);
     setMemberColor(member.color);
-    localStorage.setItem(SELECTED_MEMBER_ID_KEY, member.id);
-    toast.success("アカウントを切り替えました");
   };
 
-  const handleSaveMember = async () => {
-    if (!selectedMember || !memberName.trim()) {
-      toast.error("名前を入力してください");
+  const handleSwitchMember = () => {
+    if (!selectedMember) {
+      toast.error("アカウントを選択してください");
       return;
     }
 
-    const response = await fetch(`/api/members/${selectedMember.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: memberName.trim(), color: memberColor }),
-    });
-
-    if (!response.ok) {
-      toast.error("プロフィールを保存できませんでした");
-      return;
-    }
-
-    toast.success("プロフィールを保存しました");
-    await loadData();
+    localStorage.setItem(SELECTED_MEMBER_ID_KEY, selectedMember.id);
+    toast.success("アカウントを切り替えました");
   };
 
   const handleSave = async () => {
@@ -282,6 +269,7 @@ export default function SettingsPage() {
                   onChange={(event) => setMemberName(event.target.value)}
                   placeholder="名前"
                   className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+                  disabled
                 />
                 <div className="flex items-center gap-2">
                   <input
@@ -289,9 +277,10 @@ export default function SettingsPage() {
                     value={memberColor}
                     onChange={(event) => setMemberColor(event.target.value)}
                     className="h-10 w-12 rounded-lg border border-[#e5e7eb] bg-white p-1"
+                    disabled
                   />
-                  <Button type="button" className="h-10 flex-1" onClick={handleSaveMember}>
-                    保存
+                  <Button type="button" className="h-10 flex-1" onClick={handleSwitchMember}>
+                    切り替え
                   </Button>
                 </div>
               </div>
@@ -316,11 +305,8 @@ export default function SettingsPage() {
         </button>
         {mappingOpen ? (
         <CardContent className="space-y-4 border-t border-[#f3f4f6]">
-      <Card className="border-[#f3f4f6] shadow-none">
-        <CardHeader className="px-0">
-          <CardTitle className="text-sm font-semibold">ルール追加</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 px-0">
+      <div className="space-y-4">
+        <p className="text-sm font-semibold text-[#1f2937]">ルール追加</p>
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : (
@@ -373,8 +359,7 @@ export default function SettingsPage() {
           </Button>
           </>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-[#1f2937]">登録済みルール</p>
@@ -410,7 +395,7 @@ export default function SettingsPage() {
             const pageCount = Math.max(Math.ceil(group.rules.length / 10), 1);
             const safePage = Math.min(page, pageCount - 1);
             const pageRules = group.rules.slice(safePage * 10, safePage * 10 + 10);
-            const closed = closedRuleCategories.has(group.category.name);
+            const closed = !closedRuleCategories.has(group.category.name);
 
             return (
               <Card key={group.category.name}>

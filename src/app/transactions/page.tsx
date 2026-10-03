@@ -183,9 +183,19 @@ export default function TransactionsPage() {
     });
 
     if (response.ok) {
-      setLoading(true);
+      const updated = (await response.json()) as Transaction;
+      setTransactions((current) =>
+        current.map((transaction) =>
+          transaction.id === updated.id
+            ? {
+                ...transaction,
+                categoryId: updated.categoryId,
+                category: updated.category,
+              }
+            : transaction
+        )
+      );
       toast.success("カテゴリを更新しました");
-      loadTransactions();
     }
   };
 
@@ -199,9 +209,10 @@ export default function TransactionsPage() {
     });
 
     if (response.ok) {
-      setLoading(true);
+      setTransactions((current) =>
+        current.filter((transaction) => transaction.id !== transactionId)
+      );
       toast.success("削除しました");
-      loadTransactions();
     }
   };
 
@@ -213,9 +224,13 @@ export default function TransactionsPage() {
     });
 
     if (response.ok) {
-      setLoading(true);
+      const updated = (await response.json()) as Transaction;
+      setTransactions((current) =>
+        current.map((item) =>
+          item.id === updated.id ? { ...item, isPrivate: updated.isPrivate } : item
+        )
+      );
       toast.success(transaction.isPrivate ? "表示しました" : "非表示にしました");
-      loadTransactions();
     }
   };
 
@@ -303,7 +318,6 @@ export default function TransactionsPage() {
     <div className="space-y-3">
       <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="flex items-center gap-2">
-          <h1 className="shrink-0 text-xl font-bold text-[#1f2937]">取引一覧</h1>
           <button
             type="button"
             onClick={goToPrevMonth}

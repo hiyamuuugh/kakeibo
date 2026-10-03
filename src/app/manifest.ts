@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "kakeibo",
-    short_name: "kakeibo",
+    name: "家計簿くん",
+    short_name: "家計簿くん",
     description: "家族で使うためのブラウザ家計簿アプリ",
     start_url: "/",
     display: "standalone",
     background_color: "#f8fafc",
-    theme_color: "#0f172a",
+    theme_color: "#16a34a",
     lang: "ja",
     icons: [
       {

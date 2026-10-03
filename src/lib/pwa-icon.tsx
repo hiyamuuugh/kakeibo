@@ -10,14 +10,14 @@ export const renderPwaIcon = (size: number) =>
           width: "100%",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0f172a",
+          background: "linear-gradient(135deg, #16a34a 0%, #22c55e 52%, #86efac 100%)",
           color: "#ffffff",
-          fontSize: size * 0.3,
-          fontWeight: 700,
+          fontSize: size * 0.42,
+          fontWeight: 800,
           letterSpacing: 0,
         }}
       >
-        K
+        ¥
       </div>
     ),
     {
