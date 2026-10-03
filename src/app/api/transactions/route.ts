@@ -47,7 +47,7 @@ export async function DELETE() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { date, amount, description, store, source, categoryId, memberId } = body;
+  const { date, amount, description, store, memo, source, categoryId, memberId } = body;
   const rules = categoryId ? [] : await prisma.merchantRule.findMany({ include: { category: true } });
   const matchedCategoryId = categoryId
     ? categoryId
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       amount: Number(amount),
       description,
       store: store ?? null,
+      memo: typeof memo === "string" && memo.trim() ? memo.trim() : null,
       source: source ?? "manual",
       categoryId: matchedCategoryId,
       memberId: memberId ?? null,

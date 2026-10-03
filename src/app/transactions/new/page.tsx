@@ -23,6 +23,7 @@ export default function NewTransactionPage() {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [store, setStore] = useState("");
+  const [memo, setMemo] = useState("");
   const [date, setDate] = useState(() => formatInputDate(new Date()));
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -105,6 +106,7 @@ export default function NewTransactionPage() {
         amount: kind === "income" ? -parsedAmount : parsedAmount,
         description: description.trim(),
         store: store.trim() || null,
+        memo: memo.trim() || null,
         source: "manual",
         categoryId,
         memberId: localStorage.getItem(SELECTED_MEMBER_ID_KEY),
@@ -122,6 +124,7 @@ export default function NewTransactionPage() {
     setAmount("");
     setDescription("");
     setStore("");
+    setMemo("");
     setCategoryId(null);
     setDate(formatInputDate(new Date()));
   };
@@ -210,14 +213,24 @@ export default function NewTransactionPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#6b7280]">店名</label>
+              <label className="text-xs font-semibold text-[#6b7280]">店名(任意)</label>
               <input
                 value={store}
                 onChange={(event) => setStore(event.target.value)}
-                placeholder="任意"
+                placeholder="例: セブンイレブン"
                 className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-[#6b7280]">メモ(任意)</label>
+            <input
+              value={memo}
+              onChange={(event) => setMemo(event.target.value)}
+              placeholder="例: プレゼント"
+              className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+            />
           </div>
 
           <div className="space-y-2">

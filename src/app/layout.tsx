@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Navigation } from "@/components/navigation";
+import { CsvImportReminder } from "@/components/csv-import-reminder";
 
 export const metadata: Metadata = {
   title: "家計簿くん",
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className="min-h-screen bg-[#f9fafb] text-[#1f2937]">
         <Navigation />
+        <CsvImportReminder />
         <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 md:px-6 md:pb-10 md:pt-6">
           {children}
         </main>
