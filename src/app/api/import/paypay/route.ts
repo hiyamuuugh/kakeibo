@@ -87,8 +87,6 @@ export async function POST(req: NextRequest) {
     headers.find((h) => h.includes("内容") || h.includes("店舗") || h.toLowerCase().includes("desc")) ??
     headers[2];
 
-  const typeKey = headers.find((h) => h.includes("種別") || h.includes("タイプ") || h.toLowerCase().includes("type"));
-
   let imported = 0;
   let skipped = 0;
 
@@ -123,13 +121,6 @@ export async function POST(req: NextRequest) {
       amount = parseAmount(amountStr);
       if (amount === 0) { skipped++; continue; }
 
-      if (typeKey) {
-        const type = (row[typeKey] ?? "").trim();
-        if (type.includes("チャージ") || type.includes("受取") || type.includes("還元")) {
-          skipped++;
-          continue;
-        }
-      }
     }
 
     // 収入はマイナス値で保存（UI で isIncome 判定に使用）

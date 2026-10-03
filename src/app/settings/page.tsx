@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, RotateCw, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -44,11 +44,11 @@ export default function SettingsPage() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [mappingOpen, setMappingOpen] = useState(false);
   const [exclusionOpen, setExclusionOpen] = useState(false);
+  const [exclusionPage, setExclusionPage] = useState(0);
   const [merchant, setMerchant] = useState("");
   const [exclusionName, setExclusionName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
-  const [reapplying, setReapplying] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const visibleCategories = useMemo(
@@ -75,7 +75,10 @@ export default function SettingsPage() {
       groups.set(rule.category.name, current);
     }
     const order = new Map(visibleCategories.map((category, index) => [category.name, index]));
-    return Array.from(groups.values()).sort((a, b) => {
+    return Array.from(groups.values()).map((group) => ({
+      ...group,
+      rules: [...group.rules].sort((a, b) => a.merchant.localeCompare(b.merchant, "ja")),
+    })).sort((a, b) => {
       const aOrder = order.has(a.category.name) ? order.get(a.category.name)! : 999;
       const bOrder = order.has(b.category.name) ? order.get(b.category.name)! : 999;
       const byOrder = aOrder - bOrder;
@@ -85,6 +88,9 @@ export default function SettingsPage() {
   }, [visibleCategories, visibleRules]);
 
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
+  const exclusionPageCount = Math.max(Math.ceil(importExclusions.length / 10), 1);
+  const safeExclusionPage = Math.min(exclusionPage, exclusionPageCount - 1);
+  const pageExclusions = importExclusions.slice(safeExclusionPage * 10, safeExclusionPage * 10 + 10);
 
   const loadData = async () => {
     const [categoryResponse, ruleResponse, memberResponse, exclusionResponse] = await Promise.all([
@@ -95,7 +101,9 @@ export default function SettingsPage() {
     ]);
     setCategories((await categoryResponse.json()) as CategoryOption[]);
     setRules((await ruleResponse.json()) as MerchantRule[]);
-    setImportExclusions((await exclusionResponse.json()) as ImportExclusion[]);
+    setImportExclusions(
+      exclusionResponse.ok ? ((await exclusionResponse.json()) as ImportExclusion[]) : []
+    );
     const memberData = (await memberResponse.json()) as Member[];
     setMembers(memberData);
     const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
@@ -121,7 +129,9 @@ export default function SettingsPage() {
       .then(async ([categoryResponse, ruleResponse, memberResponse, exclusionResponse]) => {
         setCategories((await categoryResponse.json()) as CategoryOption[]);
         setRules((await ruleResponse.json()) as MerchantRule[]);
-        setImportExclusions((await exclusionResponse.json()) as ImportExclusion[]);
+        setImportExclusions(
+          exclusionResponse.ok ? ((await exclusionResponse.json()) as ImportExclusion[]) : []
+        );
         const memberData = (await memberResponse.json()) as Member[];
         setMembers(memberData);
         const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
@@ -194,20 +204,6 @@ export default function SettingsPage() {
     await loadData();
   };
 
-  const handleReapply = async () => {
-    setReapplying(true);
-    const response = await fetch("/api/merchant-rules/reapply", { method: "POST" });
-    setReapplying(false);
-
-    if (!response.ok) {
-      toast.error("再適用できませんでした");
-      return;
-    }
-
-    const data = (await response.json()) as { appliedCount: number };
-    toast.success(`${data.appliedCount}件に再適用しました`);
-  };
-
   const handleAddExclusion = async () => {
     const name = exclusionName.trim();
     if (!name) {
@@ -226,6 +222,7 @@ export default function SettingsPage() {
     }
 
     setExclusionName("");
+    setExclusionPage(0);
     toast.success("CSV取込スキップのワードを登録しました");
     await loadData();
   };
@@ -242,6 +239,7 @@ export default function SettingsPage() {
       return;
     }
     toast.success("CSV取込スキップのワードを削除しました");
+    setExclusionPage((current) => Math.min(current, Math.max(Math.ceil((importExclusions.length - 1) / 10) - 1, 0)));
     await loadData();
   };
 
@@ -262,12 +260,12 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-3">
+    <div className="mx-auto flex max-w-xl flex-col gap-3">
       <div>
         <h1 className="text-xl font-bold text-[#1f2937]">設定</h1>
       </div>
 
-      <Card>
+      <Card className="order-1">
         <button
           type="button"
           onClick={() => setAccountOpen((value) => !value)}
@@ -317,13 +315,13 @@ export default function SettingsPage() {
         ) : null}
       </Card>
 
-      <Card>
+      <Card className="order-3">
         <button
           type="button"
           onClick={() => setExclusionOpen((value) => !value)}
           className="flex w-full items-center justify-between p-4 text-left"
         >
-          <CardTitle className="text-sm font-semibold">CSV取込スキップ</CardTitle>
+          <CardTitle className="text-sm font-semibold">CSV取込スキップワード</CardTitle>
           {exclusionOpen ? (
             <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
           ) : (
@@ -347,7 +345,7 @@ export default function SettingsPage() {
               <p className="py-2 text-center text-sm text-[#9ca3af]">登録ワードがありません</p>
             ) : (
               <div className="space-y-2">
-                {importExclusions.map((exclusion) => (
+                {pageExclusions.map((exclusion) => (
                   <div key={exclusion.id} className="flex items-center gap-2 rounded-lg bg-[#f9fafb] px-3 py-2">
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#1f2937]">{exclusion.name}</span>
                     <Button
@@ -362,13 +360,40 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 ))}
+                {exclusionPageCount > 1 ? (
+                  <div className="flex items-center justify-between pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-white"
+                      disabled={safeExclusionPage === 0}
+                      onClick={() => setExclusionPage(safeExclusionPage - 1)}
+                    >
+                      前へ
+                    </Button>
+                    <span className="text-xs font-semibold text-[#6b7280]">
+                      {safeExclusionPage + 1} / {exclusionPageCount}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-white"
+                      disabled={safeExclusionPage >= exclusionPageCount - 1}
+                      onClick={() => setExclusionPage(safeExclusionPage + 1)}
+                    >
+                      次へ
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             )}
           </CardContent>
         ) : null}
       </Card>
 
-      <Card>
+      <Card className="order-2">
         <button
           type="button"
           onClick={() => setMappingOpen((value) => !value)}
@@ -416,13 +441,13 @@ export default function SettingsPage() {
             placeholder="例: コープ"
             className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
           />
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {visibleCategories.map((category) => (
               <button
                 key={category.id}
                 type="button"
                 onClick={() => setCategoryId(category.id)}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
+                className={`flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                   categoryId === category.id
                       ? "border-[#3b82f6] bg-[#eff6ff]"
                     : "border-[#e5e7eb] bg-white"
@@ -446,17 +471,6 @@ export default function SettingsPage() {
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-[#1f2937]">登録済みルール</p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2 bg-white"
-          onClick={handleReapply}
-          disabled={reapplying}
-        >
-          <RotateCw className="h-4 w-4" />
-          {reapplying ? "再適用中..." : "再適用"}
-        </Button>
       </div>
 
       <div className="space-y-2">

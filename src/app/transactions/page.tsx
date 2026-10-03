@@ -114,10 +114,15 @@ const formatSignedYen = (amount: number) => {
   return `${amount > 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
 };
 
-const getFilterLabel = (value: string, categories: Category[]) => {
+const getFilterLabel = (value: string, categories: Category[], filterType: string) => {
   if (value === "all") return "すべて";
   if (value === "uncategorized") return "未分類";
-  return categories.find((category) => category.id === value)?.name ?? "カテゴリ";
+  const category = categories.find((item) => item.id === value);
+  if (!category) return "カテゴリ";
+  if (filterType === "all" && category.name === "その他") {
+    return `その他(${category.type === "income" ? "収入" : "支出"})`;
+  }
+  return category.name;
 };
 
 const getTotalColor = (amount: number) => {
@@ -458,7 +463,7 @@ export default function TransactionsPage() {
       <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
         <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
           <span data-slot="select-value" className="flex flex-1 text-left">
-            {getFilterLabel(filterCat, categories)}
+            {getFilterLabel(filterCat, categories, filterType)}
           </span>
         </SelectTrigger>
         <SelectContent>
@@ -472,7 +477,9 @@ export default function TransactionsPage() {
             <SelectItem key={category.id} value={category.id}>
               <span className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
-                {category.name}
+                {filterType === "all" && category.name === "その他"
+                  ? `その他(${category.type === "income" ? "収入" : "支出"})`
+                  : category.name}
               </span>
             </SelectItem>
           ))}

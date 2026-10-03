@@ -1,23 +1,9 @@
 import Papa from "papaparse";
-import { normalize } from "../normalize";
 
 export interface MufgRow {
   date: Date;
   description: string;
   amount: number;
-}
-
-// UFJダイレクトCSVで実際に出現するクレカ引落の摘要内容
-const CREDIT_KEYWORDS = [
-  "PAYPAYカード",
-  "ﾍﾟｲﾍﾟｲｶｰﾄﾞ",
-  "ラクテンカードサービ",
-  "ﾗｸﾃﾝｶｰﾄﾞ",
-];
-
-export function isCreditCardPayment(description: string): boolean {
-  const lower = normalize(description);
-  return CREDIT_KEYWORDS.some((kw) => lower.includes(normalize(kw)));
 }
 
 export function decodeBuffer(buffer: ArrayBuffer): string {
@@ -71,8 +57,6 @@ export function parseMufgCsv(csvText: string): MufgRow[] {
     const incomeStr = row[incomeKey] ?? "";
 
     if (!dateStr) continue;
-    if (isCreditCardPayment(description)) continue;
-    if (/チャージ|charge/i.test(description)) continue;
 
     const date = parseDate(dateStr);
     if (!date) continue;

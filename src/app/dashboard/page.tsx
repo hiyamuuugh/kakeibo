@@ -648,7 +648,7 @@ export default function Dashboard() {
                           tick={{ fontSize: 10, fill: "#9ca3af" }}
                         />
                         {chartMode === "balance" ? <ReferenceLine y={0} stroke="#d1d5db" /> : null}
-                        <Tooltip content={<ChartTooltip />} />
+                        <Tooltip content={<ChartTooltip />} cursor={false} />
                         <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                           <LabelList dataKey="value" content={BarValueLabel} />
                           {chartData.map((item) => (
