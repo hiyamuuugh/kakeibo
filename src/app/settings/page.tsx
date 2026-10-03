@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RotateCw, Save, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, RotateCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +35,8 @@ export default function SettingsPage() {
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [memberName, setMemberName] = useState("");
   const [memberColor, setMemberColor] = useState("#3b82f6");
+  const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
+  const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
   const [merchant, setMerchant] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,6 +55,21 @@ export default function SettingsPage() {
       ),
     [kind, rules]
   );
+
+  const ruleGroups = useMemo(() => {
+    const groups = new Map<string, { category: CategoryOption; rules: MerchantRule[] }>();
+    for (const rule of visibleRules) {
+      const current = groups.get(rule.category.name) ?? {
+        category: rule.category,
+        rules: [],
+      };
+      current.rules.push(rule);
+      groups.set(rule.category.name, current);
+    }
+    return Array.from(groups.values()).sort((a, b) =>
+      a.category.name.localeCompare(b.category.name, "ja")
+    );
+  }, [visibleRules]);
 
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
 
@@ -187,6 +204,22 @@ export default function SettingsPage() {
 
     const data = (await response.json()) as { appliedCount: number };
     toast.success(`${data.appliedCount}件に再適用しました`);
+  };
+
+  const toggleRuleCategory = (categoryName: string) => {
+    setClosedRuleCategories((current) => {
+      const next = new Set(current);
+      if (next.has(categoryName)) {
+        next.delete(categoryName);
+      } else {
+        next.add(categoryName);
+      }
+      return next;
+    });
+  };
+
+  const setRulePage = (categoryName: string, page: number) => {
+    setRulePageByCategory((current) => ({ ...current, [categoryName]: Math.max(page, 0) }));
   };
 
   return (
@@ -335,39 +368,96 @@ export default function SettingsPage() {
               <LoadingSpinner />
             </CardContent>
           </Card>
-        ) : visibleRules.length === 0 ? (
+        ) : ruleGroups.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-[#9ca3af]">
               ルールがありません
             </CardContent>
           </Card>
         ) : (
-          visibleRules.map((rule) => (
-            <Card key={rule.id}>
-              <CardContent className="flex items-center gap-3 p-3">
-                <span
-                  className="h-3 w-3 shrink-0 rounded-full"
-                  style={{ backgroundColor: rule.category.color ?? "#9ca3af" }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[#1f2937]">
-                    {rule.merchant}
-                  </p>
-                  <p className="text-xs text-[#6b7280]">{rule.category.name}</p>
-                </div>
-                <Button
+          ruleGroups.map((group) => {
+            const page = rulePageByCategory[group.category.name] ?? 0;
+            const pageCount = Math.max(Math.ceil(group.rules.length / 10), 1);
+            const safePage = Math.min(page, pageCount - 1);
+            const pageRules = group.rules.slice(safePage * 10, safePage * 10 + 10);
+            const closed = closedRuleCategories.has(group.category.name);
+
+            return (
+              <Card key={group.category.name}>
+                <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
-                  onClick={() => handleDelete(rule.id)}
+                  onClick={() => toggleRuleCategory(group.category.name)}
+                  className="flex w-full items-center gap-3 p-3 text-left"
                 >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">削除</span>
-                </Button>
-              </CardContent>
-            </Card>
-          ))
+                  {closed ? (
+                    <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+                  )}
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: group.category.color ?? "#9ca3af" }}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#1f2937]">
+                    {group.category.name}
+                  </span>
+                  <span className="text-xs font-semibold text-[#9ca3af]">
+                    {group.rules.length}件
+                  </span>
+                </button>
+                {closed ? null : (
+                  <CardContent className="space-y-2 border-t border-[#f3f4f6] p-3">
+                    {pageRules.map((rule) => (
+                      <div key={rule.id} className="flex items-center gap-3 rounded-lg bg-[#f9fafb] p-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#1f2937]">
+                            {rule.merchant}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
+                          onClick={() => handleDelete(rule.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">削除</span>
+                        </Button>
+                      </div>
+                    ))}
+                    {pageCount > 1 ? (
+                      <div className="flex items-center justify-between pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="bg-white"
+                          disabled={safePage === 0}
+                          onClick={() => setRulePage(group.category.name, safePage - 1)}
+                        >
+                          前へ
+                        </Button>
+                        <span className="text-xs font-semibold text-[#6b7280]">
+                          {safePage + 1} / {pageCount}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="bg-white"
+                          disabled={safePage >= pageCount - 1}
+                          onClick={() => setRulePage(group.category.name, safePage + 1)}
+                        >
+                          次へ
+                        </Button>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })
         )}
       </div>
     </div>

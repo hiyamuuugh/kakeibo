@@ -207,6 +207,7 @@ export default function Dashboard() {
   const [rangeMode, setRangeMode] = useState<RangeMode>("monthly");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedCatName, setSelectedCatName] = useState<string | null>(null);
+  const [selectedPieName, setSelectedPieName] = useState<string | null>(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const loadedRef = useRef(false);
   const loadedMonthRef = useRef(month);
@@ -348,13 +349,18 @@ export default function Dashboard() {
   }, [month, rangeMode, selectedYear]);
 
   useEffect(() => {
-    if (!chartLoading && rangeMode === "yearly") {
+    const shouldScrollRight =
+      rangeMode === "yearly" ||
+      (rangeMode === "monthly" &&
+        (selectedYear === null || selectedYear === new Date().getFullYear()));
+
+    if (!chartLoading && shouldScrollRight) {
       const el = chartScrollRef.current;
       if (el) {
         el.scrollLeft = el.scrollWidth;
       }
     }
-  }, [chartLoading, rangeMode]);
+  }, [chartLoading, rangeMode, selectedYear]);
 
   const balance = (stats?.income ?? 0) - (stats?.total ?? 0);
   const report = stats
@@ -480,8 +486,8 @@ export default function Dashboard() {
             </div>
           ) : null}
 
-          <Card>
-            <CardContent className="space-y-3 p-4">
+          <Card className="overflow-visible">
+            <CardContent className="space-y-3 overflow-visible p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-[#1f2937]">推移グラフ</p>
                 <div className="flex rounded-lg bg-[#f3f4f6] p-0.5">
@@ -614,7 +620,7 @@ export default function Dashboard() {
               </div>
 
               {categoryEnabled ? (
-                <div className="relative">
+                <div className="relative z-20">
                   <button
                     type="button"
                     onClick={() => setShowCategoryPicker((value) => !value)}
@@ -624,7 +630,7 @@ export default function Dashboard() {
                     <ChevronDown className="h-4 w-4 text-[#6b7280]" />
                   </button>
                   {showCategoryPicker ? (
-                    <div className="absolute inset-x-0 top-11 z-10 max-h-64 overflow-auto rounded-[10px] border border-[#e5e7eb] bg-white p-2 shadow-lg">
+                    <div className="absolute inset-x-0 top-11 z-50 max-h-64 overflow-auto rounded-[10px] border border-[#e5e7eb] bg-white p-2 shadow-lg">
                       <button
                         type="button"
                         onClick={() => {
@@ -664,7 +670,10 @@ export default function Dashboard() {
                     <button
                       key={mode}
                       type="button"
-                      onClick={() => setPieMode(mode)}
+                      onClick={() => {
+                        setPieMode(mode);
+                        setSelectedPieName(null);
+                      }}
                       className={`rounded-md px-3.5 py-1.5 text-xs font-bold ${
                         pieMode === mode ? "bg-[#3b82f6] text-white" : "text-[#6b7280]"
                       }`}
@@ -686,9 +695,22 @@ export default function Dashboard() {
                           cx="50%"
                           cy="50%"
                           outerRadius={78}
+                          onClick={(data: unknown) => {
+                            const item = data as { name?: string };
+                            setSelectedPieName((current) =>
+                              current === item.name ? null : item.name ?? null
+                            );
+                          }}
                         >
                           {pieTabData.map((category) => (
-                            <Cell key={category.id} fill={category.color} />
+                            <Cell
+                              key={category.id}
+                              fill={category.color}
+                              opacity={
+                                selectedPieName && selectedPieName !== category.name ? 0.28 : 1
+                              }
+                              className="cursor-pointer"
+                            />
                           ))}
                         </Pie>
                         <Tooltip content={<PieTooltip total={pieTotal} />} />
@@ -697,7 +719,18 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-2">
                     {pieTabData.map((category) => (
-                      <div key={category.id} className="flex items-center justify-between gap-3 text-sm">
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedPieName((current) =>
+                            current === category.name ? null : category.name
+                          )
+                        }
+                        className={`flex w-full items-center justify-between gap-3 rounded-md text-left text-sm ${
+                          selectedPieName && selectedPieName !== category.name ? "opacity-40" : ""
+                        }`}
+                      >
                         <span className="flex min-w-0 items-center gap-2 text-[#374151]">
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -711,7 +744,7 @@ export default function Dashboard() {
                             {getSharePercent(category.total, pieTotal)}%
                           </span>
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
