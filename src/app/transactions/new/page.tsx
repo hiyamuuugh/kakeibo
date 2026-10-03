@@ -241,13 +241,13 @@ export default function NewTransactionPage() {
                   onClick={() => setCategoryId(category.id)}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                     categoryId === category.id
-                      ? "border-[#3b82f6] bg-[#eff6ff] text-[#1f2937]"
+                      ? "border-[#3b82f6] bg-[#eff6ff]"
                       : "border-[#e5e7eb] bg-white text-[#6b7280]"
                   }`}
                   style={
                     categoryId === category.id
-                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#9ca3af"}20` }
-                      : { borderColor: `${category.color ?? "#9ca3af"}66` }
+                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#9ca3af"}20`, color: category.color }
+                      : { borderColor: `${category.color ?? "#9ca3af"}66`, color: category.color }
                   }
                 >
                   {category.name}
