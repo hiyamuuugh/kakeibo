@@ -27,8 +27,8 @@ export const renderPwaIcon = (size: number) =>
             background: "#ffffff",
           }}
         >
-          <div style={{ position: "absolute", left: "-17%", top: "23%", height: "28%", width: "20%", border: "14px solid #111111", borderRight: 0, borderRadius: "60% 0 0 60%" }} />
-          <div style={{ position: "absolute", right: "-17%", top: "28%", height: "26%", width: "20%", border: "14px solid #111111", borderLeft: 0, borderRadius: "0 60% 60% 0" }} />
+          <div style={{ position: "absolute", left: "-17%", top: "23%", height: "28%", width: "20%", border: "14px solid #111111", borderRight: "0px", borderRadius: "60% 0 0 60%" }} />
+          <div style={{ position: "absolute", right: "-17%", top: "28%", height: "26%", width: "20%", border: "14px solid #111111", borderLeft: "0px", borderRadius: "0 60% 60% 0" }} />
           <div style={{ position: "absolute", left: "13%", top: "-30%", height: "34%", width: "25%", transform: "rotate(-28deg)", border: "16px solid #111111", borderRadius: "80% 20% 20% 20%", background: "#ffffff" }} />
           <div style={{ position: "absolute", right: "13%", top: "-30%", height: "34%", width: "25%", transform: "rotate(28deg)", border: "16px solid #111111", borderRadius: "20% 80% 20% 20%", background: "#ffffff" }} />
           <div style={{ position: "absolute", top: "12%", height: "10%", width: "28%", borderRadius: 12, background: "#111111" }} />
