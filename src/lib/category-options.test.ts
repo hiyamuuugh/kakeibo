@@ -3,6 +3,7 @@ import { getCategoriesByKind, getChartCategoryNames } from "@/lib/category-optio
 
 const categories = [
   { id: "daily", name: "日用品", type: "expense" },
+  { id: "child", name: "子ども", type: "expense" },
   { id: "income-other", name: "その他", type: "income" },
   { id: "food", name: "食費", type: "expense" },
   { id: "salary", name: "給料", type: "income" },
@@ -26,6 +27,7 @@ describe("getCategoriesByKind", () => {
     expect(getCategoriesByKind(categories, "expense").map((category) => category.name)).toEqual([
       "食費",
       "日用品",
+      "子ども",
       "その他",
       "未分類",
     ]);
