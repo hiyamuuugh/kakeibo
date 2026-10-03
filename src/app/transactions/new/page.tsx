@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Camera, Save } from "lucide-react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -123,11 +123,6 @@ export default function NewTransactionPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-3">
-      <div>
-        <p className="text-xs font-semibold text-[#6b7280]">データ追加</p>
-        <h1 className="text-xl font-bold text-[#1f2937]">直接入力</h1>
-      </div>
-
       <Button
         type="button"
         variant="outline"
@@ -255,8 +250,7 @@ export default function NewTransactionPage() {
             )}
           </div>
 
-          <Button className="h-12 w-full gap-2" onClick={handleSave} disabled={saving}>
-            <Save className="h-5 w-5" />
+          <Button className="h-12 w-full" onClick={handleSave} disabled={saving}>
             {saving ? "保存中..." : "保存"}
           </Button>
         </CardContent>

@@ -209,6 +209,7 @@ export default function Dashboard() {
   const [selectedCatName, setSelectedCatName] = useState<string | null>(null);
   const [selectedPieName, setSelectedPieName] = useState<string | null>(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
   const loadedRef = useRef(false);
   const loadedMonthRef = useRef(month);
   const chartScrollRef = useRef<HTMLDivElement>(null);
@@ -519,24 +520,44 @@ export default function Dashboard() {
                     >
                       ‹
                     </button>
-                    <select
-                      value={selectedYear ?? "recent"}
-                      onChange={(event) =>
-                        setSelectedYear(
-                          event.target.value === "recent" ? null : Number(event.target.value)
-                        )
-                      }
-                      className="min-w-24 bg-transparent text-center text-[15px] font-bold text-[#3b82f6] outline-none"
-                    >
-                      <option value="recent">過去12ヶ月</option>
-                      {Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index).map(
-                        (year) => (
-                          <option key={year} value={year}>
-                            {year}年
-                          </option>
-                        )
-                      )}
-                    </select>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowYearPicker((value) => !value)}
+                        className="min-w-24 bg-transparent text-center text-[15px] font-bold text-[#3b82f6] outline-none"
+                      >
+                        {selectedYear === null ? "過去12ヶ月" : `${selectedYear}年`}
+                      </button>
+                      {showYearPicker ? (
+                        <div className="absolute left-1/2 top-8 z-50 w-36 -translate-x-1/2 rounded-[10px] border border-[#e5e7eb] bg-white p-2 text-sm shadow-lg">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedYear(null);
+                              setShowYearPicker(false);
+                            }}
+                            className="w-full rounded-lg px-3 py-2 text-left font-semibold text-[#3b82f6] hover:bg-[#eff6ff]"
+                          >
+                            過去12ヶ月
+                          </button>
+                          {Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index).map(
+                            (year) => (
+                              <button
+                                key={year}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedYear(year);
+                                  setShowYearPicker(false);
+                                }}
+                                className="w-full rounded-lg px-3 py-2 text-left font-semibold text-[#374151] hover:bg-[#f9fafb]"
+                              >
+                                {year}年
+                              </button>
+                            )
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
                     <button
                       type="button"
                       onClick={() =>

@@ -37,6 +37,8 @@ export default function SettingsPage() {
   const [memberColor, setMemberColor] = useState("#3b82f6");
   const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
   const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
+  const [accountOpen, setAccountOpen] = useState(true);
+  const [mappingOpen, setMappingOpen] = useState(true);
   const [merchant, setMerchant] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -66,10 +68,13 @@ export default function SettingsPage() {
       current.rules.push(rule);
       groups.set(rule.category.name, current);
     }
-    return Array.from(groups.values()).sort((a, b) =>
-      a.category.name.localeCompare(b.category.name, "ja")
-    );
-  }, [visibleRules]);
+    const order = new Map(visibleCategories.map((category, index) => [category.name, index]));
+    return Array.from(groups.values()).sort((a, b) => {
+      const byOrder = (order.get(a.category.name) ?? 999) - (order.get(b.category.name) ?? 999);
+      if (byOrder !== 0) return byOrder;
+      return a.category.name.localeCompare(b.category.name, "ja");
+    });
+  }, [visibleCategories, visibleRules]);
 
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
 
@@ -225,15 +230,24 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-xl space-y-3">
       <div>
-        <p className="text-xs font-semibold text-[#6b7280]">設定</p>
         <h1 className="text-xl font-bold text-[#1f2937]">設定</h1>
       </div>
 
       <Card>
-        <CardHeader>
+        <button
+          type="button"
+          onClick={() => setAccountOpen((value) => !value)}
+          className="flex w-full items-center justify-between p-4 text-left"
+        >
           <CardTitle className="text-sm font-semibold">アカウント</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          {accountOpen ? (
+            <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+          )}
+        </button>
+        {accountOpen ? (
+        <CardContent className="space-y-4 border-t border-[#f3f4f6]">
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : members.length === 0 ? (
@@ -282,8 +296,24 @@ export default function SettingsPage() {
             </>
           )}
         </CardContent>
+        ) : null}
       </Card>
 
+      <Card>
+        <button
+          type="button"
+          onClick={() => setMappingOpen((value) => !value)}
+          className="flex w-full items-center justify-between p-4 text-left"
+        >
+          <CardTitle className="text-sm font-semibold">カテゴリマッピング</CardTitle>
+          {mappingOpen ? (
+            <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+          )}
+        </button>
+        {mappingOpen ? (
+        <CardContent className="space-y-4 border-t border-[#f3f4f6]">
       <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e5e7eb] p-1">
         {(["expense", "income"] as const).map((value) => (
           <button
@@ -306,11 +336,11 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="border-[#f3f4f6] shadow-none">
+        <CardHeader className="px-0">
           <CardTitle className="text-sm font-semibold">ルール追加</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-0">
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : (
@@ -318,7 +348,7 @@ export default function SettingsPage() {
           <input
             value={merchant}
             onChange={(event) => setMerchant(event.target.value)}
-            placeholder="例: リライアブルパートナーズ"
+            placeholder="例: コープ"
             className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
           />
           <div className="flex flex-wrap gap-2">
@@ -460,6 +490,9 @@ export default function SettingsPage() {
           })
         )}
       </div>
+        </CardContent>
+        ) : null}
+      </Card>
     </div>
   );
 }

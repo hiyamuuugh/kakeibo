@@ -11,6 +11,7 @@ export type CategoryKind = "expense" | "income";
 export const EXPENSE_CATEGORY_ORDER = [
   "食費",
   "日用品",
+  "子ども",
   "交通費",
   "娯楽",
   "医療",

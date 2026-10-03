@@ -107,7 +107,6 @@ export default function ImportPage() {
   return (
     <div className="mx-auto max-w-xl space-y-3">
       <div>
-        <p className="text-xs font-semibold text-[#6b7280]">データ追加</p>
         <h1 className="text-xl font-bold text-[#1f2937]">CSV取込</h1>
       </div>
 
