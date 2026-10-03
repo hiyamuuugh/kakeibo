@@ -334,7 +334,7 @@ export default function SettingsPage() {
               <input
                 value={exclusionName}
                 onChange={(event) => setExclusionName(event.target.value)}
-                placeholder="スキップするワード（例: 楽天証券）"
+                placeholder="例: 楽天証券"
                 className="h-10 min-w-0 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
               />
               <Button type="button" className="h-10 shrink-0" onClick={() => void handleAddExclusion()}>
@@ -441,7 +441,7 @@ export default function SettingsPage() {
             placeholder="例: コープ"
             className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
           />
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {visibleCategories.map((category) => (
               <button
                 key={category.id}

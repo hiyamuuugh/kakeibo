@@ -412,6 +412,9 @@ export default function TransactionsPage() {
     if (sortOrder === "expensive") return Math.abs(b.amount) - Math.abs(a.amount);
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
+  const allTransactionsSelected =
+    sortedTransactions.length > 0 &&
+    sortedTransactions.every((transaction) => selectedTransactionIds.has(transaction.id));
   const total = displayedTransactions.reduce((sum, transaction) => sum - transaction.amount, 0);
   const expenseCategories = getCategoriesByKind(categories, "expense");
   const incomeCategories = getCategoriesByKind(categories, "income");
@@ -456,6 +459,7 @@ export default function TransactionsPage() {
     source: "text-[#1f2937]",
     category: "text-[#1f2937]",
   };
+  const selectedFilterCategory = categories.find((category) => category.id === filterCat);
 
   const categoryPicker = (
     <div className={filterShellClass}>
@@ -463,6 +467,12 @@ export default function TransactionsPage() {
       <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
         <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
           <span data-slot="select-value" className="flex flex-1 text-left">
+            <span className="mr-2 flex shrink-0 items-center gap-1">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: selectedFilterCategory?.color ?? "#9ca3af" }}
+              />
+            </span>
             {getFilterLabel(filterCat, categories, filterType)}
           </span>
         </SelectTrigger>
@@ -578,7 +588,17 @@ export default function TransactionsPage() {
             <Select value={filterType} onValueChange={(value) => handleFilterTypeChange(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
-                  {filterType === "all" ? "すべて" : filterType === "expense" ? "支出" : "収入"}
+                  <span className="flex items-center gap-2">
+                    {filterType === "all" ? (
+                      <span className="flex items-center gap-0.5">
+                        <span className="h-2 w-2 rounded-full bg-[#dc2626]" />
+                        <span className="h-2 w-2 rounded-full bg-[#16a34a]" />
+                      </span>
+                    ) : (
+                      <span className={`h-2 w-2 rounded-full ${filterType === "expense" ? "bg-[#dc2626]" : "bg-[#16a34a]"}`} />
+                    )}
+                    {filterType === "all" ? "すべて" : filterType === "expense" ? "支出" : "収入"}
+                  </span>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -593,7 +613,10 @@ export default function TransactionsPage() {
             <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
-                  {filterSource === "all" ? "すべて" : SOURCE_LABELS[filterSource] ?? filterSource}
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: filterSource === "all" ? "#9ca3af" : SOURCE_COLORS[filterSource] ?? "#64748b" }} />
+                    {filterSource === "all" ? "すべて" : SOURCE_LABELS[filterSource] ?? filterSource}
+                  </span>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -621,16 +644,27 @@ export default function TransactionsPage() {
             >
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
-                  {filterMember === "all"
-                    ? "すべて"
-                    : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: members.find((member) => member.id === filterMember)?.color ?? "#9ca3af" }}
+                    />
+                    {filterMember === "all"
+                      ? "すべて"
+                      : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
+                  </span>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">すべて</SelectItem>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#9ca3af]" />すべて</span>
+                </SelectItem>
                 {members.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
-                    {member.name}
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: member.color }} />
+                      {member.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -641,7 +675,7 @@ export default function TransactionsPage() {
               {selectionMode ? (
                 <>
                   <Button type="button" variant="outline" size="sm" className="h-9 border-[#2563eb] bg-white px-2 font-normal text-[#2563eb] hover:bg-[#eff6ff]" onClick={toggleSelectAll}>
-                    一括選択
+                    {allTransactionsSelected ? "一括解除" : "一括選択"}
                   </Button>
                   <Button
                     type="button"
@@ -692,7 +726,7 @@ export default function TransactionsPage() {
                   <input
                     type="checkbox"
                     aria-label="すべて選択"
-                    checked={sortedTransactions.length > 0 && sortedTransactions.every((transaction) => selectedTransactionIds.has(transaction.id))}
+                    checked={allTransactionsSelected}
                     onChange={toggleSelectAll}
                   />
                 ) : null}
@@ -859,7 +893,7 @@ export default function TransactionsPage() {
                     </Badge>
                   ) : null}
                 </div>
-                <div className="ml-1 w-28 shrink-0">
+                <div className="ml-1 w-[6.5rem] shrink-0">
                   <CategorySelect
                     categories={categories}
                     transaction={transaction}
@@ -970,7 +1004,7 @@ function CategorySelect({
       value={transaction.categoryId ?? "none"}
       onValueChange={(value) => onChange(transaction.id, value ?? "none")}
     >
-      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-28">
+      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-[6.5rem]">
         <SelectValue>
           {transaction.category ? (
             <span className="flex items-center gap-2">
