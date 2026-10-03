@@ -63,6 +63,16 @@ const SOURCE_LABELS: Record<string, string> = {
   credit: "クレカ",
 };
 
+const SOURCE_SEARCH_ALIASES: Record<string, string[]> = {
+  paypay: ["ペイペイ"],
+  paypay_card: ["ペイペイカード", "paypaycard"],
+  rakuten: ["楽天", "ラクテン"],
+  mufg: ["三菱UFJ", "ミツビシユーエフジェイ"],
+  smbc: ["三井住友", "ミツイスミトモ"],
+  manual: ["手入力", "テニュウリョク"],
+  credit: ["クレジットカード"],
+};
+
 const SOURCE_ORDER = ["paypay", "rakuten", "paypay_card", "mufg", "smbc", "manual"];
 
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
@@ -89,6 +99,28 @@ const getTransactionAmountColor = (amount: number) =>
 
 const formatTransactionAmount = (amount: number) =>
   `${amount < 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
+
+const toKatakana = (value: string) =>
+  value.replace(/[ぁ-ん]/g, (char) =>
+    String.fromCharCode(char.charCodeAt(0) + 0x60)
+  );
+
+const normalizeSearchText = (value: string) =>
+  toKatakana(value)
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[\s　・ーｰ\-_/.,()[\]（）]/g, "");
+
+const getSearchValues = (transaction: Transaction) => [
+  transaction.description,
+  transaction.store,
+  transaction.memo,
+  transaction.member?.name,
+  transaction.category?.name,
+  SOURCE_LABELS[transaction.source] ?? transaction.source,
+  transaction.source,
+  ...(SOURCE_SEARCH_ALIASES[transaction.source] ?? []),
+];
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -235,7 +267,7 @@ export default function TransactionsPage() {
   };
 
   const displayedTransactions = transactions.filter((transaction) => {
-    const searchText = keyword.trim().toLowerCase();
+    const searchText = normalizeSearchText(keyword.trim());
 
     if (filterType === "expense" && transaction.amount < 0) return false;
     if (filterType === "income" && transaction.amount >= 0) return false;
@@ -252,16 +284,9 @@ export default function TransactionsPage() {
     }
     if (
       searchText &&
-      ![
-        transaction.description,
-        transaction.store,
-        transaction.memo,
-        transaction.member?.name,
-        transaction.category?.name,
-        SOURCE_LABELS[transaction.source] ?? transaction.source,
-      ]
+      !getSearchValues(transaction)
         .filter((value): value is string => Boolean(value))
-        .some((value) => value.toLowerCase().includes(searchText))
+        .some((value) => normalizeSearchText(value).includes(searchText))
     ) {
       return false;
     }
@@ -317,33 +342,35 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-3">
       <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[32px,1fr,32px] items-center gap-2">
           <button
             type="button"
             onClick={goToPrevMonth}
-            className="shrink-0 px-1 text-lg font-light text-[#3b82f6]"
+            className="justify-self-start px-1 text-lg font-light text-[#3b82f6]"
           >
             ‹
           </button>
-          <label className="relative shrink-0 cursor-pointer text-sm font-bold text-[#1f2937]">
-            <span>{monthLabel}</span>
-            <input
-              type="month"
-              value={month}
-              onChange={(event) => handleMonthChange(event.target.value)}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            />
-          </label>
+          <div className="min-w-0 text-center">
+            <label className="relative inline-block cursor-pointer text-sm font-bold text-[#1f2937]">
+              <span>{monthLabel}</span>
+              <input
+                type="month"
+                value={month}
+                onChange={(event) => handleMonthChange(event.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
+            <p className={`text-lg font-extrabold leading-tight ${getTotalColor(total)}`}>
+              {formatSignedYen(total)}
+            </p>
+          </div>
           <button
             type="button"
             onClick={goToNextMonth}
-            className="shrink-0 px-1 text-lg font-light text-[#3b82f6]"
+            className="justify-self-end px-1 text-lg font-light text-[#3b82f6]"
           >
             ›
           </button>
-          <p className={`ml-auto shrink-0 text-lg font-extrabold ${getTotalColor(total)}`}>
-            {formatSignedYen(total)}
-          </p>
         </div>
         <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
           <button

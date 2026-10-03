@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (memberId && memberId !== "all") {
-    where.OR = [{ memberId }, { memberId: null }];
+    where.memberId = memberId;
   }
   // 家族全員取得時も非公開データを返す（合計に算入するため）。
   // リスト表示での非表示はクライアント側で行う。
