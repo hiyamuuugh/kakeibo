@@ -169,19 +169,19 @@ export default function NewTransactionPage() {
       <Card>
         <CardContent className="space-y-2.5 pt-3">
           <div
-            className={`rounded-[12px] border-2 bg-white p-3 ${
+            className={`rounded-[12px] border-2 bg-white p-2 ${
               kind === "expense" ? "border-[#fee2e2]" : "border-[#dcfce7]"
             }`}
           >
-            <label className="text-xs font-semibold text-[#6b7280]">金額</label>
+            <label className="text-[11px] font-semibold text-[#6b7280]">金額</label>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-2xl font-bold text-[#9ca3af]">¥</span>
+              <span className="text-xl font-bold text-[#9ca3af]">¥</span>
               <input
                 inputMode="numeric"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="0"
-                className="min-w-0 flex-1 bg-transparent text-3xl font-extrabold text-[#1f2937] outline-none"
+                className="min-w-0 flex-1 bg-transparent text-2xl font-extrabold text-[#1f2937] outline-none"
               />
             </div>
           </div>
@@ -232,7 +232,6 @@ export default function NewTransactionPage() {
                     : "border-[#e5e7eb] bg-white text-[#6b7280]"
                 }`}
               >
-                <span className="h-2 w-2 rounded-full bg-[#9ca3af]" />
                 未分類
               </button>
               {inputCategories.map((category) => (
@@ -251,7 +250,6 @@ export default function NewTransactionPage() {
                       : { borderColor: `${category.color ?? "#9ca3af"}66` }
                   }
                 >
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color ?? "#9ca3af" }} />
                   {category.name}
                 </button>
               ))}

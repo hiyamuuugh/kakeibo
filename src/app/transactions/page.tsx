@@ -82,6 +82,15 @@ const getSourceStyle = (source: string) => {
   };
 };
 
+const getMemberStyle = (member: Member | null) => {
+  const color = member?.color ?? "#64748b";
+  return {
+    color,
+    backgroundColor: `${color}18`,
+    borderColor: `${color}55`,
+  };
+};
+
 const SOURCE_SEARCH_ALIASES: Record<string, string[]> = {
   paypay: ["ペイペイ"],
   paypay_card: ["ペイペイカード", "paypaycard"],
@@ -404,12 +413,12 @@ export default function TransactionsPage() {
           <button
             type="button"
             onClick={goToPrevMonth}
-            className="flex h-10 w-8 items-center justify-center justify-self-start text-3xl font-light leading-none text-[#3b82f6]"
+            className="flex h-10 w-10 items-center justify-center justify-self-start text-xl font-light leading-none text-[#3b82f6]"
           >
-            ‹
+            〈
           </button>
           <div className="min-w-0 text-center">
-            <label className="relative inline-block cursor-pointer text-sm font-bold text-[#1f2937]">
+            <label className="relative inline-block cursor-pointer text-base font-bold text-[#1f2937]">
               <span>{monthLabel}</span>
               <input
                 type="month"
@@ -425,9 +434,9 @@ export default function TransactionsPage() {
           <button
             type="button"
             onClick={goToNextMonth}
-            className="flex h-10 w-8 items-center justify-center justify-self-end text-3xl font-light leading-none text-[#3b82f6]"
+            className="flex h-10 w-10 items-center justify-center justify-self-end text-xl font-light leading-none text-[#3b82f6]"
           >
-            ›
+            〉
           </button>
         </div>
         <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
@@ -559,7 +568,12 @@ export default function TransactionsPage() {
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
                   <TableCell className="py-2">
-                    <div className="text-sm font-medium">{transaction.description}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-medium">{transaction.description}</div>
+                      {transaction.memo ? (
+                        <span className="max-w-40 truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
+                      ) : null}
+                    </div>
                     {transaction.store ? <div className="text-xs text-[#9ca3af]">{transaction.store}</div> : null}
                   </TableCell>
                   <TableCell className="py-2">
@@ -568,13 +582,9 @@ export default function TransactionsPage() {
                         {SOURCE_LABELS[transaction.source] ?? transaction.source}
                       </Badge>
                       {viewMode === "family" ? (
-                        <span className="flex max-w-24 items-center gap-1 truncate text-xs text-[#6b7280]">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: transaction.member?.color ?? "#9ca3af" }}
-                          />
+                        <Badge variant="secondary" style={getMemberStyle(transaction.member)}>
                           {transaction.member?.name ?? "未設定"}
-                        </span>
+                        </Badge>
                       ) : null}
                     </div>
                   </TableCell>
@@ -647,10 +657,13 @@ export default function TransactionsPage() {
               className="space-y-1.5 rounded-[10px] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">
+                <div className="flex min-w-0 items-center gap-2">
+                  <p className="truncate text-sm font-semibold text-slate-900">
                     {transaction.description}
                   </p>
+                  {transaction.memo ? (
+                    <span className="max-w-32 truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
+                  ) : null}
                 </div>
                 <p className={`shrink-0 text-base font-bold ${getTransactionAmountColor(transaction.amount)}`}>
                   {formatTransactionAmount(transaction.amount)}
@@ -660,18 +673,13 @@ export default function TransactionsPage() {
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <div className="flex shrink-0 flex-col items-start leading-tight">
                   <span>{format(new Date(transaction.date), "M/d(E)", { locale: ja })}</span>
-                  {transaction.memo ? <span className="max-w-16 truncate text-[10px] text-[#9ca3af]">{transaction.memo}</span> : null}
                 </div>
                 <div className="flex min-w-0 flex-1 items-center gap-1">
                   <Badge variant="secondary" style={getSourceStyle(transaction.source)}>{SOURCE_LABELS[transaction.source] ?? transaction.source}</Badge>
                   {viewMode === "family" ? (
-                    <span className="flex max-w-20 items-center gap-1 truncate text-[10px] text-[#6b7280]">
-                      <span
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: transaction.member?.color ?? "#9ca3af" }}
-                      />
+                    <Badge variant="secondary" style={getMemberStyle(transaction.member)}>
                       {transaction.member?.name ?? "未設定"}
-                    </span>
+                    </Badge>
                   ) : null}
                 </div>
                 <div className="w-28 shrink-0">
@@ -715,16 +723,9 @@ export default function TransactionsPage() {
                 </Button>
               </div>
 
-              {[transaction.store, viewMode === "family" ? transaction.member?.name ?? "未設定" : null]
-                .filter(Boolean).length > 0 ? (
+              {transaction.store ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                  {transaction.store || viewMode === "family" ? (
-                    <span className="truncate text-xs text-[#9ca3af]">
-                      {[transaction.store, viewMode === "family" ? transaction.member?.name ?? "未設定" : null]
-                        .filter(Boolean)
-                        .join(" / ")}
-                    </span>
-                  ) : null}
+                  <span className="truncate text-xs text-[#9ca3af]">{transaction.store}</span>
                 </div>
               ) : null}
             </div>
