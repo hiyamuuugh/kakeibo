@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { format } from "date-fns";
+import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -156,6 +156,9 @@ export default function TransactionsPage() {
     setMonth(value);
   };
 
+  const goToPrevMonth = () => handleMonthChange(format(subMonths(new Date(`${month}-01`), 1), "yyyy-MM"));
+  const goToNextMonth = () => handleMonthChange(format(addMonths(new Date(`${month}-01`), 1), "yyyy-MM"));
+
   const handleFilterChange = (value: string) => {
     setLoading(true);
     setFilterCat(value);
@@ -302,7 +305,14 @@ export default function TransactionsPage() {
       <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="flex items-center gap-2">
           <h1 className="shrink-0 text-xl font-bold text-[#1f2937]">取引一覧</h1>
-          <label className="relative shrink-0 cursor-pointer text-sm font-bold text-[#3b82f6]">
+          <button
+            type="button"
+            onClick={goToPrevMonth}
+            className="shrink-0 px-1 text-lg font-light text-[#3b82f6]"
+          >
+            ‹
+          </button>
+          <label className="relative shrink-0 cursor-pointer text-sm font-bold text-[#1f2937]">
             <span>{monthLabel}</span>
             <input
               type="month"
@@ -311,6 +321,13 @@ export default function TransactionsPage() {
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
           </label>
+          <button
+            type="button"
+            onClick={goToNextMonth}
+            className="shrink-0 px-1 text-lg font-light text-[#3b82f6]"
+          >
+            ›
+          </button>
           <p className={`ml-auto shrink-0 text-lg font-extrabold ${getTotalColor(total)}`}>
             {formatSignedYen(total)}
           </p>
