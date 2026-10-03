@@ -27,6 +27,11 @@ const defaultCategories = [
   { name: "未分類", type: "income",  color: "#9ca3af", icon: "circle-help" },
 ];
 
+const defaultMembers = [
+  { name: "奏空", color: "#3b82f6", emoji: "🙂" },
+  { name: "日向", color: "#f97316", emoji: "🙂" },
+];
+
 async function main() {
   for (const cat of defaultCategories) {
     await prisma.category.upsert({
@@ -35,7 +40,14 @@ async function main() {
       create: cat,
     });
   }
-  console.log("Seeded default categories.");
+  for (const member of defaultMembers) {
+    await prisma.member.upsert({
+      where: { name: member.name },
+      update: {},
+      create: member,
+    });
+  }
+  console.log("Seeded default categories and members.");
 }
 
 main()
