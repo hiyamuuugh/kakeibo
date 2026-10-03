@@ -1,13 +1,13 @@
-export const formatShortYen = (amount: number) => {
+export const formatShortAmount = (amount: number) => {
   const rounded = Math.round(Math.abs(amount));
 
-  if (rounded === 0) return "¥0";
+  if (rounded === 0) return "0";
   if (rounded >= 10000) {
     const man = Math.round(rounded / 1000) / 10;
-    return `¥${man.toLocaleString("ja-JP")}万`;
+    return `${man.toLocaleString("ja-JP")}万`;
   }
 
-  return `¥${rounded.toLocaleString("ja-JP")}`;
+  return rounded.toLocaleString("ja-JP");
 };
 
 export const getSharePercent = (amount: number, total: number) => {
