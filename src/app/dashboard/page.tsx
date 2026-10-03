@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
-import { AlertCircle, CheckCircle2, ChevronDown, Info, TrendingUp } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Info } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -759,11 +759,6 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-
-          <div className="order-3 flex items-center justify-center gap-2 pb-2 pt-1 text-xs font-semibold text-[#9ca3af]">
-            <TrendingUp className="h-3.5 w-3.5" />
-            {stats?.count ?? 0}件の取引
-          </div>
 
           {report && reportStyle && ReportIcon ? (
             <div
