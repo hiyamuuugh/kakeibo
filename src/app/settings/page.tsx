@@ -331,7 +331,7 @@ export default function SettingsPage() {
         </button>
         {exclusionOpen ? (
           <CardContent className="space-y-3 border-t border-[#f3f4f6]">
-            <div className="flex gap-2">
+            <div className="mt-2 flex gap-2">
               <input
                 value={exclusionName}
                 onChange={(event) => setExclusionName(event.target.value)}
