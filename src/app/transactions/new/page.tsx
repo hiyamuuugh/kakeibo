@@ -210,11 +210,11 @@ export default function NewTransactionPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#6b7280]">店名</label>
+              <label className="text-xs font-semibold text-[#6b7280]">店名(任意)</label>
               <input
                 value={store}
                 onChange={(event) => setStore(event.target.value)}
-                placeholder="任意"
+                placeholder="例: セブンイレブン"
                 className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
               />
             </div>
