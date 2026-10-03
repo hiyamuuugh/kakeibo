@@ -630,39 +630,50 @@ export default function TransactionsPage() {
             </Select>
           </div>
           ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 w-fit justify-self-end border-[#2563eb] bg-white px-3 font-normal text-[#2563eb] hover:bg-[#eff6ff]"
-              onClick={() => {
-                setSelectionMode((current) => !current);
-                if (selectionMode) setSelectedTransactionIds(new Set());
-              }}
-            >
-              {selectionMode ? "解除" : "複数選択"}
-            </Button>
+            <div className="flex items-center justify-self-end gap-1">
+              {selectionMode ? (
+                <>
+                  <Button type="button" variant="outline" size="sm" className="h-9 border-[#2563eb] bg-white px-2 font-normal text-[#2563eb] hover:bg-[#eff6ff]" onClick={toggleSelectAll}>
+                    一括選択
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 border-[#dc2626] bg-white px-2 font-normal text-[#dc2626] hover:bg-[#fef2f2]"
+                    disabled={selectedTransactionIds.size === 0}
+                    onClick={() => void deleteSelectedTransactions()}
+                  >
+                    削除
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 border-[#9ca3af] bg-white px-2 font-normal text-[#374151] hover:bg-[#f9fafb]"
+                    aria-label="複数削除を終了"
+                    onClick={() => {
+                      setSelectionMode(false);
+                      setSelectedTransactionIds(new Set());
+                    }}
+                  >
+                    ↩︎
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-fit border-[#2563eb] bg-white px-3 font-normal text-[#2563eb] hover:bg-[#eff6ff]"
+                  onClick={() => setSelectionMode(true)}
+                >
+                  複数削除
+                </Button>
+              )}
+            </div>
           )}
         </div>
-        {viewMode === "personal" && selectionMode ? (
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" className="h-8 bg-white" onClick={toggleSelectAll}>
-              {sortedTransactions.length > 0 && sortedTransactions.every((transaction) => selectedTransactionIds.has(transaction.id))
-                ? "一括解除"
-                : "一括選択"}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              className="h-8"
-              disabled={selectedTransactionIds.size === 0}
-              onClick={() => void deleteSelectedTransactions()}
-            >
-              削除
-            </Button>
-          </div>
-        ) : null}
       </div>
 
       <div className="hidden overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.05)] md:block">
@@ -841,7 +852,7 @@ export default function TransactionsPage() {
                     </Badge>
                   ) : null}
                 </div>
-                <div className="ml-1 w-24 shrink-0">
+                <div className="ml-1 w-28 shrink-0">
                   <CategorySelect
                     categories={categories}
                     transaction={transaction}
@@ -952,7 +963,7 @@ function CategorySelect({
       value={transaction.categoryId ?? "none"}
       onValueChange={(value) => onChange(transaction.id, value ?? "none")}
     >
-      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-24">
+      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-28">
         <SelectValue>
           {transaction.category ? (
             <span className="flex items-center gap-2">

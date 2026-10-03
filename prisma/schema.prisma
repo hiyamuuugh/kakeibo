@@ -59,6 +59,12 @@ model MerchantRule {
   createdAt  DateTime @default(now())
 }
 
+model ImportExclusion {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model Budget {
   id         String   @id @default(cuid())
   month      String
