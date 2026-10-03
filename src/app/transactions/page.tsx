@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,8 @@ interface Member {
   name: string;
   color: string;
 }
+
+type SortOrder = "newest" | "oldest" | "cheapest" | "expensive";
 
 const SOURCE_LABELS: Record<string, string> = {
   paypay: "PayPay",
@@ -164,6 +166,8 @@ export default function TransactionsPage() {
   const [filterMember, setFilterMember] = useState("all");
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
 
   const loadTransactions = useCallback(() => {
     if (!membersReady || (viewMode === "personal" && !selectedMemberId)) return;
@@ -212,6 +216,7 @@ export default function TransactionsPage() {
 
   const handleMonthChange = (value: string) => {
     setLoading(true);
+    setSelectedTransactionIds(new Set());
     setMonth(value);
   };
 
@@ -220,6 +225,7 @@ export default function TransactionsPage() {
 
   const handleFilterChange = (value: string) => {
     setLoading(true);
+    setSelectedTransactionIds(new Set());
     setFilterCat(value);
   };
 
@@ -230,7 +236,43 @@ export default function TransactionsPage() {
   const handleViewModeChange = (mode: "personal" | "family") => {
     setViewMode(mode);
     setFilterMember("all");
+    setSelectedTransactionIds(new Set());
     setLoading(true);
+  };
+
+  const toggleTransactionSelection = (transactionId: string) => {
+    setSelectedTransactionIds((current) => {
+      const next = new Set(current);
+      if (next.has(transactionId)) next.delete(transactionId);
+      else next.add(transactionId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedTransactionIds((current) => {
+      if (sortedTransactions.length > 0 && sortedTransactions.every((transaction) => current.has(transaction.id))) {
+        return new Set();
+      }
+      return new Set(sortedTransactions.map((transaction) => transaction.id));
+    });
+  };
+
+  const deleteSelectedTransactions = async () => {
+    const ids = [...selectedTransactionIds];
+    if (ids.length === 0 || !confirm(`${ids.length}件の取引を削除しますか？`)) return;
+
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        const response = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+        return { id, ok: response.ok };
+      })
+    );
+    const deletedIds = new Set(results.filter((result) => result.ok).map((result) => result.id));
+    setTransactions((current) => current.filter((transaction) => !deletedIds.has(transaction.id)));
+    setSelectedTransactionIds(new Set());
+    if (deletedIds.size > 0) toast.success(`${deletedIds.size}件削除しました`);
+    if (deletedIds.size < ids.length) toast.error("一部の取引を削除できませんでした");
   };
 
   const updateCategory = async (transactionId: string, categoryId: string) => {
@@ -344,6 +386,12 @@ export default function TransactionsPage() {
     viewMode === "family"
       ? displayedTransactions.filter((transaction) => !transaction.isPrivate)
       : displayedTransactions;
+  const sortedTransactions = [...visibleTransactions].sort((a, b) => {
+    if (sortOrder === "oldest") return new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (sortOrder === "cheapest") return Math.abs(a.amount) - Math.abs(b.amount);
+    if (sortOrder === "expensive") return Math.abs(b.amount) - Math.abs(a.amount);
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
   const total = displayedTransactions.reduce((sum, transaction) => sum - transaction.amount, 0);
   const expenseCategories = getCategoriesByKind(categories, "expense");
   const incomeCategories = getCategoriesByKind(categories, "income");
@@ -409,15 +457,8 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-3">
       <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="grid grid-cols-[40px,1fr,40px] items-center gap-2">
-          <button
-            type="button"
-            onClick={goToPrevMonth}
-            className="flex h-10 w-10 items-center justify-center justify-self-start text-xl font-light leading-none text-[#3b82f6]"
-          >
-            〈
-          </button>
-          <div className="min-w-0 text-center">
+        <div className="relative">
+          <div className="flex h-10 items-center justify-center">
             <label className="relative inline-flex h-10 items-center justify-center cursor-pointer text-xl font-bold text-[#1f2937]">
               <span>{monthLabel}</span>
               <input
@@ -427,17 +468,24 @@ export default function TransactionsPage() {
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
             </label>
-            <p className={`text-lg font-extrabold leading-tight ${getTotalColor(total)}`}>
-              {formatSignedYen(total)}
-            </p>
           </div>
           <button
             type="button"
-            onClick={goToNextMonth}
-            className="flex h-10 w-10 items-center justify-center justify-self-end text-xl font-light leading-none text-[#3b82f6]"
+            onClick={goToPrevMonth}
+            className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center text-[#3b82f6]"
           >
-            〉
+            <ChevronLeft className="h-6 w-6" strokeWidth={1.5} />
           </button>
+          <button
+            type="button"
+            onClick={goToNextMonth}
+            className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-[#3b82f6]"
+          >
+            <ChevronRight className="h-6 w-6" strokeWidth={1.5} />
+          </button>
+          <p className={`text-center text-lg font-extrabold leading-tight ${getTotalColor(total)}`}>
+            {formatSignedYen(total)}
+          </p>
         </div>
         <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
           <button
@@ -459,14 +507,46 @@ export default function TransactionsPage() {
             家族全員
           </button>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
           <input
             type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="キーワード検索"
-            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
           />
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder((value ?? "newest") as SortOrder)}>
+            <SelectTrigger className="h-9 w-28 shrink-0 border-[#e5e7eb] bg-white px-2 text-xs">
+              <SelectValue>
+                {sortOrder === "newest"
+                  ? "新しい順"
+                  : sortOrder === "oldest"
+                    ? "古い順"
+                    : sortOrder === "cheapest"
+                      ? "安い順"
+                      : "高い順"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">新しい順</SelectItem>
+              <SelectItem value="oldest">古い順</SelectItem>
+              <SelectItem value="cheapest">安い順</SelectItem>
+              <SelectItem value="expensive">高い順</SelectItem>
+            </SelectContent>
+          </Select>
+          {viewMode === "personal" ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 shrink-0 gap-1 px-2"
+              disabled={selectedTransactionIds.size === 0}
+              onClick={deleteSelectedTransactions}
+            >
+              <Trash2 className="h-4 w-4" />
+              {selectedTransactionIds.size > 0 ? selectedTransactionIds.size : "削除"}
+            </Button>
+          ) : null}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className={filterShellClass}>
@@ -540,6 +620,16 @@ export default function TransactionsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                {viewMode === "personal" ? (
+                  <input
+                    type="checkbox"
+                    aria-label="すべて選択"
+                    checked={sortedTransactions.length > 0 && sortedTransactions.every((transaction) => selectedTransactionIds.has(transaction.id))}
+                    onChange={toggleSelectAll}
+                  />
+                ) : null}
+              </TableHead>
               <TableHead>日付</TableHead>
               <TableHead>内容</TableHead>
               <TableHead>ソース</TableHead>
@@ -551,19 +641,29 @@ export default function TransactionsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-slate-400">
+                <TableCell colSpan={7} className="py-8 text-center text-slate-400">
                   読み込み中...
                 </TableCell>
               </TableRow>
             ) : visibleTransactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-slate-400">
+                <TableCell colSpan={7} className="py-8 text-center text-slate-400">
                   取引データがありません
                 </TableCell>
               </TableRow>
             ) : (
-              visibleTransactions.map((transaction) => (
+              sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
+                  <TableCell className="w-10 py-2">
+                    {viewMode === "personal" ? (
+                      <input
+                        type="checkbox"
+                        aria-label={`${transaction.description}を選択`}
+                        checked={selectedTransactionIds.has(transaction.id)}
+                        onChange={() => toggleTransactionSelection(transaction.id)}
+                      />
+                    ) : null}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap py-2 text-xs text-[#6b7280]">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
@@ -653,13 +753,21 @@ export default function TransactionsPage() {
             取引データがありません
           </div>
         ) : (
-          visibleTransactions.map((transaction) => (
+          sortedTransactions.map((transaction) => (
             <div
               key={transaction.id}
               className="space-y-1.5 rounded-[10px] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
+                  {viewMode === "personal" ? (
+                    <input
+                      type="checkbox"
+                      aria-label={`${transaction.description}を選択`}
+                      checked={selectedTransactionIds.has(transaction.id)}
+                      onChange={() => toggleTransactionSelection(transaction.id)}
+                    />
+                  ) : null}
                   <p className="truncate text-sm font-semibold text-slate-900">
                     {transaction.description}
                   </p>
