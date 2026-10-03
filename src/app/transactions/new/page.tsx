@@ -241,7 +241,7 @@ export default function NewTransactionPage() {
                   onClick={() => setCategoryId(category.id)}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                     categoryId === category.id
-                      ? "border-[#3b82f6] bg-[#eff6ff] text-[#2563eb]"
+                      ? "border-[#3b82f6] bg-[#eff6ff] text-[#1f2937]"
                       : "border-[#e5e7eb] bg-white text-[#6b7280]"
                   }`}
                   style={

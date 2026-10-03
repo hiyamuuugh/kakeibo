@@ -66,13 +66,13 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const SOURCE_COLORS: Record<string, string> = {
-  paypay: "#ef4444",
-  paypay_card: "#f59e0b",
-  rakuten: "#bf0000",
-  mufg: "#dc2626",
+  paypay: "#e11d48",
+  paypay_card: "#f97316",
+  rakuten: "#8b5cf6",
+  mufg: "#2563eb",
   smbc: "#16a34a",
   manual: "#64748b",
-  credit: "#8b5cf6",
+  credit: "#0f766e",
 };
 
 const getSourceStyle = (source: string) => {
@@ -167,6 +167,7 @@ export default function TransactionsPage() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [selectionMode, setSelectionMode] = useState(false);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
 
   const loadTransactions = useCallback(() => {
@@ -216,6 +217,7 @@ export default function TransactionsPage() {
 
   const handleMonthChange = (value: string) => {
     setLoading(true);
+    setSelectionMode(false);
     setSelectedTransactionIds(new Set());
     setMonth(value);
   };
@@ -225,6 +227,7 @@ export default function TransactionsPage() {
 
   const handleFilterChange = (value: string) => {
     setLoading(true);
+    setSelectionMode(false);
     setSelectedTransactionIds(new Set());
     setFilterCat(value);
   };
@@ -236,6 +239,7 @@ export default function TransactionsPage() {
   const handleViewModeChange = (mode: "personal" | "family") => {
     setViewMode(mode);
     setFilterMember("all");
+    setSelectionMode(false);
     setSelectedTransactionIds(new Set());
     setLoading(true);
   };
@@ -270,6 +274,7 @@ export default function TransactionsPage() {
     );
     const deletedIds = new Set(results.filter((result) => result.ok).map((result) => result.id));
     setTransactions((current) => current.filter((transaction) => !deletedIds.has(transaction.id)));
+    setSelectionMode(false);
     setSelectedTransactionIds(new Set());
     if (deletedIds.size > 0) toast.success(`${deletedIds.size}件削除しました`);
     if (deletedIds.size < ids.length) toast.error("一部の取引を削除できませんでした");
@@ -515,36 +520,42 @@ export default function TransactionsPage() {
             placeholder="キーワード検索"
             className="h-9 min-w-0 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
           />
-          <Select value={sortOrder} onValueChange={(value) => setSortOrder((value ?? "newest") as SortOrder)}>
-            <SelectTrigger className="h-9 w-28 shrink-0 border-[#e5e7eb] bg-white px-2 text-xs">
-              <SelectValue>
-                {sortOrder === "newest"
-                  ? "新しい順"
-                  : sortOrder === "oldest"
-                    ? "古い順"
-                    : sortOrder === "cheapest"
-                      ? "安い順"
-                      : "高い順"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">新しい順</SelectItem>
-              <SelectItem value="oldest">古い順</SelectItem>
-              <SelectItem value="cheapest">安い順</SelectItem>
-              <SelectItem value="expensive">高い順</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex h-9 w-28 shrink-0 items-center rounded-lg border border-[#e5e7eb] bg-white">
+            <span className="px-2 text-sm text-[#6b7280]">⇅</span>
+            <Select value={sortOrder} onValueChange={(value) => setSortOrder((value ?? "newest") as SortOrder)}>
+              <SelectTrigger className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-xs shadow-none focus:ring-0">
+                <SelectValue>
+                  {sortOrder === "newest"
+                    ? "新しい順"
+                    : sortOrder === "oldest"
+                      ? "古い順"
+                      : sortOrder === "cheapest"
+                        ? "安い順"
+                        : "高い順"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">新しい順</SelectItem>
+                <SelectItem value="oldest">古い順</SelectItem>
+                <SelectItem value="cheapest">安い順</SelectItem>
+                <SelectItem value="expensive">高い順</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {viewMode === "personal" ? (
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="h-9 shrink-0 gap-1 px-2"
-              disabled={selectedTransactionIds.size === 0}
-              onClick={deleteSelectedTransactions}
+              disabled={selectionMode && selectedTransactionIds.size === 0}
+              onClick={() => {
+                if (selectionMode) void deleteSelectedTransactions();
+                else setSelectionMode(true);
+              }}
             >
               <Trash2 className="h-4 w-4" />
-              {selectedTransactionIds.size > 0 ? selectedTransactionIds.size : "削除"}
+              {selectionMode ? "削除" : "選択"}
             </Button>
           ) : null}
         </div>
@@ -621,7 +632,7 @@ export default function TransactionsPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
-                {viewMode === "personal" ? (
+                {viewMode === "personal" && selectionMode ? (
                   <input
                     type="checkbox"
                     aria-label="すべて選択"
@@ -655,7 +666,7 @@ export default function TransactionsPage() {
               sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="w-10 py-2">
-                    {viewMode === "personal" ? (
+                    {viewMode === "personal" && selectionMode ? (
                       <input
                         type="checkbox"
                         aria-label={`${transaction.description}を選択`}
@@ -883,10 +894,18 @@ function CategorySelect({
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="none">未分類</SelectItem>
+        <SelectItem value="none">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#9ca3af]" />
+            未分類
+          </span>
+        </SelectItem>
         {selectableCategories.map((category) => (
           <SelectItem key={category.id} value={category.id}>
-            {category.name}
+            <span className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
+              {category.name}
+            </span>
           </SelectItem>
         ))}
       </SelectContent>
