@@ -444,10 +444,15 @@ export default function TransactionsPage() {
     "flex min-w-0 flex-1 items-center rounded-lg border border-[#e5e7eb] bg-white";
   const filterLabelClass =
     "shrink-0 border-r border-[#e5e7eb] px-2.5 text-[11px] font-bold text-[#6b7280]";
+  const filterLabelColors = {
+    balance: "text-[#2563eb]",
+    source: "text-[#c2410c]",
+    category: "text-[#7c3aed]",
+  };
 
   const categoryPicker = (
-    <div className={filterShellClass}>
-      <span className={filterLabelClass}>カテゴリ</span>
+    <div className={`${filterShellClass} border-[#ddd6fe]`}>
+      <span className={`${filterLabelClass} ${filterLabelColors.category}`}>カテゴリ</span>
       <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
         <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
           <span data-slot="select-value" className="flex flex-1 text-left">
@@ -552,8 +557,8 @@ export default function TransactionsPage() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div className={filterShellClass}>
-            <span className={filterLabelClass}>収支</span>
+          <div className={`${filterShellClass} border-[#bfdbfe]`}>
+            <span className={`${filterLabelClass} ${filterLabelColors.balance}`}>収支</span>
             <Select value={filterType} onValueChange={(value) => handleFilterTypeChange(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
@@ -567,8 +572,8 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className={filterShellClass}>
-            <span className={filterLabelClass}>取込元</span>
+          <div className={`${filterShellClass} border-[#fed7aa]`}>
+            <span className={`${filterLabelClass} ${filterLabelColors.source}`}>取込元</span>
             <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>

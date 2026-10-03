@@ -27,6 +27,7 @@ import {
 } from "@/lib/category-options";
 import { formatShortAmount, getSharePercent } from "@/lib/chart-format";
 import { buildMonthlyReport, MonthlyReport } from "@/lib/monthly-report";
+import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface CategoryStat {
   id: string;
@@ -98,13 +99,16 @@ const filterIncomeCategories = (categories: CategoryStat[]) =>
         INCOME_CATEGORY_ORDER.indexOf(a.name) - INCOME_CATEGORY_ORDER.indexOf(b.name)
     );
 
-const fetchMonthly = async (month: string): Promise<MonthlyStats> => {
-  const response = await fetch(`/api/stats/monthly?month=${month}`);
+const fetchMonthly = async (month: string, memberId: string | null): Promise<MonthlyStats> => {
+  const params = new URLSearchParams({ month });
+  if (memberId) params.set("memberId", memberId);
+  const response = await fetch(`/api/stats/monthly?${params.toString()}`);
   return (await response.json()) as MonthlyStats;
 };
 
-const fetchEarliestMonth = async () => {
-  const response = await fetch("/api/stats/range");
+const fetchEarliestMonth = async (memberId: string | null) => {
+  const params = memberId ? `?memberId=${encodeURIComponent(memberId)}` : "";
+  const response = await fetch(`/api/stats/range${params}`);
   const data = (await response.json()) as { earliestMonth: string | null };
   return data.earliestMonth;
 };
@@ -198,6 +202,9 @@ const PieTooltip = ({
 
 export default function Dashboard() {
   const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
+  const [viewMode, setViewMode] = useState<"personal" | "family">("personal");
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [memberReady, setMemberReady] = useState(false);
   const [stats, setStats] = useState<MonthlyStats | null>(null);
   const [monthBars, setMonthBars] = useState<MonthBar[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -215,6 +222,21 @@ export default function Dashboard() {
   const chartScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const loadMember = async () => {
+      const response = await fetch("/api/members");
+      if (response.ok) {
+        const members = (await response.json()) as { id: string }[];
+        const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
+        setSelectedMemberId(members.find((member) => member.id === savedMemberId)?.id ?? members[0]?.id ?? null);
+      }
+      setMemberReady(true);
+    };
+
+    void loadMember();
+  }, []);
+
+  useEffect(() => {
+    if (!memberReady) return;
     let active = true;
 
     const load = async () => {
@@ -224,7 +246,8 @@ export default function Dashboard() {
       }
       setChartLoading(true);
       const now = new Date();
-      const current = await fetchMonthly(month);
+      const memberId = viewMode === "personal" ? selectedMemberId : null;
+      const current = await fetchMonthly(month, memberId);
 
       if (rangeMode === "monthly" && selectedYear !== null) {
         const lastMonth = selectedYear === now.getFullYear() ? now.getMonth() + 1 : 12;
@@ -232,7 +255,7 @@ export default function Dashboard() {
           { length: lastMonth },
           (_, index) => `${selectedYear}-${String(index + 1).padStart(2, "0")}`
         );
-        const results = await Promise.all(months.map(fetchMonthly));
+        const results = await Promise.all(months.map((targetMonth) => fetchMonthly(targetMonth, memberId)));
         if (!active) return;
         setStats(current);
         setMonthBars(
@@ -253,7 +276,7 @@ export default function Dashboard() {
         return;
       }
 
-      const earliestMonth = await fetchEarliestMonth();
+      const earliestMonth = await fetchEarliestMonth(memberId);
       const earliest = earliestMonth ?? format(subMonths(now, 11), "yyyy-MM");
       let cursor = new Date(`${earliest}-01`);
       if (rangeMode === "monthly") {
@@ -267,7 +290,7 @@ export default function Dashboard() {
         cursor = addMonths(cursor, 1);
       }
 
-      const results = await Promise.all(months.map(fetchMonthly));
+      const results = await Promise.all(months.map((targetMonth) => fetchMonthly(targetMonth, memberId)));
       if (!active) return;
 
       setStats(current);
@@ -347,7 +370,7 @@ export default function Dashboard() {
     return () => {
       active = false;
     };
-  }, [month, rangeMode, selectedYear]);
+  }, [memberReady, month, rangeMode, selectedMemberId, selectedYear, viewMode]);
 
   useEffect(() => {
     const shouldScrollRight =
@@ -440,7 +463,28 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {statsLoading || stats === null ? (
+      <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
+        <button
+          type="button"
+          onClick={() => setViewMode("personal")}
+          className={`rounded-md py-1.5 text-xs font-bold ${
+            viewMode === "personal" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+          }`}
+        >
+          自分
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode("family")}
+          className={`rounded-md py-1.5 text-xs font-bold ${
+            viewMode === "family" ? "bg-white text-[#1f2937] shadow-sm" : "text-[#6b7280]"
+          }`}
+        >
+          家族全員
+        </button>
+      </div>
+
+      {!memberReady || statsLoading || stats === null ? (
         <LoadingSpinner className="py-16" />
       ) : (
         <>

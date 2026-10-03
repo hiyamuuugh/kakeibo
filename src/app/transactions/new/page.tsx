@@ -223,17 +223,6 @@ export default function NewTransactionPage() {
               <LoadingSpinner className="py-3" />
             ) : (
             <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => setCategoryId(null)}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
-                  categoryId === null
-                    ? "border-[#3b82f6] bg-[#eff6ff] text-[#2563eb]"
-                    : "border-[#e5e7eb] bg-white text-[#6b7280]"
-                }`}
-              >
-                未分類
-              </button>
               {inputCategories.map((category) => (
                 <button
                   key={category.id}
