@@ -23,7 +23,7 @@ const links = [
 export function Navigation() {
   const pathname = usePathname();
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/select-member") {
     return null;
   }
 

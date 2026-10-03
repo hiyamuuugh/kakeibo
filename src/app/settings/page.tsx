@@ -12,6 +12,7 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
+import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface MerchantRule {
   id: string;
@@ -20,10 +21,20 @@ interface MerchantRule {
   category: CategoryOption;
 }
 
+interface Member {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export default function SettingsPage() {
   const [kind, setKind] = useState<CategoryKind>("expense");
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [rules, setRules] = useState<MerchantRule[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [memberColor, setMemberColor] = useState("#3b82f6");
   const [merchant, setMerchant] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -43,25 +54,82 @@ export default function SettingsPage() {
     [kind, rules]
   );
 
+  const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
+
   const loadData = async () => {
-    const [categoryResponse, ruleResponse] = await Promise.all([
+    const [categoryResponse, ruleResponse, memberResponse] = await Promise.all([
       fetch("/api/categories"),
       fetch("/api/merchant-rules"),
+      fetch("/api/members"),
     ]);
     setCategories((await categoryResponse.json()) as CategoryOption[]);
     setRules((await ruleResponse.json()) as MerchantRule[]);
+    const memberData = (await memberResponse.json()) as Member[];
+    setMembers(memberData);
+    const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
+    const nextMember =
+      memberData.find((member) => member.id === selectedMemberId) ??
+      memberData.find((member) => member.id === savedMemberId) ??
+      memberData[0] ??
+      null;
+    if (nextMember) {
+      setSelectedMemberId(nextMember.id);
+      setMemberName(nextMember.name);
+      setMemberColor(nextMember.color);
+      localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMember.id);
+    }
     setLoading(false);
   };
 
   useEffect(() => {
-    Promise.all([fetch("/api/categories"), fetch("/api/merchant-rules")])
-      .then(async ([categoryResponse, ruleResponse]) => {
+    Promise.all([fetch("/api/categories"), fetch("/api/merchant-rules"), fetch("/api/members")])
+      .then(async ([categoryResponse, ruleResponse, memberResponse]) => {
         setCategories((await categoryResponse.json()) as CategoryOption[]);
         setRules((await ruleResponse.json()) as MerchantRule[]);
+        const memberData = (await memberResponse.json()) as Member[];
+        setMembers(memberData);
+        const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
+        const nextMember =
+          memberData.find((member) => member.id === savedMemberId) ?? memberData[0] ?? null;
+        if (nextMember) {
+          setSelectedMemberId(nextMember.id);
+          setMemberName(nextMember.name);
+          setMemberColor(nextMember.color);
+          localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMember.id);
+        }
       })
       .catch(() => toast.error("設定を読み込めませんでした"))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSelectMember = (member: Member) => {
+    setSelectedMemberId(member.id);
+    setMemberName(member.name);
+    setMemberColor(member.color);
+    localStorage.setItem(SELECTED_MEMBER_ID_KEY, member.id);
+    toast.success("アカウントを切り替えました");
+  };
+
+  const handleSaveMember = async () => {
+    if (!selectedMember || !memberName.trim()) {
+      toast.error("名前を入力してください");
+      return;
+    }
+
+    const response = await fetch(`/api/members/${selectedMember.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: memberName.trim(), color: memberColor }),
+    });
+
+    if (!response.ok) {
+      toast.error("プロフィールを保存できませんでした");
+      return;
+    }
+
+    toast.success("プロフィールを保存しました");
+    await loadData();
+  };
 
   const handleSave = async () => {
     if (!merchant.trim() || !categoryId) {
@@ -125,8 +193,63 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-xl space-y-3">
       <div>
         <p className="text-xs font-semibold text-[#6b7280]">設定</p>
-        <h1 className="text-xl font-bold text-[#1f2937]">カテゴリマッピング</h1>
+        <h1 className="text-xl font-bold text-[#1f2937]">設定</h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">アカウント</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <LoadingSpinner className="py-4" />
+          ) : members.length === 0 ? (
+            <p className="py-4 text-center text-sm text-[#9ca3af]">アカウントがありません</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {members.map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => handleSelectMember(member)}
+                    className={`rounded-lg border px-3 py-2 text-left text-sm font-bold ${
+                      selectedMemberId === member.id
+                        ? "border-[#3b82f6] bg-[#eff6ff] text-[#1d4ed8]"
+                        : "border-[#e5e7eb] bg-white text-[#374151]"
+                    }`}
+                  >
+                    <span
+                      className="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: member.color }}
+                    />
+                    {member.name}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-3 rounded-[10px] bg-[#f9fafb] p-3">
+                <input
+                  value={memberName}
+                  onChange={(event) => setMemberName(event.target.value)}
+                  placeholder="名前"
+                  className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={memberColor}
+                    onChange={(event) => setMemberColor(event.target.value)}
+                    className="h-10 w-12 rounded-lg border border-[#e5e7eb] bg-white p-1"
+                  />
+                  <Button type="button" className="h-10 flex-1" onClick={handleSaveMember}>
+                    保存
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e5e7eb] p-1">
         {(["expense", "income"] as const).map((value) => (

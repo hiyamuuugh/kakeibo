@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, LoaderCircle } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,8 @@ export function LoginForm({ nextPath, setupMode }: LoginFormProps) {
       return;
     }
 
-    router.replace(nextPath);
+    const target = nextPath === "/" ? "/select-member" : `/select-member?next=${encodeURIComponent(nextPath)}`;
+    router.replace(target);
     router.refresh();
   };
 
@@ -93,10 +94,7 @@ export function LoginForm({ nextPath, setupMode }: LoginFormProps) {
               disabled={loading || password.length === 0}
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ログイン中
-                </span>
+                "ログイン中..."
               ) : (
                 "ログイン"
               )}
