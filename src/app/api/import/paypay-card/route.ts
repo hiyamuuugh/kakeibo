@@ -100,6 +100,13 @@ export async function POST(req: NextRequest) {
     const amount = parseAmount(amountStr);
     if (amount === 0) { skipped++; continue; }
 
+    const description = merchant || "PayPayカード";
+    const existing = await prisma.transaction.findFirst({
+      where: { date, amount, description, source: "paypay_card", memberId },
+      select: { id: true },
+    });
+    if (existing) { skipped++; continue; }
+
     const lower = merchant.toLowerCase();
     const ruleCategory = [...ruleMap.entries()].find(([key]) => lower.includes(key))?.[1] ?? null;
 
@@ -107,7 +114,7 @@ export async function POST(req: NextRequest) {
       data: {
         date,
         amount,
-        description: merchant || "PayPayカード",
+        description,
         store: null,
         source: "paypay_card",
         categoryId: ruleCategory,

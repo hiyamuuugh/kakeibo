@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   for (const row of rows) {
     const existing = await prisma.transaction.findFirst({
-      where: { date: row.date, amount: row.amount, description: row.description, source: "mufg" },
+      where: { date: row.date, amount: row.amount, description: row.description, source: "mufg", memberId },
       select: { id: true },
     });
     if (existing) { skipped++; continue; }

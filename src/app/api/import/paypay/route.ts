@@ -130,6 +130,12 @@ export async function POST(req: NextRequest) {
 
     // 収入はマイナス値で保存（UI で isIncome 判定に使用）
     const storedAmount = isIncome ? -amount : amount;
+    const description = merchant || (isIncome ? "PayPay入金" : "PayPay支払い");
+    const existing = await prisma.transaction.findFirst({
+      where: { date, amount: storedAmount, description, source: "paypay", memberId },
+      select: { id: true },
+    });
+    if (existing) { skipped++; continue; }
 
     // ルール優先（部分一致）、なければキーワード推測
     const lower = merchant.toLowerCase();
@@ -141,7 +147,7 @@ export async function POST(req: NextRequest) {
       data: {
         date,
         amount: storedAmount,
-        description: merchant || (isIncome ? "PayPay入金" : "PayPay支払い"),
+        description,
         store: null,
         source: "paypay",
         categoryId,
