@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { decodeBuffer, parseSmbcCsv } from "@/lib/import/smbc";
-import { normalize } from "@/lib/normalize";
+import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -16,8 +16,7 @@ export async function POST(req: NextRequest) {
 
   if (rows.length === 0) return NextResponse.json({ imported: 0, skipped: 0 });
 
-  const merchantRules = await prisma.merchantRule.findMany();
-  const ruleMap = new Map(merchantRules.map((r) => [normalize(r.merchant), r.categoryId]));
+  const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
 
   let imported = 0;
   let skipped = 0;
@@ -29,8 +28,7 @@ export async function POST(req: NextRequest) {
     });
     if (existing) { skipped++; continue; }
 
-    const lower = normalize(row.description);
-    const ruleCategory = [...ruleMap.entries()].find(([key]) => lower.includes(key))?.[1] ?? null;
+    const ruleCategory = findMatchingRuleCategoryId(row.description, merchantRules, row.amount);
 
     await prisma.transaction.create({
       data: {

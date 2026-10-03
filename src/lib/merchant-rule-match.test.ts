@@ -21,4 +21,12 @@ describe("findMatchingRuleCategoryId", () => {
   it("一致しなければnullを返す", () => {
     expect(findMatchingRuleCategoryId("スーパー", [{ merchant: "Suica", categoryId: "transport" }])).toBeNull();
   });
+
+  it("収入に支出カテゴリのルールを適用しない", () => {
+    expect(
+      findMatchingRuleCategoryId("スーパー入金", [
+        { merchant: "スーパー", categoryId: "daily", category: { type: "expense" } },
+      ], -1000)
+    ).toBeNull();
+  });
 });

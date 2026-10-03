@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 import Papa from "papaparse";
 
 interface RakutenRow {
@@ -74,8 +75,7 @@ export async function POST(req: NextRequest) {
   }
   if (rows.length === 0) return NextResponse.json({ imported: 0, skipped: 0 });
 
-  const merchantRules = await prisma.merchantRule.findMany();
-  const ruleMap = new Map(merchantRules.map((r) => [r.merchant.toLowerCase(), r.categoryId]));
+  const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
 
   const headers = Object.keys(rows[0]);
   const normalizedHeaders = headers.map((header) => [
@@ -113,8 +113,7 @@ export async function POST(req: NextRequest) {
     });
     if (existing) { skipped++; continue; }
 
-    const lower = merchant.toLowerCase();
-    const ruleCategory = [...ruleMap.entries()].find(([key]) => lower.includes(key))?.[1] ?? null;
+    const ruleCategory = findMatchingRuleCategoryId(merchant, merchantRules, amount);
 
     await prisma.transaction.create({
       data: {

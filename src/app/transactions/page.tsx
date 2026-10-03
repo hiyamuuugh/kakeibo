@@ -448,12 +448,12 @@ export default function TransactionsPage() {
     "shrink-0 border-r border-[#e5e7eb] px-2.5 text-[11px] font-bold text-[#6b7280]";
   const filterLabelColors = {
     balance: "text-[#2563eb]",
-    source: "text-[#c2410c]",
-    category: "text-[#7c3aed]",
+    source: "text-[#2563eb]",
+    category: "text-[#2563eb]",
   };
 
   const categoryPicker = (
-    <div className={`${filterShellClass} border-[#ddd6fe]`}>
+    <div className={filterShellClass}>
       <span className={`${filterLabelClass} ${filterLabelColors.category}`}>カテゴリ</span>
       <Select value={filterCat} onValueChange={(value) => handleFilterChange(value ?? "all")}>
         <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
@@ -462,11 +462,18 @@ export default function TransactionsPage() {
           </span>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">すべて</SelectItem>
-          <SelectItem value="uncategorized">未分類</SelectItem>
+          <SelectItem value="all">
+            <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#9ca3af]" />すべて</span>
+          </SelectItem>
+          <SelectItem value="uncategorized">
+            <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#9ca3af]" />未分類</span>
+          </SelectItem>
           {filterCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
-              {category.name}
+              <span className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
+                {category.name}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
@@ -559,7 +566,7 @@ export default function TransactionsPage() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div className={`${filterShellClass} border-[#bfdbfe]`}>
+          <div className={filterShellClass}>
             <span className={`${filterLabelClass} ${filterLabelColors.balance}`}>収支</span>
             <Select value={filterType} onValueChange={(value) => handleFilterTypeChange(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
@@ -574,7 +581,7 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className={`${filterShellClass} border-[#fed7aa]`}>
+          <div className={filterShellClass}>
             <span className={`${filterLabelClass} ${filterLabelColors.source}`}>取込元</span>
             <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
@@ -889,18 +896,8 @@ export default function TransactionsPage() {
       {memoEditingTransaction ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3">
               <p className="text-sm font-bold text-[#1f2937]">メモ</p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-[#9ca3af]"
-                onClick={() => setMemoEditingTransaction(null)}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">閉じる</span>
-              </Button>
             </div>
             <div className="relative">
               <input
