@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const exclusions = await prisma.importExclusion.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(exclusions);
+  try {
+    const exclusions = await prisma.importExclusion.findMany({ orderBy: { name: "asc" } });
+    return NextResponse.json(exclusions);
+  } catch {
+    return NextResponse.json({ error: "CSV取込スキップワードを読み込めませんでした" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -14,8 +19,11 @@ export async function POST(req: NextRequest) {
   try {
     const exclusion = await prisma.importExclusion.create({ data: { name } });
     return NextResponse.json(exclusion, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "同じ除外名が登録されています" }, { status: 409 });
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ error: "同じワードが登録されています" }, { status: 409 });
+    }
+    return NextResponse.json({ error: "CSV取込スキップワードを登録できませんでした" }, { status: 500 });
   }
 }
 
