@@ -4,13 +4,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { Navigation } from "@/components/navigation";
 
 export const metadata: Metadata = {
-  title: "kakeibo",
+  title: "家計簿くん",
   description: "家族で使うためのブラウザ家計簿アプリ",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "kakeibo",
+    title: "家計簿くん",
   },
 };
 
