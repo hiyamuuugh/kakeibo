@@ -12,6 +12,7 @@ export const EXPENSE_CATEGORY_ORDER = [
   "食費",
   "日用品",
   "子ども",
+  "お小遣い",
   "交通費",
   "娯楽",
   "医療",

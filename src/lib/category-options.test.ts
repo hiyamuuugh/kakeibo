@@ -4,6 +4,7 @@ import { getCategoriesByKind, getChartCategoryNames } from "@/lib/category-optio
 const categories = [
   { id: "daily", name: "日用品", type: "expense" },
   { id: "child", name: "子ども", type: "expense" },
+  { id: "allowance", name: "お小遣い", type: "expense" },
   { id: "income-other", name: "その他", type: "income" },
   { id: "food", name: "食費", type: "expense" },
   { id: "salary", name: "給料", type: "income" },
@@ -28,6 +29,7 @@ describe("getCategoriesByKind", () => {
       "食費",
       "日用品",
       "子ども",
+      "お小遣い",
       "その他",
       "未分類",
     ]);

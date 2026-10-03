@@ -67,12 +67,12 @@ const SOURCE_LABELS: Record<string, string> = {
 
 const SOURCE_COLORS: Record<string, string> = {
   paypay: "#e11d48",
-  paypay_card: "#f97316",
-  rakuten: "#8b5cf6",
+  paypay_card: "#f59e0b",
+  rakuten: "#7c3aed",
   mufg: "#2563eb",
   smbc: "#16a34a",
-  manual: "#64748b",
-  credit: "#0f766e",
+  manual: "#475569",
+  credit: "#0891b2",
 };
 
 const getSourceStyle = (source: string) => {
