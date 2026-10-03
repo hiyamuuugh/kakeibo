@@ -7,4 +7,10 @@ describe("LoginForm", () => {
 
     expect(source).toContain('type="submit"');
   });
+
+  it("routes successful login through member selection", () => {
+    const source = readFileSync("src/components/login-form.tsx", "utf8");
+
+    expect(source).toContain("/select-member");
+  });
 });

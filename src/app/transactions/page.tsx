@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface Category {
   id: string;
@@ -97,6 +98,7 @@ export default function TransactionsPage() {
   const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [viewMode, setViewMode] = useState<"personal" | "family">("personal");
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [membersReady, setMembersReady] = useState(false);
   const [filterCat, setFilterCat] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [filterSource, setFilterSource] = useState("all");
@@ -105,6 +107,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
 
   const loadTransactions = useCallback(() => {
+    if (!membersReady) return;
+
     const params = new URLSearchParams({ month });
 
     if (filterCat !== "all") {
@@ -120,7 +124,7 @@ export default function TransactionsPage() {
         setTransactions(data);
         setLoading(false);
       });
-  }, [filterCat, month, selectedMemberId, viewMode]);
+  }, [filterCat, membersReady, month, selectedMemberId, viewMode]);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -130,7 +134,16 @@ export default function TransactionsPage() {
       .then((response) => response.json())
       .then((data: Member[]) => {
         setMembers(data);
-        setSelectedMemberId((current) => current || data[0]?.id || "");
+        const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
+        const nextMemberId =
+          savedMemberId && data.some((member) => member.id === savedMemberId)
+            ? savedMemberId
+            : data[0]?.id || "";
+        setSelectedMemberId(nextMemberId);
+        if (nextMemberId) {
+          localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMemberId);
+        }
+        setMembersReady(true);
       });
   }, []);
 
@@ -322,14 +335,16 @@ export default function TransactionsPage() {
             家族全員
           </button>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr),8rem] gap-2">
+        <div>
           <input
             type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="キーワード検索"
-            className="h-9 min-w-0 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+            className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
           />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
           <div className={filterShellClass}>
             <span className={filterLabelClass}>収支</span>
             <Select value={filterType} onValueChange={(value) => setFilterType(value ?? "all")}>
@@ -345,8 +360,6 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
           <div className={filterShellClass}>
             <span className={filterLabelClass}>取込元</span>
             <Select value={filterSource} onValueChange={(value) => setFilterSource(value ?? "all")}>
@@ -365,30 +378,25 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className={viewMode === "family" ? "grid grid-cols-2 gap-2" : "grid grid-cols-1 gap-2"}>
+          {categoryPicker}
+          {viewMode === "family" ? (
           <div className={filterShellClass}>
             <span className={filterLabelClass}>アカウント</span>
             <Select
-              value={viewMode === "personal" ? selectedMemberId : filterMember}
-              onValueChange={(value) => {
-                if (viewMode === "personal") {
-                  setSelectedMemberId(value ?? "");
-                  setLoading(true);
-                  return;
-                }
-                handleMemberFilterChange(value ?? "all");
-              }}
+              value={filterMember}
+              onValueChange={(value) => handleMemberFilterChange(value ?? "all")}
             >
               <SelectTrigger className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
-                  {viewMode === "personal"
-                    ? members.find((member) => member.id === selectedMemberId)?.name ?? "選択"
-                    : filterMember === "all"
-                      ? "すべて"
-                      : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
+                  {filterMember === "all"
+                    ? "すべて"
+                    : members.find((member) => member.id === filterMember)?.name ?? "アカウント"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {viewMode === "family" ? <SelectItem value="all">すべて</SelectItem> : null}
+                <SelectItem value="all">すべて</SelectItem>
                 {members.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     {member.name}
@@ -397,7 +405,7 @@ export default function TransactionsPage() {
               </SelectContent>
             </Select>
           </div>
-          {categoryPicker}
+          ) : null}
         </div>
       </div>
 

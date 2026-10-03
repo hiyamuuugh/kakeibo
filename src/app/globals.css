@@ -126,6 +126,10 @@
     @apply bg-background text-foreground;
     -webkit-tap-highlight-color: transparent;
   }
+  .recharts-sector:focus,
+  .recharts-surface:focus {
+    outline: none;
+  }
   html {
     @apply font-sans;
   }
