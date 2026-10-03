@@ -654,8 +654,8 @@ export default function Dashboard() {
                               fill={
                                 chartMode === "balance"
                                   ? item.value < 0
-                                    ? "#ef4444"
-                                    : "#22c55e"
+                                    ? item.active ? "#ef4444" : "#fca5a5"
+                                    : item.active ? "#22c55e" : "#86efac"
                                   : item.active
                                     ? CHART_CONFIGS[chartMode].active
                                     : CHART_CONFIGS[chartMode].inactive
