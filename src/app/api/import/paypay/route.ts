@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
+import { isImportExcluded } from "@/lib/import-exclusion";
 import Papa from "papaparse";
 
 interface PayPayRow {
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
   const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
   const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
+  const exclusions = await prisma.importExclusion.findMany({ select: { name: true } });
 
   const headers = Object.keys(rows[0]);
 
@@ -93,6 +95,8 @@ export async function POST(req: NextRequest) {
   for (const row of rows) {
     const dateStr = row[dateKey];
     const merchant = (row[merchantKey] ?? "").trim();
+
+    if (isImportExcluded(merchant, exclusions)) { skipped++; continue; }
 
     if (!dateStr) { skipped++; continue; }
 

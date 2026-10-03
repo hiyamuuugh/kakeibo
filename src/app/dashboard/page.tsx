@@ -214,6 +214,7 @@ export default function Dashboard() {
   const [rangeMode, setRangeMode] = useState<RangeMode>("monthly");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedCatName, setSelectedCatName] = useState<string | null>(null);
+  const [selectedChartMonth, setSelectedChartMonth] = useState<string | null>(null);
   const [selectedPieName, setSelectedPieName] = useState<string | null>(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
@@ -421,8 +422,10 @@ export default function Dashboard() {
       ...bar,
       value,
       active: (rangeMode === "yearly" ? month.slice(0, 4) : month) === bar.month,
+      selected: selectedChartMonth === bar.month,
     };
   });
+  const hasSelectedChartMonth = chartData.some((item) => item.selected);
 
   const maxAbs = Math.max(...chartData.map((item) => Math.abs(item.value)), 1);
   const yDomain =
@@ -516,7 +519,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col gap-3">
-          <Card className="order-2 overflow-visible">
+          <Card className="order-1 overflow-visible">
             <CardContent className="space-y-3 overflow-visible p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-[#1f2937]">推移グラフ</p>
@@ -651,15 +654,11 @@ export default function Dashboard() {
                           {chartData.map((item) => (
                             <Cell
                               key={item.month}
-                              fill={
-                                chartMode === "balance"
-                                  ? item.value < 0
-                                    ? item.active ? "#ef4444" : "#fca5a5"
-                                    : item.active ? "#22c55e" : "#86efac"
-                                  : item.active
-                                    ? CHART_CONFIGS[chartMode].active
-                                    : CHART_CONFIGS[chartMode].inactive
-                              }
+                              fill={hasSelectedChartMonth && !item.selected
+                                ? CHART_CONFIGS[chartMode].inactive
+                                : CHART_CONFIGS[chartMode].active}
+                              onClick={() => setSelectedChartMonth((current) => current === item.month ? null : item.month)}
+                              className="cursor-pointer"
                             />
                           ))}
                         </Bar>
@@ -711,7 +710,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="order-1">
+          <Card className="order-2">
             <CardContent className="space-y-4 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-[#1f2937]">カテゴリ別</p>

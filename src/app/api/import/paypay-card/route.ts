@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
+import { isImportExcluded } from "@/lib/import-exclusion";
 import Papa from "papaparse";
 
 interface Row {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
   if (rows.length === 0) return NextResponse.json({ imported: 0, skipped: 0 });
 
   const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
+  const exclusions = await prisma.importExclusion.findMany({ select: { name: true } });
 
   const headers = Object.keys(rows[0]);
   const normalizedHeaders = headers.map((header) => [
@@ -91,6 +93,8 @@ export async function POST(req: NextRequest) {
     const dateStr = row[dateKey];
     const merchant = (row[merchantKey] ?? "").trim();
     const amountStr = row[amountKey] ?? "";
+
+    if (isImportExcluded(merchant, exclusions)) { skipped++; continue; }
 
     if (!dateStr || !amountStr) { skipped++; continue; }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ExternalLink, Upload } from "lucide-react";
+import { Building2, CreditCard, ExternalLink, Landmark, ShoppingBag, Smartphone, WalletCards } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface ImportSource {
   description: string;
   endpoint: string;
   color: string;
+  icon: LucideIcon;
   linkUrl: string;
   appUrl?: string;
   linkLabel: string;
@@ -37,6 +39,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "PayPayアプリの利用履歴CSV",
     endpoint: "/api/import/paypay",
     color: "#ef4444",
+    icon: Smartphone,
     linkUrl: "https://apps.apple.com/jp/app/paypay/id1435783608",
     appUrl: "paypay://",
     linkLabel: "PayPayを開く",
@@ -52,6 +55,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "PayPayカードの利用明細CSV",
     endpoint: "/api/import/paypay-card",
     color: "#f59e0b",
+    icon: CreditCard,
     linkUrl: "https://apps.apple.com/jp/app/paypay/id1435783608",
     appUrl: "paypay://",
     linkLabel: "PayPayを開く",
@@ -67,6 +71,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "楽天e-NAVIの利用明細CSV",
     endpoint: "/api/import/rakuten",
     color: "#bf0000",
+    icon: ShoppingBag,
     linkUrl: "https://www.rakuten-card.co.jp/e-navi/members/statement/index.xhtml",
     linkLabel: "楽天e-NAVIを開く",
     steps: [
@@ -81,6 +86,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "セゾンカードの利用明細CSV",
     endpoint: "/api/import/saison",
     color: "#0f766e",
+    icon: WalletCards,
     linkUrl: "https://www.saisoncard.co.jp/",
     linkLabel: "セゾンカードを開く",
     steps: [
@@ -95,6 +101,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "三菱UFJダイレクトの入出金明細CSV",
     endpoint: "/api/import/mufg",
     color: "#dc2626",
+    icon: Landmark,
     linkUrl: "https://direct.bk.mufg.jp/",
     linkLabel: "三菱UFJダイレクトを開く",
     steps: [
@@ -109,6 +116,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     description: "SMBCダイレクトの入出金明細CSV",
     endpoint: "/api/import/smbc",
     color: "#16a34a",
+    icon: Building2,
     linkUrl: "https://direct.smbc.co.jp/",
     linkLabel: "SMBCダイレクトを開く",
     steps: [
@@ -234,7 +242,7 @@ function ImportSourceCard({
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-white"
           style={{ backgroundColor: source.color }}
         >
-          <Upload className="h-5 w-5" />
+          <source.icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-bold text-[#1f2937]">{source.title}</span>
