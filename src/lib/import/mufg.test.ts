@@ -1,33 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isCreditCardPayment, parseDate, parseAmount, parseMufgCsv } from "./mufg";
-
-describe("isCreditCardPayment", () => {
-  it("PAYPAYカードをスキップする", () => {
-    expect(isCreditCardPayment("PAYPAYカード")).toBe(true);
-  });
-
-  it("大文字小文字を区別しない（paypayカード）", () => {
-    expect(isCreditCardPayment("paypayカード")).toBe(true);
-  });
-
-  it("半角カナのPayPayカードをスキップする", () => {
-    expect(isCreditCardPayment("ﾍﾟｲﾍﾟｲｶｰﾄﾞ請求")).toBe(true);
-  });
-
-  it("ラクテンカードサービをスキップする", () => {
-    expect(isCreditCardPayment("ラクテンカードサービス")).toBe(true);
-  });
-
-  it("半角カナの楽天カードをスキップする", () => {
-    expect(isCreditCardPayment("ﾗｸﾃﾝｶｰﾄﾞ引落")).toBe(true);
-  });
-
-  it("通常の取引はスキップしない", () => {
-    expect(isCreditCardPayment("セブンイレブン")).toBe(false);
-    expect(isCreditCardPayment("ATM引出し")).toBe(false);
-    expect(isCreditCardPayment("給与振込")).toBe(false);
-  });
-});
+import { parseDate, parseAmount, parseMufgCsv } from "./mufg";
 
 describe("parseDate", () => {
   it("スラッシュ区切りの日付をパースする", () => {
@@ -84,24 +56,11 @@ describe("parseMufgCsv", () => {
     expect(atm!.amount).toBe(30000);
   });
 
-  it("PAYPAYカードの引落をスキップする", () => {
+  it("CSV行を読み込み、除外判定は取込APIに委ねる", () => {
     const rows = parseMufgCsv(baseCsv);
-    expect(rows.find((r) => r.description === "PAYPAYカード")).toBeUndefined();
-  });
-
-  it("ラクテンカードサービスの引落をスキップする", () => {
-    const rows = parseMufgCsv(baseCsv);
-    expect(rows.find((r) => r.description.includes("ラクテン"))).toBeUndefined();
-  });
-
-  it("半角カナの楽天カードをスキップする", () => {
-    const rows = parseMufgCsv(baseCsv);
-    expect(rows.find((r) => r.description.includes("ﾗｸﾃﾝ"))).toBeUndefined();
-  });
-
-  it("クレカ除外後は2件のみ取り込む", () => {
-    const rows = parseMufgCsv(baseCsv);
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(5);
+    expect(rows.some((r) => r.description === "PAYPAYカード")).toBe(true);
+    expect(rows.some((r) => r.description === "ラクテンカードサービス")).toBe(true);
   });
 
   it("ヘッダー前に説明行がある場合でも正しくパースする", () => {

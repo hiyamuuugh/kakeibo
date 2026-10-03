@@ -41,9 +41,10 @@ describe("parseSmbcCsv", () => {
     expect(rows[0].amount).toBe(-200000);
   });
 
-  it("クレカ引落は除外する", () => {
+  it("クレカ引落もCSV行として読み込む", () => {
     const csv = `${header}\n2026/6/14,30000,,ﾗｸﾃﾝｶｰﾄﾞ,68500,,`;
-    expect(parseSmbcCsv(csv)).toHaveLength(0);
+    expect(parseSmbcCsv(csv)).toHaveLength(1);
+    expect(parseSmbcCsv(csv)[0].description).toBe("ﾗｸﾃﾝｶｰﾄﾞ");
   });
 
   it("出入金ともに0の行は除外する", () => {

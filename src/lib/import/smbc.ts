@@ -1,5 +1,4 @@
 import Papa from "papaparse";
-import { isCreditCardPayment } from "./mufg";
 
 export interface SmbcRow {
   date: Date;
@@ -58,8 +57,6 @@ export function parseSmbcCsv(csvText: string): SmbcRow[] {
     const incomeStr = row[incomeKey] ?? "";
 
     if (!dateStr) continue;
-    if (isCreditCardPayment(description)) continue;
-    if (/チャージ|charge/i.test(description)) continue;
 
     const date = parseDate(dateStr);
     if (!date) continue;

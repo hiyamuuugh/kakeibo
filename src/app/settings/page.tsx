@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, RotateCw, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -49,7 +49,6 @@ export default function SettingsPage() {
   const [exclusionName, setExclusionName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
-  const [reapplying, setReapplying] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const visibleCategories = useMemo(
@@ -76,7 +75,10 @@ export default function SettingsPage() {
       groups.set(rule.category.name, current);
     }
     const order = new Map(visibleCategories.map((category, index) => [category.name, index]));
-    return Array.from(groups.values()).sort((a, b) => {
+    return Array.from(groups.values()).map((group) => ({
+      ...group,
+      rules: [...group.rules].sort((a, b) => a.merchant.localeCompare(b.merchant, "ja")),
+    })).sort((a, b) => {
       const aOrder = order.has(a.category.name) ? order.get(a.category.name)! : 999;
       const bOrder = order.has(b.category.name) ? order.get(b.category.name)! : 999;
       const byOrder = aOrder - bOrder;
@@ -200,20 +202,6 @@ export default function SettingsPage() {
 
     toast.success("ルールを削除しました");
     await loadData();
-  };
-
-  const handleReapply = async () => {
-    setReapplying(true);
-    const response = await fetch("/api/merchant-rules/reapply", { method: "POST" });
-    setReapplying(false);
-
-    if (!response.ok) {
-      toast.error("再適用できませんでした");
-      return;
-    }
-
-    const data = (await response.json()) as { appliedCount: number };
-    toast.success(`${data.appliedCount}件に再適用しました`);
   };
 
   const handleAddExclusion = async () => {
@@ -453,13 +441,13 @@ export default function SettingsPage() {
             placeholder="例: コープ"
             className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
           />
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {visibleCategories.map((category) => (
               <button
                 key={category.id}
                 type="button"
                 onClick={() => setCategoryId(category.id)}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
+                className={`flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                   categoryId === category.id
                       ? "border-[#3b82f6] bg-[#eff6ff]"
                     : "border-[#e5e7eb] bg-white"
@@ -483,17 +471,6 @@ export default function SettingsPage() {
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-[#1f2937]">登録済みルール</p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2 bg-white"
-          onClick={handleReapply}
-          disabled={reapplying}
-        >
-          <RotateCw className="h-4 w-4" />
-          {reapplying ? "再適用中..." : "再適用"}
-        </Button>
       </div>
 
       <div className="space-y-2">
