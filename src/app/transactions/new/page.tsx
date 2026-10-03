@@ -13,6 +13,7 @@ import {
   getCategoriesByKind,
 } from "@/lib/category-options";
 import { parseReceipt } from "@/lib/receipt-parser";
+import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 const formatInputDate = (date: Date) => format(date, "yyyy-MM-dd");
 
@@ -103,6 +104,7 @@ export default function NewTransactionPage() {
         store: store.trim() || null,
         source: "manual",
         categoryId,
+        memberId: localStorage.getItem(SELECTED_MEMBER_ID_KEY),
       }),
     });
 
@@ -122,11 +124,11 @@ export default function NewTransactionPage() {
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-3">
+    <div className="mx-auto max-w-xl space-y-2">
       <Button
         type="button"
         variant="outline"
-        className="h-12 w-full gap-2 rounded-[10px] bg-white"
+        className="h-10 w-full gap-2 rounded-[10px] bg-white"
         onClick={() => fileInputRef.current?.click()}
         disabled={scanning}
       >
@@ -142,7 +144,7 @@ export default function NewTransactionPage() {
         onChange={handleScan}
       />
 
-      <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e5e7eb] p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-[10px] bg-[#e5e7eb] p-1">
         {(["expense", "income"] as const).map((value) => (
           <button
             key={value}
@@ -165,21 +167,21 @@ export default function NewTransactionPage() {
       </div>
 
       <Card>
-        <CardContent className="space-y-4 pt-6">
+        <CardContent className="space-y-2.5 pt-3">
           <div
-            className={`rounded-[12px] border-2 bg-white p-4 ${
+            className={`rounded-[12px] border-2 bg-white p-3 ${
               kind === "expense" ? "border-[#fee2e2]" : "border-[#dcfce7]"
             }`}
           >
             <label className="text-xs font-semibold text-[#6b7280]">金額</label>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-3xl font-bold text-[#9ca3af]">¥</span>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-2xl font-bold text-[#9ca3af]">¥</span>
               <input
                 inputMode="numeric"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="0"
-                className="min-w-0 flex-1 bg-transparent text-4xl font-extrabold text-[#1f2937] outline-none"
+                className="min-w-0 flex-1 bg-transparent text-3xl font-extrabold text-[#1f2937] outline-none"
               />
             </div>
           </div>
@@ -190,18 +192,18 @@ export default function NewTransactionPage() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="例: スーパー、給料"
-              className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+              className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
               <label className="text-xs font-semibold text-[#6b7280]">日付</label>
               <input
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
               />
             </div>
             <div className="space-y-2">
@@ -210,7 +212,7 @@ export default function NewTransactionPage() {
                 value={store}
                 onChange={(event) => setStore(event.target.value)}
                 placeholder="任意"
-                className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
               />
             </div>
           </div>
@@ -220,7 +222,7 @@ export default function NewTransactionPage() {
             {categoriesLoading ? (
               <LoadingSpinner className="py-3" />
             ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() => setCategoryId(null)}
@@ -250,7 +252,7 @@ export default function NewTransactionPage() {
             )}
           </div>
 
-          <Button className="h-12 w-full" onClick={handleSave} disabled={saving}>
+          <Button className="h-10 w-full" onClick={handleSave} disabled={saving}>
             {saving ? "保存中..." : "保存"}
           </Button>
         </CardContent>

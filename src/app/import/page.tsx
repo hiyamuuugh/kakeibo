@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -25,6 +25,11 @@ interface ImportSource {
 interface ImportResult {
   imported: number;
   skipped: number;
+}
+
+interface Member {
+  id: string;
+  name: string;
 }
 
 const IMPORT_SOURCES: ImportSource[] = [
@@ -104,6 +109,25 @@ const IMPORT_SOURCES: ImportSource[] = [
 
 export default function ImportPage() {
   const [openId, setOpenId] = useState(IMPORT_SOURCES[0].id);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+
+  useEffect(() => {
+    const loadMember = async () => {
+      const response = await fetch("/api/members");
+      if (!response.ok) return;
+
+      const members = (await response.json()) as Member[];
+      const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
+      const memberId =
+        members.find((member) => member.id === savedMemberId)?.id ?? members[0]?.id ?? "";
+      if (memberId) {
+        localStorage.setItem(SELECTED_MEMBER_ID_KEY, memberId);
+        setSelectedMemberId(memberId);
+      }
+    };
+
+    void loadMember();
+  }, []);
 
   return (
     <div className="mx-auto max-w-xl space-y-3">
@@ -116,6 +140,7 @@ export default function ImportPage() {
           <ImportSourceCard
             key={source.id}
             source={source}
+            memberId={selectedMemberId}
             open={openId === source.id}
             onToggle={() => setOpenId((current) => (current === source.id ? "" : source.id))}
           />
@@ -127,10 +152,12 @@ export default function ImportPage() {
 
 function ImportSourceCard({
   source,
+  memberId,
   open,
   onToggle,
 }: {
   source: ImportSource;
+  memberId: string;
   open: boolean;
   onToggle: () => void;
 }) {
@@ -158,9 +185,8 @@ function ImportSourceCard({
 
     const formData = new FormData();
     formData.append("file", file);
-    const selectedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
-    if (selectedMemberId) {
-      formData.append("memberId", selectedMemberId);
+    if (memberId) {
+      formData.append("memberId", memberId);
     }
 
     const response = await fetch(source.endpoint, {
@@ -258,7 +284,7 @@ function ImportSourceCard({
             </div>
           ) : null}
 
-          <Button className="w-full" onClick={handleImport} disabled={!file || loading}>
+          <Button className="w-full" onClick={handleImport} disabled={!file || loading || !memberId}>
             {loading ? "インポート中..." : "取込開始"}
           </Button>
 
