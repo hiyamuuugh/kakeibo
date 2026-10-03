@@ -523,7 +523,7 @@ export default function TransactionsPage() {
           <div className="flex h-9 w-28 shrink-0 items-center rounded-lg border border-[#e5e7eb] bg-white">
             <span className="flex h-5 items-center border-r border-[#d1d5db] px-2 text-sm text-[#6b7280]">⇅</span>
             <Select value={sortOrder} onValueChange={(value) => setSortOrder((value ?? "newest") as SortOrder)}>
-              <SelectTrigger className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-xs shadow-none focus:ring-0">
+              <SelectTrigger className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 pl-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
                   {sortOrder === "newest"
                     ? "新しい順"
@@ -581,8 +581,8 @@ export default function TransactionsPage() {
             </Select>
           </div>
         </div>
-        <div className={viewMode === "family" ? "grid grid-cols-2 gap-2" : "flex items-center gap-2"}>
-          <div className="min-w-0 flex-1">{categoryPicker}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="min-w-0">{categoryPicker}</div>
           {viewMode === "family" ? (
           <div className={filterShellClass}>
             <span className={filterLabelClass}>アカウント</span>
@@ -625,16 +625,9 @@ export default function TransactionsPage() {
         {viewMode === "personal" && selectionMode ? (
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" size="sm" className="h-8 bg-white" onClick={toggleSelectAll}>
-              一括選択
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 bg-white"
-              onClick={() => setSelectedTransactionIds(new Set())}
-            >
-              一括解除
+              {sortedTransactions.length > 0 && sortedTransactions.every((transaction) => selectedTransactionIds.has(transaction.id))
+                ? "一括解除"
+                : "一括選択"}
             </Button>
             <Button
               type="button"
@@ -794,7 +787,7 @@ export default function TransactionsPage() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  {viewMode === "personal" ? (
+                  {viewMode === "personal" && selectionMode ? (
                     <input
                       type="checkbox"
                       aria-label={`${transaction.description}を選択`}
