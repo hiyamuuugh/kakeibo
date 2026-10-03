@@ -106,7 +106,7 @@ const IMPORT_SOURCES: ImportSource[] = [
 ];
 
 export default function ImportPage() {
-  const [openId, setOpenId] = useState(IMPORT_SOURCES[0].id);
+  const [openId, setOpenId] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState("");
 
   useEffect(() => {
