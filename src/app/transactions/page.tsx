@@ -63,6 +63,7 @@ const SOURCE_LABELS: Record<string, string> = {
   smbc: "三井住友",
   manual: "手入力",
   credit: "クレカ",
+  saison: "セゾンカード",
 };
 
 const SOURCE_COLORS: Record<string, string> = {
@@ -73,6 +74,7 @@ const SOURCE_COLORS: Record<string, string> = {
   smbc: "#16a34a",
   manual: "#475569",
   credit: "#0891b2",
+  saison: "#0f766e",
 };
 
 const getSourceStyle = (source: string) => {
@@ -103,7 +105,7 @@ const SOURCE_SEARCH_ALIASES: Record<string, string[]> = {
   credit: ["クレジットカード"],
 };
 
-const SOURCE_ORDER = ["paypay", "rakuten", "paypay_card", "mufg", "smbc", "manual"];
+const SOURCE_ORDER = ["paypay", "rakuten", "paypay_card", "saison", "mufg", "smbc", "manual"];
 
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
 

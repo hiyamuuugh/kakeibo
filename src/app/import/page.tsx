@@ -76,6 +76,20 @@ const IMPORT_SOURCES: ImportSource[] = [
     ],
   },
   {
+    id: "saison",
+    title: "セゾンカード",
+    description: "セゾンカードの利用明細CSV",
+    endpoint: "/api/import/saison",
+    color: "#0f766e",
+    linkUrl: "https://www.saisoncard.co.jp/",
+    linkLabel: "セゾンカードを開く",
+    steps: [
+      "NetアンサーまたはセゾンPortalを開く",
+      "利用明細からCSVをダウンロード",
+      "ダウンロードしたCSVを選択",
+    ],
+  },
+  {
     id: "mufg",
     title: "三菱UFJ銀行",
     description: "三菱UFJダイレクトの入出金明細CSV",
