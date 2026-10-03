@@ -441,7 +441,7 @@ export default function SettingsPage() {
             placeholder="例: コープ"
             className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
           />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {visibleCategories.map((category) => (
               <button
                 key={category.id}

@@ -66,6 +66,9 @@ const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive
   balance: { label: "収支", active: "#3b82f6", inactive: "#bfdbfe" },
 };
 
+const getBalanceColor = (value: number) =>
+  value > 0 ? "#22c55e" : value < 0 ? "#ef4444" : "#3b82f6";
+
 const REPORT_STYLE: Record<
   MonthlyReport["tone"],
   { bg: string; border: string; accent: string; icon: typeof AlertCircle }
@@ -148,17 +151,20 @@ const BarValueLabel = (props: unknown) => {
     x?: number | string;
     y?: number | string;
     width?: number | string;
+    height?: number | string;
     value?: number | string;
   };
   const labelX = toNumber(x);
   const labelY = toNumber(y);
   const labelWidth = toNumber(width);
+  const labelHeight = toNumber((props as { height?: number | string }).height);
   const amount = toNumber(value);
 
   if (
     !Number.isFinite(labelX) ||
     !Number.isFinite(labelY) ||
     !Number.isFinite(labelWidth) ||
+    !Number.isFinite(labelHeight) ||
     !Number.isFinite(amount) ||
     amount === 0
   ) {
@@ -168,7 +174,7 @@ const BarValueLabel = (props: unknown) => {
   return (
     <text
       x={labelX + labelWidth / 2}
-      y={amount < 0 ? labelY + 14 : labelY - 5}
+      y={amount < 0 ? labelY + labelHeight + 12 : labelY - 5}
       textAnchor="middle"
       className="fill-[#374151] text-[10px] font-bold"
     >
@@ -639,7 +645,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="h-full min-w-[560px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ left: -20, right: 8, top: 28, bottom: 0 }}>
+                        <BarChart data={chartData} margin={{ left: -20, right: 8, top: 28, bottom: 18 }}>
                         <CartesianGrid vertical={false} stroke="#f3f4f6" />
                         <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} />
                         <YAxis
@@ -654,9 +660,16 @@ export default function Dashboard() {
                           {chartData.map((item) => (
                             <Cell
                               key={item.month}
-                              fill={hasSelectedChartMonth && !item.selected
-                                ? CHART_CONFIGS[chartMode].inactive
+                              fill={chartMode === "balance"
+                                ? getBalanceColor(item.value)
                                 : CHART_CONFIGS[chartMode].active}
+                              opacity={
+                                hasSelectedChartMonth
+                                  ? item.selected ? 1 : 0.28
+                                  : rangeMode === "monthly" && selectedYear === null
+                                    ? item.active ? 1 : 0.28
+                                    : 1
+                              }
                               onClick={() => setSelectedChartMonth((current) => current === item.month ? null : item.month)}
                               className="cursor-pointer"
                             />
