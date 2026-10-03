@@ -155,7 +155,7 @@ export default function ImportPage() {
         <h1 className="text-xl font-bold text-[#1f2937]">CSV取込</h1>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {IMPORT_SOURCES.map((source) => (
           <ImportSourceCard
             key={source.id}
@@ -236,19 +236,19 @@ function ImportSourceCard({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left"
       >
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-white"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
           style={{ backgroundColor: source.color }}
         >
-          <source.icon className="h-5 w-5" />
+          <source.icon className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-bold text-[#1f2937]">{source.title}</span>
           <span className="block truncate text-xs text-[#6b7280]">{source.description}</span>
         </span>
-        <span className="text-lg font-semibold text-[#9ca3af]">{open ? "-" : "+"}</span>
+        <span className="text-base font-semibold text-[#9ca3af]">{open ? "-" : "+"}</span>
       </button>
 
       {open ? (
