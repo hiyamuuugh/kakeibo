@@ -23,7 +23,17 @@ function decodeBuffer(buffer: ArrayBuffer): string {
 }
 
 function parseDate(dateStr: string): Date | null {
-  const cleaned = dateStr.trim().replace(/\//g, "-");
+  const cleaned = dateStr
+    .trim()
+    .normalize("NFKC")
+    .replace(/[年月]/g, "-")
+    .replace(/日/g, "")
+    .replace(/[/.]/g, "-");
+  const parts = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (parts) {
+    const [, year, month, day] = parts;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
   const d = new Date(cleaned);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -68,11 +78,17 @@ export async function POST(req: NextRequest) {
   const ruleMap = new Map(merchantRules.map((r) => [r.merchant.toLowerCase(), r.categoryId]));
 
   const headers = Object.keys(rows[0]);
+  const normalizedHeaders = headers.map((header) => [
+    header,
+    header.trim().normalize("NFKC").replace(/[\s　]/g, ""),
+  ] as const);
+  const findHeader = (predicate: (header: string) => boolean) =>
+    normalizedHeaders.find(([, normalized]) => predicate(normalized))?.[0];
 
-  const dateKey = headers.find((h) => h.includes("利用日")) ?? headers[0];
-  const merchantKey = headers.find((h) => h.includes("利用店名") || h.includes("商品名")) ?? headers[1];
+  const dateKey = findHeader((header) => header.includes("利用日")) ?? headers[0];
+  const merchantKey = findHeader((header) => header.includes("利用店名") || header.includes("商品名")) ?? headers[1];
   // 「利用金額(円)」「利用金額」どちらにも対応
-  const amountKey = headers.find((h) => h.includes("利用金額")) ?? headers[4];
+  const amountKey = findHeader((header) => header.includes("利用金額")) ?? headers[4];
 
   let imported = 0;
   let skipped = 0;

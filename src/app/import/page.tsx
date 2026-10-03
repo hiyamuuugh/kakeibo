@@ -6,8 +6,6 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { LoadingSpinner } from "@/components/loading-spinner";
-import { Progress } from "@/components/ui/progress";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface ImportSource {
@@ -267,13 +265,6 @@ function ImportSourceCard({
               </div>
             )}
           </div>
-
-          {loading ? (
-            <div className="space-y-1">
-              <Progress value={null} />
-              <LoadingSpinner label="インポート中..." />
-            </div>
-          ) : null}
 
           {result ? (
             <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm">
