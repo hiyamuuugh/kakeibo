@@ -447,9 +447,9 @@ export default function TransactionsPage() {
   const filterLabelClass =
     "shrink-0 border-r border-[#e5e7eb] px-2.5 text-[11px] font-bold text-[#6b7280]";
   const filterLabelColors = {
-    balance: "text-[#2563eb]",
-    source: "text-[#2563eb]",
-    category: "text-[#2563eb]",
+    balance: "text-[#1f2937]",
+    source: "text-[#1f2937]",
+    category: "text-[#1f2937]",
   };
 
   const categoryPicker = (
@@ -634,7 +634,7 @@ export default function TransactionsPage() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 w-fit justify-self-end bg-white px-3"
+              className="h-9 w-fit justify-self-end border-[#2563eb] bg-white px-3 font-normal text-[#2563eb] hover:bg-[#eff6ff]"
               onClick={() => {
                 setSelectionMode((current) => !current);
                 if (selectionMode) setSelectedTransactionIds(new Set());

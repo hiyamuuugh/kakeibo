@@ -33,7 +33,10 @@ export default function NewTransactionPage() {
   useEffect(() => {
     fetch("/api/categories")
       .then((response) => response.json())
-      .then((data: CategoryOption[]) => setCategories(data))
+      .then((data: CategoryOption[]) => {
+        setCategories(data);
+        setCategoryId(data.find((category) => category.name === "食費" && category.type === "expense")?.id ?? null);
+      })
       .finally(() => setCategoriesLoading(false));
   }, []);
 
