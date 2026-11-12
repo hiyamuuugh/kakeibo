@@ -70,7 +70,7 @@ const SOURCE_COLORS: Record<string, string> = {
   paypay: "#e11d48",
   paypay_card: "#f59e0b",
   rakuten: "#7c3aed",
-  mufg: "#2563eb",
+  mufg: "#214e40",
   smbc: "#16a34a",
   manual: "#475569",
   credit: "#0891b2",
@@ -128,7 +128,7 @@ const getFilterLabel = (value: string, categories: Category[], filterType: strin
 const getTotalColor = (amount: number) => {
   if (amount > 0) return "text-[#16a34a]";
   if (amount < 0) return "text-[#dc2626]";
-  return "text-[#1f2937]";
+  return "text-[#263c34]";
 };
 
 const getTransactionAmountColor = (amount: number) =>
@@ -451,13 +451,13 @@ export default function TransactionsPage() {
   const monthLabel = format(new Date(`${month}-01`), "yyyy年M月", { locale: ja });
 
   const filterShellClass =
-    "flex min-w-0 flex-1 items-center rounded-lg border border-[#e5e7eb] bg-white";
+    "flex min-w-0 flex-1 items-center rounded-lg border border-[#e6eae3] bg-white";
   const filterLabelClass =
-    "shrink-0 border-r border-[#e5e7eb] px-2.5 text-[11px] font-bold text-[#6b7280]";
+    "shrink-0 border-r border-[#e6eae3] px-2.5 text-[11px] font-bold text-[#748172]";
   const filterLabelColors = {
-    balance: "text-[#1f2937]",
-    source: "text-[#1f2937]",
-    category: "text-[#1f2937]",
+    balance: "text-[#263c34]",
+    source: "text-[#263c34]",
+    category: "text-[#263c34]",
   };
   const categoryPicker = (
     <div className={filterShellClass}>
@@ -470,10 +470,10 @@ export default function TransactionsPage() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">
-            <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#9ca3af]" />すべて</span>
+            <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#8a9585]" />すべて</span>
           </SelectItem>
           <SelectItem value="uncategorized">
-            <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#9ca3af]" />未分類</span>
+            <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#8a9585]" />未分類</span>
           </SelectItem>
           {filterCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
@@ -492,10 +492,10 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-3">
-      <div className="space-y-3 rounded-xl border-b border-[#e5e7eb] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="space-y-3 rounded-xl border-b border-[#e6eae3] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="relative">
           <div className="flex h-10 items-center justify-center">
-            <label className="relative inline-flex h-10 items-center justify-center cursor-pointer text-xl font-bold text-[#1f2937]">
+            <label className="relative inline-flex h-10 items-center justify-center cursor-pointer text-xl font-bold text-[#263c34]">
               <span>{monthLabel}</span>
               <input
                 type="month"
@@ -508,27 +508,27 @@ export default function TransactionsPage() {
           <button
             type="button"
             onClick={goToPrevMonth}
-            className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center text-[#3b82f6]"
+            className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center text-[#285d4d]"
           >
             <ChevronLeft className="h-6 w-6" strokeWidth={1.5} />
           </button>
           <button
             type="button"
             onClick={goToNextMonth}
-            className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-[#3b82f6]"
+            className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-[#285d4d]"
           >
             <ChevronRight className="h-6 w-6" strokeWidth={1.5} />
           </button>
-          <p className={`text-center text-lg font-extrabold leading-tight ${loading ? "text-[#9ca3af]" : getTotalColor(total)}`}>
+          <p className={`text-center text-lg font-extrabold leading-tight ${loading ? "text-[#8a9585]" : getTotalColor(total)}`}>
             {loading ? "読み込み中..." : formatSignedYen(total)}
           </p>
         </div>
-        <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
+        <div className="grid grid-cols-2 rounded-lg bg-[#e6eae3] p-0.5">
           <button
             type="button"
             onClick={() => handleViewModeChange("personal")}
             className={`rounded-md py-1.5 text-xs font-bold ${
-              viewMode === "personal" ? "bg-[#dbeafe] text-[#2563eb] shadow-sm" : "text-[#6b7280]"
+              viewMode === "personal" ? "bg-[#dce8d9] text-[#214e40] shadow-sm" : "text-[#748172]"
             }`}
           >
             自分
@@ -537,7 +537,7 @@ export default function TransactionsPage() {
             type="button"
             onClick={() => handleViewModeChange("family")}
             className={`rounded-md py-1.5 text-xs font-bold ${
-              viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#6b7280]"
+              viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#748172]"
             }`}
           >
             家族全員
@@ -549,10 +549,10 @@ export default function TransactionsPage() {
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="キーワード検索"
-            className="h-9 min-w-0 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none"
           />
-          <div className="flex h-9 w-28 shrink-0 items-center rounded-lg border border-[#e5e7eb] bg-white">
-            <span className="flex h-5 items-center border-r border-[#d1d5db] px-2 text-sm text-[#6b7280]">⇅</span>
+          <div className="flex h-9 w-28 shrink-0 items-center rounded-lg border border-[#e6eae3] bg-white">
+            <span className="flex h-5 items-center border-r border-[#cdd5c7] px-2 text-sm text-[#748172]">⇅</span>
             <Select value={sortOrder} onValueChange={(value) => setSortOrder((value ?? "newest") as SortOrder)}>
               <SelectTrigger className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 pl-2 text-xs shadow-none focus:ring-0">
                 <SelectValue>
@@ -630,7 +630,7 @@ export default function TransactionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#9ca3af]" />すべて</span>
+                  <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#8a9585]" />すべて</span>
                 </SelectItem>
                 {members.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
@@ -647,7 +647,7 @@ export default function TransactionsPage() {
             <div className="flex items-center justify-self-end gap-1">
               {selectionMode ? (
                 <>
-                  <Button type="button" variant="outline" size="sm" className="h-9 border-[#2563eb] bg-white px-2 font-normal text-[#2563eb] hover:bg-[#eff6ff]" onClick={toggleSelectAll}>
+                  <Button type="button" variant="outline" size="sm" className="h-9 border-[#214e40] bg-white px-2 font-normal text-[#214e40] hover:bg-[#eaf1e9]" onClick={toggleSelectAll}>
                     {allTransactionsSelected ? "一括解除" : "一括選択"}
                   </Button>
                   <Button
@@ -664,7 +664,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-9 border-[#9ca3af] bg-white px-2 font-normal text-[#374151] hover:bg-[#f9fafb]"
+                    className="h-9 border-[#8a9585] bg-white px-2 font-normal text-[#415749] hover:bg-[#f5f6f1]"
                     aria-label="複数削除を終了"
                     onClick={() => {
                       setSelectionMode(false);
@@ -679,7 +679,7 @@ export default function TransactionsPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 w-fit border-[#2563eb] bg-white px-3 font-normal text-[#2563eb] hover:bg-[#eff6ff]"
+                  className="h-9 w-fit border-[#214e40] bg-white px-3 font-normal text-[#214e40] hover:bg-[#eaf1e9]"
                   onClick={() => setSelectionMode(true)}
                 >
                   複数削除
@@ -738,17 +738,17 @@ export default function TransactionsPage() {
                       />
                     ) : null}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap py-2 text-xs text-[#6b7280]">
+                  <TableCell className="whitespace-nowrap py-2 text-xs text-[#748172]">
                     {format(new Date(transaction.date), "M/d(E)", { locale: ja })}
                   </TableCell>
                   <TableCell className="py-2 pl-3">
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">{transaction.description}</div>
                       {transaction.memo ? (
-                        <span className="max-w-40 truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
+                        <span className="max-w-40 truncate text-xs text-[#8a9585]">{transaction.memo}</span>
                       ) : null}
                     </div>
-                    {transaction.store ? <div className="text-xs text-[#9ca3af]">{transaction.store}</div> : null}
+                    {transaction.store ? <div className="text-xs text-[#8a9585]">{transaction.store}</div> : null}
                   </TableCell>
                   <TableCell className="py-2">
                     <div className="flex items-center gap-1.5">
@@ -778,7 +778,7 @@ export default function TransactionsPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-[#d1d5db] hover:text-[#3b82f6]"
+                        className="h-7 w-7 text-[#cdd5c7] hover:text-[#285d4d]"
                         onClick={() => updateMemo(transaction)}
                       >
                         <MessageSquare className="h-4 w-4" />
@@ -789,7 +789,7 @@ export default function TransactionsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-[#d1d5db] hover:text-[#3b82f6]"
+                          className="h-7 w-7 text-[#cdd5c7] hover:text-[#285d4d]"
                           onClick={() => togglePrivate(transaction)}
                         >
                           {transaction.isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -801,7 +801,7 @@ export default function TransactionsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-[#d1d5db] hover:text-red-600"
+                          className="h-7 w-7 text-[#cdd5c7] hover:text-red-600"
                           onClick={() => deleteTransaction(transaction.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -819,11 +819,11 @@ export default function TransactionsPage() {
 
       <div className="space-y-3 md:hidden">
         {loading ? (
-          <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
+          <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#8a9585] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             読み込み中...
           </div>
         ) : visibleTransactions.length === 0 ? (
-          <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#9ca3af] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
+          <div className="rounded-[10px] bg-white px-4 py-8 text-center text-sm text-[#8a9585] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
             取引データがありません
           </div>
         ) : (
@@ -846,7 +846,7 @@ export default function TransactionsPage() {
                     {transaction.description}
                   </p>
                   {transaction.memo ? (
-                    <span className="max-w-32 truncate text-xs text-[#9ca3af]">{transaction.memo}</span>
+                    <span className="max-w-32 truncate text-xs text-[#8a9585]">{transaction.memo}</span>
                   ) : null}
                 </div>
                 <p className={`shrink-0 text-base font-bold ${getTransactionAmountColor(transaction.amount)}`}>
@@ -877,7 +877,7 @@ export default function TransactionsPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-[#3b82f6]"
+                  className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-[#285d4d]"
                   onClick={() => updateMemo(transaction)}
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -888,7 +888,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-[#3b82f6]"
+                    className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-[#285d4d]"
                     onClick={() => togglePrivate(transaction)}
                   >
                     {transaction.isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -900,7 +900,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 shrink-0 text-[#d1d5db] hover:text-red-600"
+                    className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-red-600"
                     onClick={() => deleteTransaction(transaction.id)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -911,7 +911,7 @@ export default function TransactionsPage() {
 
               {transaction.store ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                  <span className="truncate text-xs text-[#9ca3af]">{transaction.store}</span>
+                  <span className="truncate text-xs text-[#8a9585]">{transaction.store}</span>
                 </div>
               ) : null}
             </div>
@@ -922,21 +922,21 @@ export default function TransactionsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl">
             <div className="mb-3">
-              <p className="text-sm font-bold text-[#1f2937]">メモ</p>
+              <p className="text-sm font-bold text-[#263c34]">メモ</p>
             </div>
             <div className="relative">
               <input
                 autoFocus
                 value={memoDraft}
                 onChange={(event) => setMemoDraft(event.target.value)}
-                className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 pr-10 text-sm outline-none focus:border-[#93c5fd]"
+                className="h-10 w-full rounded-lg border border-[#e6eae3] bg-white px-3 pr-10 text-sm outline-none focus:border-[#8eaf94]"
                 aria-label="メモ"
               />
               {memoDraft ? (
                 <button
                   type="button"
                   aria-label="メモを全削除"
-                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center text-[#9ca3af] hover:text-[#374151]"
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center text-[#8a9585] hover:text-[#415749]"
                   onClick={() => setMemoDraft("")}
                 >
                   <X className="h-4 w-4" />
@@ -977,7 +977,7 @@ function CategorySelect({
       value={transaction.categoryId ?? "none"}
       onValueChange={(value) => onChange(transaction.id, value ?? "none")}
     >
-      <SelectTrigger className="h-8 w-full rounded-lg border-[#e5e7eb] bg-white px-2 text-xs sm:w-[6.5rem]">
+      <SelectTrigger className="h-8 w-full rounded-lg border-[#e6eae3] bg-white px-2 text-xs sm:w-[6.5rem]">
         <SelectValue>
           {transaction.category ? (
             <span className="flex items-center gap-2">
@@ -988,14 +988,14 @@ function CategorySelect({
               <span>{transaction.category.name}</span>
             </span>
           ) : (
-            <span className="text-[#9ca3af]">未分類</span>
+            <span className="text-[#8a9585]">未分類</span>
           )}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="none">
           <span className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#9ca3af]" />
+            <span className="h-2 w-2 rounded-full bg-[#8a9585]" />
             未分類
           </span>
         </SelectItem>

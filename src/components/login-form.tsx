@@ -56,12 +56,12 @@ export function LoginForm({ nextPath, setupMode }: LoginFormProps) {
   return (
     <Card>
       <CardHeader className="space-y-3 pb-4">
-        <div className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#eff6ff] text-[#3b82f6]">
+        <div className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#eaf1e9] text-[#285d4d]">
           <LockKeyhole className="h-5 w-5" />
         </div>
         <div className="space-y-1">
           <CardTitle className="text-xl font-bold">家族用ログイン</CardTitle>
-          <p className="text-sm text-[#6b7280]">
+          <p className="text-sm text-[#748172]">
             身内だけで使うため、最初に共通パスワードを入力します。
           </p>
         </div>
@@ -74,7 +74,7 @@ export function LoginForm({ nextPath, setupMode }: LoginFormProps) {
         ) : (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-[#374151]" htmlFor="password">
+              <label className="text-sm font-semibold text-[#415749]" htmlFor="password">
                 パスワード
               </label>
               <Input
