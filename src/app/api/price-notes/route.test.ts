@@ -4,7 +4,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: db }));
 import { GET, POST } from "./route";
 import { middleware } from "../../../../middleware";
 import { NextRequest } from "next/server";
-const input = { name: "牛乳", category: "食品", store: "イオン", unit: "L", quantity: 1, price: 198, shipping: 0, online: false, date: "2026-11-12" };
+const input = { name: "牛乳", category: "食品", store: "イオン", unit: "L", quantity: 1, price: 198, shipping: 0, date: "2026-11-12" };
 const request = (body: unknown) => new Request("https://example.test/api/price-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 describe("price notes API", () => {
   beforeEach(() => { vi.resetAllMocks(); });
@@ -27,7 +27,7 @@ describe("price notes API", () => {
     expect(res.status).toBe(201);
     expect(db.priceProduct.upsert).toHaveBeenCalledWith(expect.objectContaining({
       where: { name_category_unit: { name: "牛乳", category: "食品", unit: "ml" } },
-      update: { records: { create: { store: "イオン", price: 198, shipping: 0, quantity: 1000, online: false, date: new Date("2026-11-12") } } },
+      update: { records: { create: { store: "イオン", price: 198, shipping: 0, quantity: 1000, date: new Date("2026-11-12") } } },
     }));
   });
   it("stores an omitted quantity as null and defaults shipping to zero", async () => {

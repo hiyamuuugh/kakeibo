@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryColor } from "@/lib/category-colors";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -62,12 +64,12 @@ type RangeMode = "monthly" | "yearly";
 
 const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive: string }> = {
   expense: { label: "支出", active: "#ef4444", inactive: "#fecaca" },
-  income: { label: "収入", active: "#22c55e", inactive: "#bbf7d0" },
+  income: { label: "収入", active: "#3b82f6", inactive: "#bfdbfe" },
   balance: { label: "収支", active: "#285d4d", inactive: "#c7d9c0" },
 };
 
 const getBalanceColor = (value: number) =>
-  value > 0 ? "#22c55e" : value < 0 ? "#ef4444" : "#285d4d";
+  value > 0 ? "#3b82f6" : value < 0 ? "#ef4444" : "#285d4d";
 
 const REPORT_STYLE: Record<
   MonthlyReport["tone"],
@@ -486,7 +488,7 @@ export default function Dashboard() {
           type="button"
           onClick={() => setViewMode("family")}
           className={`rounded-md py-1.5 text-xs font-bold ${
-            viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#748172]"
+            viewMode === "family" ? "bg-[#dce8d9] text-[#214e40] shadow-sm" : "text-[#748172]"
           }`}
         >
           家族全員
@@ -502,7 +504,7 @@ export default function Dashboard() {
               <p className="text-[10px] leading-none text-[#748172]">収支</p>
               <p
                 className="text-2xl font-extrabold leading-tight"
-                style={{ color: balance > 0 ? "#22c55e" : balance < 0 ? "#ef4444" : "#263c34" }}
+                style={{ color: balance > 0 ? "#3b82f6" : balance < 0 ? "#ef4444" : "#263c34" }}
               >
                 {formatBalance(balance)}
               </p>
@@ -513,7 +515,7 @@ export default function Dashboard() {
             <Card>
               <CardContent className="px-3 py-2">
                 <p className="text-[10px] leading-none text-[#748172]">収入</p>
-                <p className="text-base font-bold leading-tight text-[#22c55e]">{formatYen(stats?.income ?? 0)}</p>
+                <p className="text-base font-bold leading-tight text-[#3b82f6]">{formatYen(stats?.income ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -767,7 +769,7 @@ export default function Dashboard() {
                           {pieTabData.map((category) => (
                             <Cell
                               key={category.id}
-                              fill={category.color}
+                              fill={categoryColor(category.name)}
                               opacity={
                                 selectedPieName && selectedPieName !== category.name ? 0.28 : 1
                               }
@@ -796,7 +798,7 @@ export default function Dashboard() {
                         <span className="flex min-w-0 items-center gap-2 text-[#415749]">
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ background: category.color }}
+                            style={{ background: categoryColor(category.name) }}
                           />
                           <span className="truncate">{category.name}</span>
                         </span>

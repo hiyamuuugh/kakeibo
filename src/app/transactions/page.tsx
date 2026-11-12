@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryColor } from "@/lib/category-colors";
+
 import { useCallback, useEffect, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -126,13 +128,13 @@ const getFilterLabel = (value: string, categories: Category[], filterType: strin
 };
 
 const getTotalColor = (amount: number) => {
-  if (amount > 0) return "text-[#16a34a]";
+  if (amount > 0) return "text-[#2563eb]";
   if (amount < 0) return "text-[#dc2626]";
   return "text-[#263c34]";
 };
 
 const getTransactionAmountColor = (amount: number) =>
-  amount < 0 ? "text-[#16a34a]" : "text-[#dc2626]";
+  amount < 0 ? "text-[#2563eb]" : "text-[#dc2626]";
 
 const formatTransactionAmount = (amount: number) =>
   `${amount < 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
@@ -478,7 +480,7 @@ export default function TransactionsPage() {
           {filterCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: categoryColor(category.name) }} />
                 {filterType === "all" && category.name === "その他"
                   ? `その他(${category.type === "income" ? "収入" : "支出"})`
                   : category.name}
@@ -537,7 +539,7 @@ export default function TransactionsPage() {
             type="button"
             onClick={() => handleViewModeChange("family")}
             className={`rounded-md py-1.5 text-xs font-bold ${
-              viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#748172]"
+              viewMode === "family" ? "bg-[#dce8d9] text-[#214e40] shadow-sm" : "text-[#748172]"
             }`}
           >
             家族全員
@@ -983,7 +985,7 @@ function CategorySelect({
             <span className="flex items-center gap-2">
               <span
                 className="h-2 w-2 rounded-full"
-                style={{ background: transaction.category.color }}
+                style={{ background: categoryColor(transaction.category.name) }}
               />
               <span>{transaction.category.name}</span>
             </span>
@@ -1002,7 +1004,7 @@ function CategorySelect({
         {selectableCategories.map((category) => (
           <SelectItem key={category.id} value={category.id}>
             <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: categoryColor(category.name) }} />
               {category.name}
             </span>
           </SelectItem>

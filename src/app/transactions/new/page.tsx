@@ -159,7 +159,7 @@ export default function NewTransactionPage() {
               kind === value
                 ? value === "expense"
                   ? "bg-[#ef4444] text-white"
-                  : "bg-[#22c55e] text-white"
+                  : "bg-[#3b82f6] text-white"
                 : "text-[#748172]"
             }`}
           >
@@ -172,7 +172,7 @@ export default function NewTransactionPage() {
         <CardContent className="space-y-2.5 pt-3">
           <div
             className={`rounded-[12px] border-2 bg-white p-2 ${
-              kind === "expense" ? "border-[#fee2e2]" : "border-[#dcfce7]"
+              kind === "expense" ? "border-[#fee2e2]" : "border-[#dbeafe]"
             }`}
           >
             <label className="text-[11px] font-semibold text-[#748172]">金額</label>
@@ -232,14 +232,10 @@ export default function NewTransactionPage() {
                   onClick={() => setCategoryId(category.id)}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                     categoryId === category.id
-                      ? "border-[#285d4d] bg-[#eaf1e9]"
-                      : "border-[#e6eae3] bg-white text-[#748172]"
+                      ? "border-[#285d4d] bg-[#eaf1e9] text-[#285d4d]"
+                      : "border-[#dce3d7] bg-[#fafbf7] text-[#415749]"
                   }`}
-                  style={
-                    categoryId === category.id
-                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color }
-                      : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color }
-                  }
+
                 >
                   {category.name}
                 </button>
