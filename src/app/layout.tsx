@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f6f1",
+  themeColor: "#f4f6f8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -31,10 +31,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="min-h-screen bg-[#f5f6f1] text-[#263c34]">
+      <body className="min-h-screen bg-[#f4f6f8] text-[#253b4b]">
         <Navigation />
         <CsvImportReminder />
-        <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 md:px-6 md:pb-10 md:pt-6">
+        <main className="mx-auto max-w-5xl px-4 pb-36 pt-4 md:px-6 xl:pb-10 md:pt-6">
           {children}
         </main>
         <Toaster richColors position="top-right" />

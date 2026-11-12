@@ -37,13 +37,13 @@ export default function SelectMemberPage() {
       <Card className="w-full">
         <CardContent className="space-y-5 p-5">
           <div>
-            <p className="text-xs font-semibold text-[#748172]">アカウント</p>
-            <h1 className="text-xl font-bold text-[#263c34]">使うアカウントを選択</h1>
+            <p className="text-xs font-semibold text-[#72818b]">アカウント</p>
+            <h1 className="text-xl font-bold text-[#253b4b]">使うアカウントを選択</h1>
           </div>
           {loading ? (
             <LoadingSpinner className="py-10" />
           ) : members.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#8a9585]">アカウントがありません</p>
+            <p className="py-10 text-center text-sm text-[#8a97a1]">アカウントがありません</p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {members.map((member) => (
@@ -51,7 +51,7 @@ export default function SelectMemberPage() {
                   key={member.id}
                   type="button"
                   onClick={() => selectMember(member.id)}
-                  className="flex flex-col items-center gap-2 rounded-[10px] border border-[#e6eae3] bg-white p-4 text-center"
+                  className="flex flex-col items-center gap-2 rounded-[10px] border border-[#e2e8ed] bg-white p-4 text-center"
                 >
                   <span
                     className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold"
@@ -59,7 +59,7 @@ export default function SelectMemberPage() {
                   >
                     {member.name.charAt(0)}
                   </span>
-                  <span className="text-sm font-bold text-[#263c34]">{member.name}</span>
+                  <span className="text-sm font-bold text-[#253b4b]">{member.name}</span>
                 </button>
               ))}
             </div>

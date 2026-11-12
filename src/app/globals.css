@@ -49,27 +49,27 @@
 }
 
 :root {
-  --background: #f5f6f1;
-  --foreground: #263c34;
+  --background: #f4f6f8;
+  --foreground: #253b4b;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
   --card: oklch(1 0 0);
-  --card-foreground: #263c34;
+  --card-foreground: #253b4b;
   --popover: oklch(1 0 0);
-  --popover-foreground: #263c34;
-  --primary: #285d4d;
+  --popover-foreground: #253b4b;
+  --primary: #245f8b;
   --primary-foreground: #ffffff;
-  --secondary: #edf1e8;
-  --secondary-foreground: #415749;
-  --muted: #edf1e8;
-  --muted-foreground: #748172;
-  --accent: #eaf1e9;
-  --accent-foreground: #285d4d;
+  --secondary: #edf2f6;
+  --secondary-foreground: #415665;
+  --muted: #edf2f6;
+  --muted-foreground: #72818b;
+  --accent: #e9f1f7;
+  --accent-foreground: #245f8b;
   --destructive: #ad3929;
-  --border: #e6eae3;
-  --input: #e6eae3;
-  --ring: #8eaf94;
-  --chart-1: #285d4d;
-  --chart-2: #216aab;
+  --border: #e2e8ed;
+  --input: #e2e8ed;
+  --ring: #8faec5;
+  --chart-1: #245f8b;
+  --chart-2: #3f6f51;
   --chart-3: #c1432f;
   --chart-4: #f59e0b;
   --chart-5: #8b5cf6;
