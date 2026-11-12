@@ -12,7 +12,7 @@ describe("Navigation", () => {
 
   it("provides the price notebook destination in desktop and mobile menus", () => {
     const html = renderToStaticMarkup(<Navigation />);
-    expect(html.match(/href="https:\/\/kurashi-price-note-nov11\.browncello4\.chatgpt\.site"/g)).toHaveLength(2);
+    expect(html.match(/href="\/price-notes"/g)).toHaveLength(2);
     expect(html.match(/底値帖/g)).toHaveLength(2);
     expect(html).toContain('href="/transactions/new"');
     expect(html).toContain('href="/settings"');
