@@ -14,6 +14,7 @@ import {
   CategoryOption,
   getCategoriesByKind,
 } from "@/lib/category-options";
+import { prepareReceiptImage, ReceiptImageError } from "@/lib/receipt-image";
 import { parseReceipt } from "@/lib/receipt-parser";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
@@ -52,42 +53,39 @@ export default function NewTransactionPage() {
   );
 
   const handleScan = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file || scanning) return;
     setScanning(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch("/api/ocr", {
-      method: "POST",
-      body: formData,
-    });
-
-    setScanning(false);
-    event.target.value = "";
-
-    if (response.status === 503) {
-      toast.error("OCR設定が未完了です");
-      return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const image = await prepareReceiptImage(file);
+      const formData = new FormData();
+      formData.append("file", image);
+      const response = await fetch("/api/ocr", { method: "POST", body: formData, signal: controller.signal });
+      const data = await response.json().catch(() => null) as { message?: string; lines?: unknown } | null;
+      if (!response.ok) {
+        const fallback = response.status === 401 ? "ログインし直してから読み取ってください。" : response.status === 413 ? "画像が大きすぎます。レシート部分だけを撮影してください。" : response.status === 429 ? "OCRの利用上限に達しています。" : "レシートを読み取れませんでした。もう一度お試しください。";
+        toast.error(typeof data?.message === "string" ? data.message : fallback);
+        return;
+      }
+      if (!Array.isArray(data?.lines) || !data.lines.length || !data.lines.every(line => typeof line === "string")) {
+        toast.error("文字を検出できませんでした。レシートを明るい場所で撮影し直してください。");
+        return;
+      }
+      const parsed = parseReceipt(data.lines);
+      if (parsed.amount !== null) setAmount(String(parsed.amount));
+      if (parsed.date) setDate(formatInputDate(parsed.date));
+      if (parsed.store) setDescription(parsed.store);
+      toast.success("レシートを読み取りました");
+    } catch (error) {
+      toast.error(error instanceof ReceiptImageError ? error.message : controller.signal.aborted ? "読み取りがタイムアウトしました。もう一度お試しください。" : "通信に失敗しました。接続を確認してもう一度お試しください。");
+    } finally {
+      clearTimeout(timer);
+      setScanning(false);
+      input.value = "";
     }
-    if (response.status === 429) {
-      toast.error("OCRの利用上限に達しています");
-      return;
-    }
-    if (!response.ok) {
-      toast.error("レシートを読み取れませんでした");
-      return;
-    }
-
-    const data = (await response.json()) as { lines?: string[] };
-    const parsed = parseReceipt(data.lines ?? []);
-    if (parsed.amount !== null) setAmount(String(parsed.amount));
-    if (parsed.date) setDate(formatInputDate(parsed.date));
-    if (parsed.store) {
-      setDescription(parsed.store);
-    }
-    toast.success("レシートを読み取りました");
   };
 
   const handleSave = async () => {
@@ -142,7 +140,7 @@ export default function NewTransactionPage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         capture="environment"
         className="hidden"
         onChange={handleScan}
@@ -160,8 +158,8 @@ export default function NewTransactionPage() {
             className={`h-10 rounded-lg text-sm font-bold ${
               kind === value
                 ? value === "expense"
-                  ? "bg-[#b56c64] text-white"
-                  : "bg-[#557f9f] text-white"
+                  ? "bg-[#c1432f] text-white"
+                  : "bg-[#216aab] text-white"
                 : "text-[#748172]"
             }`}
           >

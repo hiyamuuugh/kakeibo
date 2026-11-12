@@ -355,7 +355,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-[#cdd5c7] hover:text-[#a65952]"
+                      className="h-8 w-8 text-[#cdd5c7] hover:text-[#ad3929]"
                       onClick={() => void handleDeleteExclusion(exclusion.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -429,8 +429,8 @@ export default function SettingsPage() {
                 className={`h-10 rounded-lg text-sm font-bold ${
                   kind === value
                     ? value === "expense"
-                      ? "bg-[#b56c64] text-white"
-                      : "bg-[#557f9f] text-white"
+                      ? "bg-[#c1432f] text-white"
+                      : "bg-[#216aab] text-white"
                     : "text-[#748172]"
                 }`}
               >
@@ -532,7 +532,7 @@ export default function SettingsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#cdd5c7] hover:text-[#a65952]"
+                          className="h-8 w-8 text-[#cdd5c7] hover:text-[#ad3929]"
                           onClick={() => handleDelete(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />

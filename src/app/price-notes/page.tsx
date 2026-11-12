@@ -5,6 +5,7 @@ import { ChevronRight, LoaderCircle, Pencil, Plus, Search, Trash2, X } from "luc
 import { toast } from "sonner";
 import { cheapest, sortedRecords, usesUnitComparison, unitLabel, units, type PriceProduct, type PriceRecord } from "@/lib/price-notes";
 
+const PAGE_SIZE = 10;
 const yen = (n: number) => n.toLocaleString("ja-JP");
 const field = "mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring";
 const primary = "inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50";
@@ -17,6 +18,8 @@ export default function PriceNotesPage() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("すべて");
   const [sort, setSort] = useState("recent");
+  const [page, setPage] = useState(0);
+  const listRef = useRef<HTMLElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<PriceProduct | null>(null);
   const [editing, setEditing] = useState<PriceRecord | null>(null);
@@ -53,6 +56,7 @@ export default function PriceNotesPage() {
       const product: PriceProduct = editing ? data.product : data;
       setProducts(old => [product, ...old.filter(p => p.id !== product.id).map(p => editing ? { ...p, records: p.records.filter(r => r.id !== editing.id) } : p)]);
       setSelected(product.id);
+      if (!editing) setPage(0);
       formDialog.current?.close();
       if (editing) detailDialog.current?.showModal();
       toast.success(editing ? "価格の記録を更新しました" : "価格を記録しました");
@@ -79,21 +83,33 @@ export default function PriceNotesPage() {
     const last = (p: PriceProduct) => Math.max(...p.records.map(r => Date.parse(r.createdAt)));
     return last(b) - last(a);
   });
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageProducts = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  function goToPage(next: number) {
+    setPage(next);
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   return <div className="mx-auto max-w-3xl">
     <div className="mb-4 flex justify-end"><button className={primary} onClick={() => openForm()}><Plus className="h-4 w-4" />追加</button></div>
-    <section className="overflow-hidden rounded-2xl border border-border bg-white">
+    <section ref={listRef} className="scroll-mt-20 overflow-hidden rounded-2xl border border-border bg-white">
       <div className="px-4 pt-6 sm:px-7">
         <div className="flex items-center justify-between gap-2"><h1 className="text-lg font-bold sm:text-xl">わが家の底値帖 <span className="ml-2 text-xs font-normal text-muted-foreground">{products.filter(p => p.records.length).length} 商品</span></h1></div>
-        <div className="my-6 flex gap-2 sm:gap-4"><div className="relative min-w-0 flex-1"><Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" /><input aria-label="商品名・お店で検索" placeholder="商品名・お店で探す" value={query} onChange={e => setQuery(e.target.value)} className={`${field} mt-0 bg-background pl-9`} /></div><select aria-label="並び順" className="min-w-0 rounded-lg border border-border bg-white px-2 text-xs sm:text-sm" value={sort} onChange={e => setSort(e.target.value)}><option value="recent">新着順</option><option value="low">価格が安い順</option><option value="high">価格が高い順</option><option value="name">商品名順</option></select></div>
-        <div className="flex gap-5 border-b border-border sm:gap-8" aria-label="カテゴリ">{["すべて", "食品", "日用品"].map(c => <button key={c} aria-pressed={category === c} onClick={() => setCategory(c)} className={`border-b-2 pb-4 text-xs sm:text-sm ${category === c ? "border-primary font-semibold text-primary" : "border-transparent text-muted-foreground"}`}>{c}</button>)}</div>
+        <div className="my-6 flex gap-2 sm:gap-4"><div className="relative min-w-0 flex-1"><Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" /><input aria-label="商品名・お店で検索" placeholder="商品名・お店で探す" value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} className={`${field} mt-0 bg-background pl-9`} /></div><select aria-label="並び順" className="min-w-0 rounded-lg border border-border bg-white px-2 text-xs sm:text-sm" value={sort} onChange={e => { setSort(e.target.value); setPage(0); }}><option value="recent">新着順</option><option value="low">価格が安い順</option><option value="high">価格が高い順</option><option value="name">商品名順</option></select></div>
+        <div className="flex gap-5 border-b border-border sm:gap-8" aria-label="カテゴリ">{["すべて", "食品", "日用品"].map(c => <button key={c} aria-pressed={category === c} onClick={() => { setCategory(c); setPage(0); }} className={`border-b-2 pb-4 text-xs sm:text-sm ${category === c ? "border-primary font-semibold text-primary" : "border-transparent text-muted-foreground"}`}>{c}</button>)}</div>
       </div>
       {loading && <p className="p-12 text-center text-sm text-muted-foreground" role="status">読み込み中…</p>}
       {error && <div className="p-8 text-center" role="alert"><p className="mb-4 text-sm text-destructive">{error}</p><button className={primary} onClick={() => void load()}>再読み込み</button></div>}
       {!loading && !error && !visible.length && <div className="px-6 py-16 text-center text-muted-foreground"><p className="text-sm">{products.some(p => p.records.length) ? "条件に合う商品がありません。" : "まだ価格の記録がありません。"}</p><p className="mt-2 text-xs">「追加」から商品・お店・買った価格を記録できます。</p></div>}
-      {!loading && !error && visible.map(p => { const best = cheapest(p.records); const metadata = [best.quantity !== null ? `${yen(best.quantity)}${p.unit}` : null, category === "すべて" ? p.category : null].filter(Boolean).join(" · "); return <button key={p.id} onClick={() => { setSelected(p.id); detailDialog.current?.showModal(); }} className="grid w-full grid-cols-[minmax(0,1fr)_86px_66px_10px] items-center gap-2 border-b border-border px-3 py-6 text-left last:border-0 hover:bg-background sm:grid-cols-[minmax(0,1fr)_140px_110px_16px] sm:gap-4 sm:px-6 sm:py-8">
+      {!loading && !error && pageProducts.map(p => { const best = cheapest(p.records); const metadata = [best.quantity !== null ? `${yen(best.quantity)}${p.unit}` : null, category === "すべて" ? p.category : null].filter(Boolean).join(" · "); return <button key={p.id} onClick={() => { setSelected(p.id); detailDialog.current?.showModal(); }} className="grid w-full grid-cols-[minmax(0,1fr)_86px_66px_10px] items-center gap-2 border-b border-border px-3 py-6 text-left last:border-0 hover:bg-background sm:grid-cols-[minmax(0,1fr)_140px_110px_16px] sm:gap-4 sm:px-6 sm:py-8">
         <div className="flex min-w-0 items-center gap-2 sm:gap-4"><div className="min-w-0"><p className="break-words text-xs font-semibold leading-6 sm:text-sm">{p.name}</p>{metadata && <p className="mt-2 text-[10px] text-muted-foreground sm:text-xs">{metadata}</p>}</div></div>
         <div><p className="text-xl font-semibold sm:text-3xl"><span className="mr-1 text-xs sm:text-base">¥</span>{yen(best.price + best.shipping)}</p>{best.quantity !== null && <p className="mt-2 text-[10px] leading-5 text-muted-foreground sm:text-xs">{unitLabel(p.unit, best)}</p>}</div><div className="min-w-0"><span className="inline-block rounded bg-[#edf3e8] px-2 py-1 text-[10px] text-[#527346] sm:text-xs">{usesUnitComparison(p.records) ? "最安単価" : "最安値"}</span><p className="mt-2 break-words text-[10px] text-muted-foreground sm:text-xs">{best.store}</p></div><ChevronRight className="h-4 w-3 text-muted-foreground" />
       </button>; })}
+      {!loading && !error && visible.length > PAGE_SIZE && <nav aria-label="底値帖のページ切り替え" className="flex items-center justify-between gap-2 border-t border-border px-4 py-4 sm:px-6">
+        <button type="button" aria-label="前のページ" disabled={currentPage === 0} onClick={() => goToPage(currentPage - 1)} className="rounded-lg border border-border px-3 py-2 text-xs disabled:opacity-40">前へ</button>
+        <div className="text-center text-xs text-muted-foreground" aria-live="polite"><p>{currentPage + 1} / {pageCount} ページ</p><p className="mt-1 text-[10px]">{currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, visible.length)} / {visible.length} 件</p></div>
+        <button type="button" aria-label="次のページ" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(currentPage + 1)} className="rounded-lg border border-border px-3 py-2 text-xs disabled:opacity-40">次へ</button>
+      </nav>}
     </section>
     <dialog ref={formDialog} className="m-auto max-h-[90dvh] w-[calc(100%_-_24px)] max-w-lg overflow-y-auto rounded-2xl bg-white p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-7" aria-labelledby="record-title" onCancel={e => { if (saving) e.preventDefault(); }}>
       <div className="mb-5 flex items-center justify-between"><h2 id="record-title" className="text-lg font-bold">{editing ? "価格を編集" : "価格を記録"}</h2><button aria-label="閉じる" disabled={saving} onClick={() => formDialog.current?.close()}><X className="h-5 w-5" /></button></div>

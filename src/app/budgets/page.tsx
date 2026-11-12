@@ -181,13 +181,13 @@ export default function BudgetsPage() {
                   <div className="space-y-1">
                     <div className="relative h-2 w-full overflow-hidden rounded-full bg-[#edf1e8]">
                       <div
-                        className={`h-full rounded-full transition-all ${over ? "bg-[#b56c64]" : "bg-[#285d4d]"}`}
+                        className={`h-full rounded-full transition-all ${over ? "bg-[#c1432f]" : "bg-[#285d4d]"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-xs text-[#748172]">
                       <span>使用: {formatYen(spent)}</span>
-                      <span className={over ? "text-[#b56c64] font-medium" : ""}>
+                      <span className={over ? "text-[#c1432f] font-medium" : ""}>
                         {over
                           ? `¥${(spent - limit).toLocaleString("ja-JP")} オーバー`
                           : `残: ${formatYen(limit - spent)}`}
