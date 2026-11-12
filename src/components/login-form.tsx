@@ -87,7 +87,7 @@ export function LoginForm({ nextPath, setupMode }: LoginFormProps) {
                 className="h-11"
               />
             </div>
-            {error ? <p className="text-sm text-[#915950]">{error}</p> : null}
+            {error ? <p className="text-sm text-[#874b35]">{error}</p> : null}
             <Button
               type="submit"
               className="h-11 w-full"

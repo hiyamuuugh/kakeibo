@@ -1,6 +1,6 @@
 "use client";
 
-import { mutedColor } from "@/lib/theme-colors";
+import { paletteColor } from "@/lib/theme-colors";
 
 import { useCallback, useEffect, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
@@ -69,18 +69,18 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const SOURCE_COLORS: Record<string, string> = {
-  paypay: "#93636d",
-  paypay_card: "#a3895b",
-  rakuten: "#746181",
+  paypay: "#82582f",
+  paypay_card: "#82582f",
+  rakuten: "#6d583d",
   mufg: "#214e40",
-  smbc: "#52745d",
+  smbc: "#3f6849",
   manual: "#475569",
-  credit: "#587d86",
-  saison: "#54766d",
+  credit: "#385b65",
+  saison: "#285d4d",
 };
 
 const getSourceStyle = (source: string) => {
-  const color = mutedColor(SOURCE_COLORS[source]);
+  const color = paletteColor(SOURCE_COLORS[source]);
   return {
     color,
     backgroundColor: `${color}18`,
@@ -89,7 +89,7 @@ const getSourceStyle = (source: string) => {
 };
 
 const getMemberStyle = (member: Member | null) => {
-  const color = mutedColor(member?.color);
+  const color = paletteColor(member?.color);
   return {
     color,
     backgroundColor: `${color}18`,
@@ -128,13 +128,13 @@ const getFilterLabel = (value: string, categories: Category[], filterType: strin
 };
 
 const getTotalColor = (amount: number) => {
-  if (amount > 0) return "text-[#52745d]";
-  if (amount < 0) return "text-[#915950]";
+  if (amount > 0) return "text-[#3f6849]";
+  if (amount < 0) return "text-[#874b35]";
   return "text-[#263c34]";
 };
 
 const getTransactionAmountColor = (amount: number) =>
-  amount < 0 ? "text-[#52745d]" : "text-[#915950]";
+  amount < 0 ? "text-[#3f6849]" : "text-[#874b35]";
 
 const formatTransactionAmount = (amount: number) =>
   `${amount < 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
@@ -480,7 +480,7 @@ export default function TransactionsPage() {
           {filterCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: mutedColor(category.color) }} />
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: paletteColor(category.color) }} />
                 {filterType === "all" && category.name === "その他"
                   ? `その他(${category.type === "income" ? "収入" : "支出"})`
                   : category.name}
@@ -539,7 +539,7 @@ export default function TransactionsPage() {
             type="button"
             onClick={() => handleViewModeChange("family")}
             className={`rounded-md py-1.5 text-xs font-bold ${
-              viewMode === "family" ? "bg-[#eee5e8] text-[#986f82] shadow-sm" : "text-[#748172]"
+              viewMode === "family" ? "bg-[#eee5e8] text-[#82582f] shadow-sm" : "text-[#748172]"
             }`}
           >
             家族全員
@@ -637,7 +637,7 @@ export default function TransactionsPage() {
                 {members.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: mutedColor(member.color) }} />
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: paletteColor(member.color) }} />
                       {member.name}
                     </span>
                   </SelectItem>
@@ -656,7 +656,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-9 border-[#915950] bg-white px-2 font-normal text-[#915950] hover:bg-[#f7f0ec]"
+                    className="h-9 border-[#874b35] bg-white px-2 font-normal text-[#874b35] hover:bg-[#f7f0ec]"
                     disabled={selectedTransactionIds.size === 0}
                     onClick={() => void deleteSelectedTransactions()}
                   >
@@ -803,7 +803,7 @@ export default function TransactionsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-[#cdd5c7] hover:text-[#915950]"
+                          className="h-7 w-7 text-[#cdd5c7] hover:text-[#874b35]"
                           onClick={() => deleteTransaction(transaction.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -902,7 +902,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-[#915950]"
+                    className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-[#874b35]"
                     onClick={() => deleteTransaction(transaction.id)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -985,7 +985,7 @@ function CategorySelect({
             <span className="flex items-center gap-2">
               <span
                 className="h-2 w-2 rounded-full"
-                style={{ background: mutedColor(transaction.category.color) }}
+                style={{ background: paletteColor(transaction.category.color) }}
               />
               <span>{transaction.category.name}</span>
             </span>
@@ -1004,7 +1004,7 @@ function CategorySelect({
         {selectableCategories.map((category) => (
           <SelectItem key={category.id} value={category.id}>
             <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: mutedColor(category.color) }} />
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: paletteColor(category.color) }} />
               {category.name}
             </span>
           </SelectItem>

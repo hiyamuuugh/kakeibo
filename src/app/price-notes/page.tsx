@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, ChevronRight, Plus, Search, X } from "lucide-react";
+import { ChevronRight, Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { cheapest, sortedRecords, usesUnitComparison, unitLabel, units, type PriceProduct } from "@/lib/price-notes";
 
@@ -67,7 +67,10 @@ export default function PriceNotesPage() {
   }
   const visible = products.filter(p => p.records.length && (category === "すべて" || p.category === category || (category === "ネット購入" && p.records.some(r => r.online))) && `${p.name} ${p.records.map(r => r.store).join(" ")}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).sort((a, b) => {
     if (sort === "name") return a.name.localeCompare(b.name, "ja");
-    if (sort === "low") return (cheapest(a.records).price + cheapest(a.records).shipping) - (cheapest(b.records).price + cheapest(b.records).shipping);
+    if (sort === "low" || sort === "high") {
+      const difference = (cheapest(a.records).price + cheapest(a.records).shipping) - (cheapest(b.records).price + cheapest(b.records).shipping);
+      return sort === "high" ? -difference : difference;
+    }
     const last = (p: PriceProduct) => Math.max(...p.records.map(r => Date.parse(r.createdAt)));
     return last(b) - last(a);
   });
@@ -76,15 +79,15 @@ export default function PriceNotesPage() {
     <section className="overflow-hidden rounded-2xl border border-border bg-white">
       <div className="px-4 pt-6 sm:px-7">
         <div className="flex items-center justify-between gap-2"><h1 className="text-lg font-bold sm:text-xl">わが家の底値帖 <span className="ml-2 text-xs font-normal text-muted-foreground">{products.filter(p => p.records.length).length} 商品</span></h1><span className="text-[10px] text-muted-foreground sm:text-xs">税込・送料込み</span></div>
-        <div className="my-6 flex gap-2 sm:gap-4"><div className="relative min-w-0 flex-1"><Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" /><input aria-label="商品名・お店で検索" placeholder="商品名・お店で探す" value={query} onChange={e => setQuery(e.target.value)} className={`${field} mt-0 bg-background pl-9`} /></div><select aria-label="並び順" className="min-w-0 rounded-lg border border-border bg-white px-2 text-xs sm:text-sm" value={sort} onChange={e => setSort(e.target.value)}><option value="recent">最近の記録順</option><option value="low">価格が安い順</option><option value="name">商品名順</option></select></div>
+        <div className="my-6 flex gap-2 sm:gap-4"><div className="relative min-w-0 flex-1"><Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" /><input aria-label="商品名・お店で検索" placeholder="商品名・お店で探す" value={query} onChange={e => setQuery(e.target.value)} className={`${field} mt-0 bg-background pl-9`} /></div><select aria-label="並び順" className="min-w-0 rounded-lg border border-border bg-white px-2 text-xs sm:text-sm" value={sort} onChange={e => setSort(e.target.value)}><option value="recent">新着順</option><option value="low">価格が安い順</option><option value="high">価格が高い順</option><option value="name">商品名順</option></select></div>
         <div className="flex gap-5 border-b border-border sm:gap-8" aria-label="カテゴリー">{["すべて", "食品", "日用品", "ネット購入"].map(c => <button key={c} aria-pressed={category === c} onClick={() => setCategory(c)} className={`border-b-2 pb-4 text-xs sm:text-sm ${category === c ? "border-primary font-semibold text-primary" : "border-transparent text-muted-foreground"}`}>{c}</button>)}</div>
       </div>
       {loading && <p className="p-12 text-center text-sm text-muted-foreground" role="status">読み込み中…</p>}
       {error && <div className="p-8 text-center" role="alert"><p className="mb-4 text-sm text-destructive">{error}</p><button className={primary} onClick={() => void load()}>再読み込み</button></div>}
-      {!loading && !error && !visible.length && <div className="px-6 py-16 text-center text-muted-foreground"><BookOpen className="mx-auto mb-4 h-8 w-8" /><p className="text-sm">{products.some(p => p.records.length) ? "条件に合う商品がありません。" : "まだ価格の記録がありません。"}</p><p className="mt-2 text-xs">「追加」から商品・お店・買った価格を記録できます。</p></div>}
+      {!loading && !error && !visible.length && <div className="px-6 py-16 text-center text-muted-foreground"><p className="text-sm">{products.some(p => p.records.length) ? "条件に合う商品がありません。" : "まだ価格の記録がありません。"}</p><p className="mt-2 text-xs">「追加」から商品・お店・買った価格を記録できます。</p></div>}
       {!loading && !error && visible.map(p => { const best = cheapest(p.records); return <button key={p.id} onClick={() => { setSelected(p.id); detailDialog.current?.showModal(); }} className="grid w-full grid-cols-[minmax(0,1fr)_86px_66px_10px] items-center gap-2 border-b border-border px-3 py-6 text-left last:border-0 hover:bg-background sm:grid-cols-[minmax(0,1fr)_140px_110px_16px] sm:gap-4 sm:px-6 sm:py-8">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-4"><div className="flex h-14 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4f1e8] text-2xl sm:h-20 sm:w-16 sm:text-3xl">{p.category === "食品" ? "🛒" : "🧴"}</div><div className="min-w-0"><p className="break-words text-xs font-semibold leading-6 sm:text-sm">{p.name}</p><p className="mt-2 text-[10px] text-muted-foreground sm:text-xs">{best.quantity === null ? "内容量未入力" : `${yen(best.quantity)}${p.unit}`} · {p.category}</p></div></div>
-        <div><p className="text-xl font-semibold sm:text-3xl"><span className="mr-1 text-xs sm:text-base">¥</span>{yen(best.price + best.shipping)}</p><p className="mt-2 text-[10px] leading-5 text-muted-foreground sm:text-xs">{unitLabel(p.unit, best)}</p></div><div className="min-w-0"><span className="inline-block rounded bg-[#edf3e8] px-2 py-1 text-[10px] text-[#527346] sm:text-xs">{usesUnitComparison(p.records) ? "最安単価" : "最安値"}</span><p className="mt-2 break-words text-[10px] text-muted-foreground sm:text-xs">{best.store}</p></div><ChevronRight className="h-4 w-3 text-muted-foreground" />
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4"><div className="min-w-0"><p className="break-words text-xs font-semibold leading-6 sm:text-sm">{p.name}</p><p className="mt-2 text-[10px] text-muted-foreground sm:text-xs">{best.quantity !== null && `${yen(best.quantity)}${p.unit} · `}{p.category}</p></div></div>
+        <div><p className="text-xl font-semibold sm:text-3xl"><span className="mr-1 text-xs sm:text-base">¥</span>{yen(best.price + best.shipping)}</p>{best.quantity !== null && <p className="mt-2 text-[10px] leading-5 text-muted-foreground sm:text-xs">{unitLabel(p.unit, best)}</p>}</div><div className="min-w-0"><span className="inline-block rounded bg-[#edf3e8] px-2 py-1 text-[10px] text-[#527346] sm:text-xs">{usesUnitComparison(p.records) ? "最安単価" : "最安値"}</span><p className="mt-2 break-words text-[10px] text-muted-foreground sm:text-xs">{best.store}</p></div><ChevronRight className="h-4 w-3 text-muted-foreground" />
       </button>; })}
     </section>
     <dialog ref={formDialog} className="m-auto max-h-[90dvh] w-[calc(100%_-_24px)] max-w-lg overflow-y-auto rounded-2xl bg-white p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-7" aria-labelledby="record-title" onCancel={e => { if (saving) e.preventDefault(); }}>
@@ -106,8 +109,8 @@ export default function PriceNotesPage() {
     </dialog>
     <dialog ref={detailDialog} className="m-auto max-h-[85dvh] w-[calc(100%_-_24px)] max-w-lg overflow-y-auto rounded-2xl bg-white p-6 text-foreground shadow-xl backdrop:bg-black/40" aria-labelledby="history-title">
       <div className="mb-5 flex items-center justify-between gap-3"><h2 id="history-title" className="text-lg font-bold">{current?.name ?? "購入履歴"}</h2><button aria-label="閉じる" onClick={() => detailDialog.current?.close()}><X className="h-5 w-5" /></button></div>
-      <p className="mb-4 text-xs text-muted-foreground">{current && usesUnitComparison(current.records) ? "単価の安い順 · 税込・送料込み" : "価格の安い順 · 内容量未入力を含むため単価比較なし"}</p>
-      {current && sortedRecords(current.records).map(r => <div key={r.id} className="flex items-center justify-between gap-4 border-t border-border py-4"><div className="min-w-0"><p className="break-words text-sm font-semibold">{r.store} <span className="text-xs font-normal text-muted-foreground">{r.online ? "ネット" : "実店舗"}</span></p><p className="mt-1 text-xs text-muted-foreground">{r.date.slice(0, 10)} · {r.quantity === null ? "内容量未入力" : `${yen(r.quantity)}${current.unit}`}</p><p className="mt-1 text-xs text-muted-foreground">税込 ¥{yen(r.price)} ＋ 送料 ¥{yen(r.shipping)}</p><button disabled={deleting !== null} onClick={() => void remove(r.id)} className="mt-2 text-xs text-destructive underline disabled:opacity-50">{deleting === r.id ? "削除中…" : "記録を削除"}</button></div><div className="shrink-0 text-right"><p className="text-xl font-semibold">¥{yen(r.price + r.shipping)}</p><p className="mt-1 text-xs text-muted-foreground">{unitLabel(current.unit, r)}</p></div></div>)}
+      <p className="mb-4 text-xs text-muted-foreground">{current && usesUnitComparison(current.records) ? "単価の安い順 · 税込・送料込み" : "価格の安い順 · 税込・送料込み"}</p>
+      {current && sortedRecords(current.records).map(r => <div key={r.id} className="flex items-center justify-between gap-4 border-t border-border py-4"><div className="min-w-0"><p className="break-words text-sm font-semibold">{r.store} <span className="text-xs font-normal text-muted-foreground">{r.online ? "ネット" : "実店舗"}</span></p><p className="mt-1 text-xs text-muted-foreground">{r.date.slice(0, 10)}{r.quantity !== null && ` · ${yen(r.quantity)}${current.unit}`}</p><p className="mt-1 text-xs text-muted-foreground">税込 ¥{yen(r.price)} ＋ 送料 ¥{yen(r.shipping)}</p><button disabled={deleting !== null} onClick={() => void remove(r.id)} className="mt-2 text-xs text-destructive underline disabled:opacity-50">{deleting === r.id ? "削除中…" : "記録を削除"}</button></div><div className="shrink-0 text-right"><p className="text-xl font-semibold">¥{yen(r.price + r.shipping)}</p>{r.quantity !== null && <p className="mt-1 text-xs text-muted-foreground">{unitLabel(current.unit, r)}</p>}</div></div>)}
       {current && !current.records.length && <p className="py-6 text-sm text-muted-foreground">記録がありません。</p>}
       <button className={`${primary} mt-5 w-full`} onClick={() => openForm(current ?? null)}>この商品の価格を追加</button>
     </dialog>

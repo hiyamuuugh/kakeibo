@@ -159,8 +159,8 @@ export default function NewTransactionPage() {
             className={`h-10 rounded-lg text-sm font-bold ${
               kind === value
                 ? value === "expense"
-                  ? "bg-[#a1645d] text-white"
-                  : "bg-[#5c7d67] text-white"
+                  ? "bg-[#874b35] text-white"
+                  : "bg-[#3f6849] text-white"
                 : "text-[#748172]"
             }`}
           >

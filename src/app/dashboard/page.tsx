@@ -1,6 +1,6 @@
 "use client";
 
-import { mutedColor } from "@/lib/theme-colors";
+import { paletteColor } from "@/lib/theme-colors";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
@@ -63,21 +63,21 @@ type ChartMode = "expense" | "income" | "balance";
 type RangeMode = "monthly" | "yearly";
 
 const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive: string }> = {
-  expense: { label: "支出", active: "#a1645d", inactive: "#e5cfca" },
-  income: { label: "収入", active: "#5c7d67", inactive: "#d2e0cf" },
+  expense: { label: "支出", active: "#874b35", inactive: "#e5cfca" },
+  income: { label: "収入", active: "#3f6849", inactive: "#d2e0cf" },
   balance: { label: "収支", active: "#285d4d", inactive: "#c7d9c0" },
 };
 
 const getBalanceColor = (value: number) =>
-  value > 0 ? "#5c7d67" : value < 0 ? "#a1645d" : "#285d4d";
+  value > 0 ? "#3f6849" : value < 0 ? "#874b35" : "#285d4d";
 
 const REPORT_STYLE: Record<
   MonthlyReport["tone"],
   { bg: string; border: string; accent: string; icon: typeof AlertCircle }
 > = {
-  alert: { bg: "#f7f0ec", border: "#e5cfca", accent: "#915950", icon: AlertCircle },
-  warn: { bg: "#f6f2e7", border: "#e4dac0", accent: "#92764e", icon: AlertCircle },
-  good: { bg: "#f0f4eb", border: "#d2e0cf", accent: "#52745d", icon: CheckCircle2 },
+  alert: { bg: "#f7f0ec", border: "#e5cfca", accent: "#874b35", icon: AlertCircle },
+  warn: { bg: "#f6f2e7", border: "#e4dac0", accent: "#82582f", icon: AlertCircle },
+  good: { bg: "#f0f4eb", border: "#d2e0cf", accent: "#3f6849", icon: CheckCircle2 },
   neutral: { bg: "#f5f6f1", border: "#e2e8f0", accent: "#64748b", icon: Info },
 };
 
@@ -488,7 +488,7 @@ export default function Dashboard() {
           type="button"
           onClick={() => setViewMode("family")}
           className={`rounded-md py-1.5 text-xs font-bold ${
-            viewMode === "family" ? "bg-[#eee5e8] text-[#986f82] shadow-sm" : "text-[#748172]"
+            viewMode === "family" ? "bg-[#eee5e8] text-[#82582f] shadow-sm" : "text-[#748172]"
           }`}
         >
           家族全員
@@ -504,7 +504,7 @@ export default function Dashboard() {
               <p className="text-[10px] leading-none text-[#748172]">収支</p>
               <p
                 className="text-2xl font-extrabold leading-tight"
-                style={{ color: balance > 0 ? "#5c7d67" : balance < 0 ? "#a1645d" : "#263c34" }}
+                style={{ color: balance > 0 ? "#3f6849" : balance < 0 ? "#874b35" : "#263c34" }}
               >
                 {formatBalance(balance)}
               </p>
@@ -515,13 +515,13 @@ export default function Dashboard() {
             <Card>
               <CardContent className="px-3 py-2">
                 <p className="text-[10px] leading-none text-[#748172]">収入</p>
-                <p className="text-base font-bold leading-tight text-[#5c7d67]">{formatYen(stats?.income ?? 0)}</p>
+                <p className="text-base font-bold leading-tight text-[#3f6849]">{formatYen(stats?.income ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="px-3 py-2">
                 <p className="text-[10px] leading-none text-[#748172]">支出</p>
-                <p className="text-base font-bold leading-tight text-[#a1645d]">{formatYen(stats?.total ?? 0)}</p>
+                <p className="text-base font-bold leading-tight text-[#874b35]">{formatYen(stats?.total ?? 0)}</p>
               </CardContent>
             </Card>
           </div>
@@ -769,7 +769,7 @@ export default function Dashboard() {
                           {pieTabData.map((category) => (
                             <Cell
                               key={category.id}
-                              fill={mutedColor(category.color)}
+                              fill={paletteColor(category.color)}
                               opacity={
                                 selectedPieName && selectedPieName !== category.name ? 0.28 : 1
                               }
@@ -798,7 +798,7 @@ export default function Dashboard() {
                         <span className="flex min-w-0 items-center gap-2 text-[#415749]">
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ background: mutedColor(category.color) }}
+                            style={{ background: paletteColor(category.color) }}
                           />
                           <span className="truncate">{category.name}</span>
                         </span>

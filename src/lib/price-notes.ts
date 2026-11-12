@@ -33,7 +33,7 @@ export function cheapest(records: PriceRecord[]) {
 }
 export function unitLabel(unit: string, record: PriceRecord) {
   const price = unitPrice(record);
-  if (price === null) return "内容量未入力";
+  if (price === null) return "";
   const base = unit === "g" || unit === "ml" ? 100 : 1;
   return `${base}${unit} あたり ¥${(price * base).toLocaleString("ja-JP", { maximumFractionDigits: 1 })}`;
 }
