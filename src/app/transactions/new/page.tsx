@@ -13,6 +13,7 @@ import {
   getCategoriesByKind,
 } from "@/lib/category-options";
 import { parseReceipt } from "@/lib/receipt-parser";
+import { categoryChipStyle } from "@/lib/theme-colors";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 const formatInputDate = (date: Date) => format(date, "yyyy-MM-dd");
@@ -158,8 +159,8 @@ export default function NewTransactionPage() {
             className={`h-10 rounded-lg text-sm font-bold ${
               kind === value
                 ? value === "expense"
-                  ? "bg-[#ef4444] text-white"
-                  : "bg-[#22c55e] text-white"
+                  ? "bg-[#a1645d] text-white"
+                  : "bg-[#5c7d67] text-white"
                 : "text-[#748172]"
             }`}
           >
@@ -172,7 +173,7 @@ export default function NewTransactionPage() {
         <CardContent className="space-y-2.5 pt-3">
           <div
             className={`rounded-[12px] border-2 bg-white p-2 ${
-              kind === "expense" ? "border-[#fee2e2]" : "border-[#dcfce7]"
+              kind === "expense" ? "border-[#eee2dd]" : "border-[#e4ecdf]"
             }`}
           >
             <label className="text-[11px] font-semibold text-[#748172]">金額</label>
@@ -220,7 +221,7 @@ export default function NewTransactionPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#748172]">カテゴリ</label>
+            <label className="text-xs font-semibold text-[#748172]">カテゴリ(任意)</label>
             {categoriesLoading ? (
               <LoadingSpinner className="py-3" />
             ) : (
@@ -235,11 +236,7 @@ export default function NewTransactionPage() {
                       ? "border-[#285d4d] bg-[#eaf1e9]"
                       : "border-[#e6eae3] bg-white text-[#748172]"
                   }`}
-                  style={
-                    categoryId === category.id
-                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color }
-                      : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color }
-                  }
+                  style={categoryChipStyle(category.color, categoryId === category.id)}
                 >
                   {category.name}
                 </button>

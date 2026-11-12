@@ -94,7 +94,7 @@ model PriceRecord {
   store     String
   price     Int
   shipping  Int          @default(0)
-  quantity  Float
+  quantity  Float?
   online    Boolean      @default(false)
   date      DateTime     @db.Date
   createdAt DateTime     @default(now())
