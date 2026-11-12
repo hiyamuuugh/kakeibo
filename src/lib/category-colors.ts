@@ -1,8 +1,8 @@
 /** Distinct, restrained presentation colors for category controls, lists and legends. */
 const categoryColors: Record<string, string> = {
-  食費: "#587343", 日用品: "#397370", 子ども: "#8b692f", お小遣い: "#756085",
-  交通費: "#426e91", 娯楽: "#975b40", 医療: "#8a5c72", 固定費: "#52616f",
-  その他: "#796949", 未分類: "#68756c", 給料: "#3f7190", 補助金: "#68713e",
+  食費: "#4f732f", 日用品: "#1e756f", 子ども: "#96651a", お小遣い: "#71498b",
+  交通費: "#285f8f", 娯楽: "#a04d2c", 医療: "#8a455d", 固定費: "#385c75",
+  その他: "#7b5d2e", 未分類: "#58715c", 給料: "#226589", 補助金: "#66762f",
 };
 const extraColors = Object.values(categoryColors);
 export function categoryColor(name: string): string {
