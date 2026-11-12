@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "家族で使うためのブラウザ家計簿アプリ",
     start_url: "/",
     display: "standalone",
-    background_color: "#f8fafc",
-    theme_color: "#16a34a",
+    background_color: "#f5f6f1",
+    theme_color: "#285d4d",
     lang: "ja",
     icons: [
       {

@@ -146,7 +146,7 @@ export default function NewTransactionPage() {
         onChange={handleScan}
       />
 
-      <div className="grid grid-cols-2 gap-1 rounded-[10px] bg-[#e5e7eb] p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-[10px] bg-[#e6eae3] p-1">
         {(["expense", "income"] as const).map((value) => (
           <button
             key={value}
@@ -160,7 +160,7 @@ export default function NewTransactionPage() {
                 ? value === "expense"
                   ? "bg-[#ef4444] text-white"
                   : "bg-[#22c55e] text-white"
-                : "text-[#6b7280]"
+                : "text-[#748172]"
             }`}
           >
             {value === "expense" ? "支出" : "収入"}
@@ -175,52 +175,52 @@ export default function NewTransactionPage() {
               kind === "expense" ? "border-[#fee2e2]" : "border-[#dcfce7]"
             }`}
           >
-            <label className="text-[11px] font-semibold text-[#6b7280]">金額</label>
+            <label className="text-[11px] font-semibold text-[#748172]">金額</label>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-xl font-bold text-[#9ca3af]">¥</span>
+              <span className="text-xl font-bold text-[#8a9585]">¥</span>
               <input
                 inputMode="numeric"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="0"
-                className="min-w-0 flex-1 bg-transparent text-2xl font-extrabold text-[#1f2937] outline-none"
+                className="min-w-0 flex-1 bg-transparent text-2xl font-extrabold text-[#263c34] outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#6b7280]">内容</label>
+            <label className="text-xs font-semibold text-[#748172]">内容</label>
             <input
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="例: セブンイレブン"
-              className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+              className="h-9 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
             />
           </div>
 
           <div className="grid grid-cols-1 gap-2">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#6b7280]">日付</label>
+              <label className="text-xs font-semibold text-[#748172]">日付</label>
               <input
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+                className="h-9 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#6b7280]">メモ(任意)</label>
+              <label className="text-xs font-semibold text-[#748172]">メモ(任意)</label>
               <input
                 value={memo}
                 onChange={(event) => setMemo(event.target.value)}
                 placeholder="例: プレゼント"
-                className="h-9 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+                className="h-9 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#6b7280]">カテゴリ</label>
+            <label className="text-xs font-semibold text-[#748172]">カテゴリ</label>
             {categoriesLoading ? (
               <LoadingSpinner className="py-3" />
             ) : (
@@ -232,13 +232,13 @@ export default function NewTransactionPage() {
                   onClick={() => setCategoryId(category.id)}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                     categoryId === category.id
-                      ? "border-[#3b82f6] bg-[#eff6ff]"
-                      : "border-[#e5e7eb] bg-white text-[#6b7280]"
+                      ? "border-[#285d4d] bg-[#eaf1e9]"
+                      : "border-[#e6eae3] bg-white text-[#748172]"
                   }`}
                   style={
                     categoryId === category.id
-                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#9ca3af"}20`, color: category.color }
-                      : { borderColor: `${category.color ?? "#9ca3af"}66`, color: category.color }
+                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color }
+                      : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color }
                   }
                 >
                   {category.name}

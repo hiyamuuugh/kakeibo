@@ -152,7 +152,7 @@ export default function ImportPage() {
   return (
     <div className="mx-auto max-w-xl space-y-3">
       <div>
-        <h1 className="text-xl font-bold text-[#1f2937]">CSV取込</h1>
+        <h1 className="text-xl font-bold text-[#263c34]">CSV取込</h1>
       </div>
 
       <div className="space-y-2">
@@ -245,18 +245,18 @@ function ImportSourceCard({
           <source.icon className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-bold text-[#1f2937]">{source.title}</span>
-          <span className="block truncate text-xs text-[#6b7280]">{source.description}</span>
+          <span className="block text-sm font-bold text-[#263c34]">{source.title}</span>
+          <span className="block truncate text-xs text-[#748172]">{source.description}</span>
         </span>
-        <span className="text-base font-semibold text-[#9ca3af]">{open ? "-" : "+"}</span>
+        <span className="text-base font-semibold text-[#8a9585]">{open ? "-" : "+"}</span>
       </button>
 
       {open ? (
-        <CardContent className="space-y-4 border-t border-[#f3f4f6] pt-4">
+        <CardContent className="space-y-4 border-t border-[#edf1e8] pt-4">
           <button
             type="button"
             onClick={openSource}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#e6eae3] bg-white px-3 text-sm font-semibold text-[#415749] hover:bg-[#f5f6f1]"
           >
             <ExternalLink className="h-4 w-4" />
             {source.linkLabel}
@@ -266,24 +266,24 @@ function ImportSourceCard({
             {...getRootProps()}
             className={`cursor-pointer rounded-[10px] border-2 border-dashed p-8 text-center transition-colors ${
               isDragActive
-                ? "border-[#93c5fd] bg-[#eff6ff]"
-                : "border-[#e5e7eb] bg-[#f9fafb] hover:border-[#d1d5db]"
+                ? "border-[#8eaf94] bg-[#eaf1e9]"
+                : "border-[#e6eae3] bg-[#f5f6f1] hover:border-[#cdd5c7]"
             }`}
           >
             <input {...getInputProps()} />
             {file ? (
               <div>
-                <p className="font-medium text-[#1f2937]">{file.name}</p>
-                <p className="mt-1 text-sm text-[#6b7280]">
+                <p className="font-medium text-[#263c34]">{file.name}</p>
+                <p className="mt-1 text-sm text-[#748172]">
                   {(file.size / 1024).toFixed(1)} KB
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-sm text-[#6b7280]">
+                <p className="text-sm text-[#748172]">
                   CSVファイルをドロップ、またはクリックして選択
                 </p>
-                <p className="mt-2 text-xs text-[#9ca3af]">{source.description}</p>
+                <p className="mt-2 text-xs text-[#8a9585]">{source.description}</p>
               </div>
             )}
           </div>
@@ -301,9 +301,9 @@ function ImportSourceCard({
             {loading ? "インポート中..." : "取込開始"}
           </Button>
 
-          <div className="rounded-[10px] bg-[#f9fafb] p-4">
-            <p className="mb-2 text-sm font-bold text-[#1f2937]">CSVの取得手順</p>
-            <ol className="list-inside list-decimal space-y-1 text-sm text-[#6b7280]">
+          <div className="rounded-[10px] bg-[#f5f6f1] p-4">
+            <p className="mb-2 text-sm font-bold text-[#263c34]">CSVの取得手順</p>
+            <ol className="list-inside list-decimal space-y-1 text-sm text-[#748172]">
               {source.steps.map((step) => (
                 <li key={step}>{step}</li>
               ))}

@@ -263,7 +263,7 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-3">
       <div>
-        <h1 className="text-xl font-bold text-[#1f2937]">設定</h1>
+        <h1 className="text-xl font-bold text-[#263c34]">設定</h1>
       </div>
 
       <Card className="order-1">
@@ -274,17 +274,17 @@ export default function SettingsPage() {
         >
           <CardTitle className="text-sm font-semibold">アカウント</CardTitle>
           {accountOpen ? (
-            <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+            <ChevronDown className="h-4 w-4 text-[#8a9585]" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+            <ChevronRight className="h-4 w-4 text-[#8a9585]" />
           )}
         </button>
         {accountOpen ? (
-        <CardContent className="space-y-4 border-t border-[#f3f4f6] pt-2">
+        <CardContent className="space-y-4 border-t border-[#edf1e8] pt-2">
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : members.length === 0 ? (
-            <p className="py-4 text-center text-sm text-[#9ca3af]">アカウントがありません</p>
+            <p className="py-4 text-center text-sm text-[#8a9585]">アカウントがありません</p>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2">
@@ -295,8 +295,8 @@ export default function SettingsPage() {
                     onClick={() => handleSelectMember(member)}
                     className={`rounded-lg border px-3 py-2 text-left text-sm font-bold ${
                       selectedMemberId === member.id
-                        ? "border-[#3b82f6] bg-[#eff6ff] text-[#1d4ed8]"
-                        : "border-[#e5e7eb] bg-white text-[#374151]"
+                        ? "border-[#285d4d] bg-[#eaf1e9] text-[#214e40]"
+                        : "border-[#e6eae3] bg-white text-[#415749]"
                     }`}
                   >
                     <span
@@ -324,36 +324,36 @@ export default function SettingsPage() {
         >
           <CardTitle className="text-sm font-semibold">CSV取込スキップワード</CardTitle>
           {exclusionOpen ? (
-            <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+            <ChevronDown className="h-4 w-4 text-[#8a9585]" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+            <ChevronRight className="h-4 w-4 text-[#8a9585]" />
           )}
         </button>
         {exclusionOpen ? (
-          <CardContent className="space-y-3 border-t border-[#f3f4f6]">
+          <CardContent className="space-y-3 border-t border-[#edf1e8]">
             <div className="mt-2 flex gap-2">
               <input
                 value={exclusionName}
                 onChange={(event) => setExclusionName(event.target.value)}
                 placeholder="例: 楽天証券"
-                className="h-10 min-w-0 flex-1 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+                className="h-10 min-w-0 flex-1 rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
               />
               <Button type="button" className="h-10 shrink-0" onClick={() => void handleAddExclusion()}>
                 追加
               </Button>
             </div>
             {importExclusions.length === 0 ? (
-              <p className="py-2 text-center text-sm text-[#9ca3af]">登録ワードがありません</p>
+              <p className="py-2 text-center text-sm text-[#8a9585]">登録ワードがありません</p>
             ) : (
               <div className="space-y-2">
                 {pageExclusions.map((exclusion) => (
-                  <div key={exclusion.id} className="flex items-center gap-2 rounded-lg bg-[#f9fafb] px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#1f2937]">{exclusion.name}</span>
+                  <div key={exclusion.id} className="flex items-center gap-2 rounded-lg bg-[#f5f6f1] px-3 py-2">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#263c34]">{exclusion.name}</span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
+                      className="h-8 w-8 text-[#cdd5c7] hover:text-red-600"
                       onClick={() => void handleDeleteExclusion(exclusion.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -373,7 +373,7 @@ export default function SettingsPage() {
                     >
                       前へ
                     </Button>
-                    <span className="text-xs font-semibold text-[#6b7280]">
+                    <span className="text-xs font-semibold text-[#748172]">
                       {safeExclusionPage + 1} / {exclusionPageCount}
                     </span>
                     <Button
@@ -402,20 +402,20 @@ export default function SettingsPage() {
         >
           <CardTitle className="text-sm font-semibold">カテゴリマッピング</CardTitle>
           {mappingOpen ? (
-            <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+            <ChevronDown className="h-4 w-4 text-[#8a9585]" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+            <ChevronRight className="h-4 w-4 text-[#8a9585]" />
           )}
         </button>
         {mappingOpen ? (
-        <CardContent className="space-y-4 border-t border-[#f3f4f6]">
+        <CardContent className="space-y-4 border-t border-[#edf1e8]">
       <div className="space-y-4 pt-3">
-        <p className="text-sm font-semibold text-[#1f2937]">ルール追加</p>
+        <p className="text-sm font-semibold text-[#263c34]">ルール追加</p>
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : (
           <>
-          <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e5e7eb] p-1">
+          <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#e6eae3] p-1">
             {(["expense", "income"] as const).map((value) => (
               <button
                 key={value}
@@ -429,7 +429,7 @@ export default function SettingsPage() {
                     ? value === "expense"
                       ? "bg-[#ef4444] text-white"
                       : "bg-[#22c55e] text-white"
-                    : "text-[#6b7280]"
+                    : "text-[#748172]"
                 }`}
               >
                 {value === "expense" ? "支出" : "収入"}
@@ -440,7 +440,7 @@ export default function SettingsPage() {
             value={merchant}
             onChange={(event) => setMerchant(event.target.value)}
             placeholder="例: コープ"
-            className="h-11 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus:border-[#93c5fd]"
+            className="h-11 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
           />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {visibleCategories.map((category) => (
@@ -450,13 +450,13 @@ export default function SettingsPage() {
                 onClick={() => setCategoryId(category.id)}
                 className={`flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                   categoryId === category.id
-                      ? "border-[#3b82f6] bg-[#eff6ff]"
-                    : "border-[#e5e7eb] bg-white"
+                      ? "border-[#285d4d] bg-[#eaf1e9]"
+                    : "border-[#e6eae3] bg-white"
                 }`}
                 style={
                   categoryId === category.id
-                    ? { borderColor: category.color ?? "#9ca3af", backgroundColor: `${category.color ?? "#9ca3af"}20`, color: category.color ?? "#9ca3af" }
-                    : { borderColor: `${category.color ?? "#9ca3af"}66`, color: category.color ?? "#9ca3af" }
+                    ? { borderColor: category.color ?? "#8a9585", backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color ?? "#8a9585" }
+                    : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color ?? "#8a9585" }
                 }
               >
                 {category.name}
@@ -471,7 +471,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-bold text-[#1f2937]">登録済みルール</p>
+        <p className="text-sm font-bold text-[#263c34]">登録済みルール</p>
       </div>
 
       <div className="space-y-2">
@@ -483,7 +483,7 @@ export default function SettingsPage() {
           </Card>
         ) : ruleGroups.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-sm text-[#9ca3af]">
+            <CardContent className="py-8 text-center text-sm text-[#8a9585]">
               ルールがありません
             </CardContent>
           </Card>
@@ -503,27 +503,27 @@ export default function SettingsPage() {
                   className="flex w-full items-center gap-3 p-3 text-left"
                 >
                   {closed ? (
-                    <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+                    <ChevronRight className="h-4 w-4 text-[#8a9585]" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-[#9ca3af]" />
+                    <ChevronDown className="h-4 w-4 text-[#8a9585]" />
                   )}
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: group.category.color ?? "#9ca3af" }}
+                    style={{ backgroundColor: group.category.color ?? "#8a9585" }}
                   />
-                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#1f2937]">
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#263c34]">
                     {group.category.name}
                   </span>
-                  <span className="text-xs font-semibold text-[#9ca3af]">
+                  <span className="text-xs font-semibold text-[#8a9585]">
                     {group.rules.length}件
                   </span>
                 </button>
                 {closed ? null : (
-                  <CardContent className="space-y-2 border-t border-[#f3f4f6] p-3">
+                  <CardContent className="space-y-2 border-t border-[#edf1e8] p-3">
                     {pageRules.map((rule) => (
-                      <div key={rule.id} className="flex items-center gap-3 rounded-lg bg-[#f9fafb] p-2">
+                      <div key={rule.id} className="flex items-center gap-3 rounded-lg bg-[#f5f6f1] p-2">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-[#1f2937]">
+                          <p className="truncate text-sm font-semibold text-[#263c34]">
                             {rule.merchant}
                           </p>
                         </div>
@@ -531,7 +531,7 @@ export default function SettingsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#d1d5db] hover:text-red-600"
+                          className="h-8 w-8 text-[#cdd5c7] hover:text-red-600"
                           onClick={() => handleDelete(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -551,7 +551,7 @@ export default function SettingsPage() {
                         >
                           前へ
                         </Button>
-                        <span className="text-xs font-semibold text-[#6b7280]">
+                        <span className="text-xs font-semibold text-[#748172]">
                           {safePage + 1} / {pageCount}
                         </span>
                         <Button

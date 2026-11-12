@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-[10px] border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-all outline-none select-none focus-visible:border-blue-300 focus-visible:ring-3 focus-visible:ring-blue-100 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-[10px] border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-[#3b82f6] text-white [a]:hover:bg-blue-500 hover:bg-blue-500",
+        default: "bg-[#285d4d] text-white [a]:hover:bg-[#214e40] hover:bg-[#214e40]",
         outline:
-          "border-[#e5e7eb] bg-white text-[#374151] hover:bg-[#f3f4f6] hover:text-[#1f2937] aria-expanded:bg-[#f3f4f6] aria-expanded:text-[#1f2937]",
+          "border-[#e6eae3] bg-white text-[#415749] hover:bg-[#edf1e8] hover:text-[#263c34] aria-expanded:bg-[#edf1e8] aria-expanded:text-[#263c34]",
         secondary:
-          "bg-[#e5e7eb] text-[#374151] hover:bg-[#d1d5db] aria-expanded:bg-[#e5e7eb] aria-expanded:text-[#374151]",
+          "bg-[#e6eae3] text-[#415749] hover:bg-[#cdd5c7] aria-expanded:bg-[#e6eae3] aria-expanded:text-[#415749]",
         ghost:
-          "text-[#374151] hover:bg-[#f3f4f6] hover:text-[#1f2937] aria-expanded:bg-[#f3f4f6] aria-expanded:text-[#1f2937]",
+          "text-[#415749] hover:bg-[#edf1e8] hover:text-[#263c34] aria-expanded:bg-[#edf1e8] aria-expanded:text-[#263c34]",
         destructive:
           "bg-red-50 text-red-600 hover:bg-red-100 focus-visible:border-red-300 focus-visible:ring-red-100",
         link: "text-primary underline-offset-4 hover:underline",

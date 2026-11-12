@@ -115,8 +115,8 @@ export default function BudgetsPage() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold text-[#6b7280]">カテゴリ別</p>
-          <h1 className="text-xl font-bold text-[#1f2937]">予算管理</h1>
+          <p className="text-xs font-semibold text-[#748172]">カテゴリ別</p>
+          <h1 className="text-xl font-bold text-[#263c34]">予算管理</h1>
         </div>
         <input
           type="month"
@@ -125,7 +125,7 @@ export default function BudgetsPage() {
             setLoading(true);
             setMonth(e.target.value);
           }}
-          className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 text-sm"
+          className="h-10 rounded-lg border border-[#e6eae3] bg-white px-3 text-sm"
         />
       </div>
 
@@ -177,13 +177,13 @@ export default function BudgetsPage() {
 
                 {limit > 0 && (
                   <div className="space-y-1">
-                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-[#f3f4f6]">
+                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-[#edf1e8]">
                       <div
-                        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-[#3b82f6]"}`}
+                        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-[#285d4d]"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-[#6b7280]">
+                    <div className="flex justify-between text-xs text-[#748172]">
                       <span>使用: {formatYen(spent)}</span>
                       <span className={over ? "text-red-500 font-medium" : ""}>
                         {over
@@ -195,7 +195,7 @@ export default function BudgetsPage() {
                 )}
 
                 {limit === 0 && spent > 0 && (
-                  <p className="text-xs text-[#9ca3af]">
+                  <p className="text-xs text-[#8a9585]">
                     今月の支出: {formatYen(spent)}（予算未設定）
                   </p>
                 )}

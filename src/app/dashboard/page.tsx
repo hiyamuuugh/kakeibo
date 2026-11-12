@@ -63,11 +63,11 @@ type RangeMode = "monthly" | "yearly";
 const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive: string }> = {
   expense: { label: "支出", active: "#ef4444", inactive: "#fecaca" },
   income: { label: "収入", active: "#22c55e", inactive: "#bbf7d0" },
-  balance: { label: "収支", active: "#3b82f6", inactive: "#bfdbfe" },
+  balance: { label: "収支", active: "#285d4d", inactive: "#c7d9c0" },
 };
 
 const getBalanceColor = (value: number) =>
-  value > 0 ? "#22c55e" : value < 0 ? "#ef4444" : "#3b82f6";
+  value > 0 ? "#22c55e" : value < 0 ? "#ef4444" : "#285d4d";
 
 const REPORT_STYLE: Record<
   MonthlyReport["tone"],
@@ -76,7 +76,7 @@ const REPORT_STYLE: Record<
   alert: { bg: "#fef2f2", border: "#fecaca", accent: "#dc2626", icon: AlertCircle },
   warn: { bg: "#fffbeb", border: "#fde68a", accent: "#d97706", icon: AlertCircle },
   good: { bg: "#f0fdf4", border: "#bbf7d0", accent: "#16a34a", icon: CheckCircle2 },
-  neutral: { bg: "#f8fafc", border: "#e2e8f0", accent: "#64748b", icon: Info },
+  neutral: { bg: "#f5f6f1", border: "#e2e8f0", accent: "#64748b", icon: Info },
 };
 
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
@@ -133,9 +133,9 @@ const ChartTooltip = ({
   }
 
   return (
-    <div className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-xs shadow">
-      <p className="font-semibold text-[#374151]">{label}</p>
-      <p className="mt-1 font-bold text-[#1f2937]">{formatBalance(payload[0].value)}</p>
+    <div className="rounded-lg border border-[#e6eae3] bg-white px-3 py-2 text-xs shadow">
+      <p className="font-semibold text-[#415749]">{label}</p>
+      <p className="mt-1 font-bold text-[#263c34]">{formatBalance(payload[0].value)}</p>
     </div>
   );
 };
@@ -176,7 +176,7 @@ const BarValueLabel = (props: unknown) => {
       x={labelX + labelWidth / 2}
       y={amount < 0 ? labelY + labelHeight + 12 : labelY - 5}
       textAnchor="middle"
-      className="fill-[#374151] text-[10px] font-bold"
+      className="fill-[#415749] text-[10px] font-bold"
     >
       {amount < 0 ? `-${formatShortAmount(amount)}` : formatShortAmount(amount)}
     </text>
@@ -197,9 +197,9 @@ const PieTooltip = ({
   }
 
   return (
-    <div className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-xs shadow">
-      <p className="font-semibold text-[#374151]">{payload[0].name}</p>
-      <p className="mt-1 font-bold text-[#1f2937]">
+    <div className="rounded-lg border border-[#e6eae3] bg-white px-3 py-2 text-xs shadow">
+      <p className="font-semibold text-[#415749]">{payload[0].name}</p>
+      <p className="mt-1 font-bold text-[#263c34]">
         {formatYen(payload[0].value)} / {getSharePercent(payload[0].value, total)}%
       </p>
     </div>
@@ -453,7 +453,7 @@ export default function Dashboard() {
         <button
           type="button"
           onClick={goToPrevMonth}
-          className="px-2 text-3xl font-light text-[#3b82f6]"
+          className="px-2 text-3xl font-light text-[#285d4d]"
         >
           ‹
         </button>
@@ -461,23 +461,23 @@ export default function Dashboard() {
           type="month"
           value={month}
           onChange={(event) => setMonth(event.target.value)}
-          className="h-10 rounded-lg border-0 bg-transparent px-3 text-center text-xl font-bold text-[#1f2937] outline-none"
+          className="h-10 rounded-lg border-0 bg-transparent px-3 text-center text-xl font-bold text-[#263c34] outline-none"
         />
         <button
           type="button"
           onClick={goToNextMonth}
-          className="px-2 text-3xl font-light text-[#3b82f6]"
+          className="px-2 text-3xl font-light text-[#285d4d]"
         >
           ›
         </button>
       </div>
 
-      <div className="grid grid-cols-2 rounded-lg bg-[#e5e7eb] p-0.5">
+      <div className="grid grid-cols-2 rounded-lg bg-[#e6eae3] p-0.5">
         <button
           type="button"
           onClick={() => setViewMode("personal")}
           className={`rounded-md py-1.5 text-xs font-bold ${
-            viewMode === "personal" ? "bg-[#dbeafe] text-[#2563eb] shadow-sm" : "text-[#6b7280]"
+            viewMode === "personal" ? "bg-[#dce8d9] text-[#214e40] shadow-sm" : "text-[#748172]"
           }`}
         >
           自分
@@ -486,7 +486,7 @@ export default function Dashboard() {
           type="button"
           onClick={() => setViewMode("family")}
           className={`rounded-md py-1.5 text-xs font-bold ${
-            viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#6b7280]"
+            viewMode === "family" ? "bg-[#fce7f3] text-[#db2777] shadow-sm" : "text-[#748172]"
           }`}
         >
           家族全員
@@ -499,10 +499,10 @@ export default function Dashboard() {
         <>
           <Card>
             <CardContent className="px-3 py-2">
-              <p className="text-[10px] leading-none text-[#6b7280]">収支</p>
+              <p className="text-[10px] leading-none text-[#748172]">収支</p>
               <p
                 className="text-2xl font-extrabold leading-tight"
-                style={{ color: balance > 0 ? "#22c55e" : balance < 0 ? "#ef4444" : "#1f2937" }}
+                style={{ color: balance > 0 ? "#22c55e" : balance < 0 ? "#ef4444" : "#263c34" }}
               >
                 {formatBalance(balance)}
               </p>
@@ -512,13 +512,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 gap-2">
             <Card>
               <CardContent className="px-3 py-2">
-                <p className="text-[10px] leading-none text-[#6b7280]">収入</p>
+                <p className="text-[10px] leading-none text-[#748172]">収入</p>
                 <p className="text-base font-bold leading-tight text-[#22c55e]">{formatYen(stats?.income ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="px-3 py-2">
-                <p className="text-[10px] leading-none text-[#6b7280]">支出</p>
+                <p className="text-[10px] leading-none text-[#748172]">支出</p>
                 <p className="text-base font-bold leading-tight text-[#ef4444]">{formatYen(stats?.total ?? 0)}</p>
               </CardContent>
             </Card>
@@ -528,8 +528,8 @@ export default function Dashboard() {
           <Card className="order-1 overflow-visible">
             <CardContent className="space-y-3 overflow-visible p-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[#1f2937]">推移グラフ</p>
-                <div className="flex rounded-lg bg-[#f3f4f6] p-0.5">
+                <p className="text-sm font-semibold text-[#263c34]">推移グラフ</p>
+                <div className="flex rounded-lg bg-[#edf1e8] p-0.5">
                   {(["monthly", "yearly"] as const).map((mode) => (
                     <button
                       key={mode}
@@ -539,7 +539,7 @@ export default function Dashboard() {
                         setSelectedYear(null);
                       }}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                        rangeMode === mode ? "bg-[#3b82f6] text-white" : "text-[#6b7280]"
+                        rangeMode === mode ? "bg-[#285d4d] text-white" : "text-[#748172]"
                       }`}
                     >
                       {mode === "monthly" ? "月別" : "年別"}
@@ -554,7 +554,7 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setSelectedYear((year) => (year ?? new Date().getFullYear()) - 1)}
-                      className="p-1 text-lg text-[#3b82f6]"
+                      className="p-1 text-lg text-[#285d4d]"
                     >
                       ‹
                     </button>
@@ -562,19 +562,19 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => setShowYearPicker((value) => !value)}
-                        className="min-w-24 bg-transparent text-center text-[15px] font-bold text-[#3b82f6] outline-none"
+                        className="min-w-24 bg-transparent text-center text-[15px] font-bold text-[#285d4d] outline-none"
                       >
                         {selectedYear === null ? "過去12ヶ月" : `${selectedYear}年`}
                       </button>
                       {showYearPicker ? (
-                        <div className="absolute left-1/2 top-8 z-50 w-36 -translate-x-1/2 rounded-[10px] border border-[#e5e7eb] bg-white p-2 text-sm shadow-lg">
+                        <div className="absolute left-1/2 top-8 z-50 w-36 -translate-x-1/2 rounded-[10px] border border-[#e6eae3] bg-white p-2 text-sm shadow-lg">
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedYear(null);
                               setShowYearPicker(false);
                             }}
-                            className="w-full rounded-lg px-3 py-2 text-left font-semibold text-[#3b82f6] hover:bg-[#eff6ff]"
+                            className="w-full rounded-lg px-3 py-2 text-left font-semibold text-[#285d4d] hover:bg-[#eaf1e9]"
                           >
                             過去12ヶ月
                           </button>
@@ -587,7 +587,7 @@ export default function Dashboard() {
                                   setSelectedYear(year);
                                   setShowYearPicker(false);
                                 }}
-                                className="w-full rounded-lg px-3 py-2 text-left font-semibold text-[#374151] hover:bg-[#f9fafb]"
+                                className="w-full rounded-lg px-3 py-2 text-left font-semibold text-[#415749] hover:bg-[#f5f6f1]"
                               >
                                 {year}年
                               </button>
@@ -604,7 +604,7 @@ export default function Dashboard() {
                           return next >= new Date().getFullYear() ? null : next;
                         })
                       }
-                      className="p-1 text-lg text-[#3b82f6]"
+                      className="p-1 text-lg text-[#285d4d]"
                     >
                       ›
                     </button>
@@ -613,7 +613,7 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setSelectedYear(null)}
-                      className="absolute right-0 rounded-md border border-[#bfdbfe] bg-[#eff6ff] px-2.5 py-1 text-xs font-bold text-[#3b82f6]"
+                      className="absolute right-0 rounded-md border border-[#c7d9c0] bg-[#eaf1e9] px-2.5 py-1 text-xs font-bold text-[#285d4d]"
                     >
                       最新
                     </button>
@@ -631,7 +631,7 @@ export default function Dashboard() {
                       setSelectedCatName(null);
                     }}
                     className={`rounded-lg py-1.5 text-[11px] font-semibold ${
-                      chartMode === mode ? "bg-[#3b82f6] text-white" : "bg-[#f3f4f6] text-[#6b7280]"
+                      chartMode === mode ? "bg-[#285d4d] text-white" : "bg-[#edf1e8] text-[#748172]"
                     }`}
                   >
                     {CHART_CONFIGS[mode].label}
@@ -646,14 +646,14 @@ export default function Dashboard() {
                   <div className="h-full min-w-[560px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} margin={{ left: -20, right: 8, top: 28, bottom: 18 }}>
-                        <CartesianGrid vertical={false} stroke="#f3f4f6" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                        <CartesianGrid vertical={false} stroke="#edf1e8" />
+                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#8a9585" }} />
                         <YAxis
                           domain={yDomain}
                           tickFormatter={(value) => formatShortAmount(Number(value))}
-                          tick={{ fontSize: 10, fill: "#9ca3af" }}
+                          tick={{ fontSize: 10, fill: "#8a9585" }}
                         />
-                        {chartMode === "balance" ? <ReferenceLine y={0} stroke="#d1d5db" /> : null}
+                        {chartMode === "balance" ? <ReferenceLine y={0} stroke="#cdd5c7" /> : null}
                         <Tooltip content={<ChartTooltip />} cursor={false} />
                         <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                           <LabelList dataKey="value" content={BarValueLabel} />
@@ -686,20 +686,20 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setShowCategoryPicker((value) => !value)}
-                    className="flex w-full items-center justify-between rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2 text-left text-xs font-semibold text-[#374151]"
+                    className="flex w-full items-center justify-between rounded-lg border border-[#e6eae3] bg-[#f5f6f1] px-3 py-2 text-left text-xs font-semibold text-[#415749]"
                   >
                     <span className="truncate">カテゴリ：{selectedCatName ?? "すべて"}</span>
-                    <ChevronDown className="h-4 w-4 text-[#6b7280]" />
+                    <ChevronDown className="h-4 w-4 text-[#748172]" />
                   </button>
                   {showCategoryPicker ? (
-                    <div className="absolute inset-x-0 top-11 z-50 max-h-64 overflow-auto rounded-[10px] border border-[#e5e7eb] bg-white p-2 shadow-lg">
+                    <div className="absolute inset-x-0 top-11 z-50 max-h-64 overflow-auto rounded-[10px] border border-[#e6eae3] bg-white p-2 shadow-lg">
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedCatName(null);
                           setShowCategoryPicker(false);
                         }}
-                        className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#3b82f6] hover:bg-[#eff6ff]"
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#285d4d] hover:bg-[#eaf1e9]"
                       >
                         すべて
                       </button>
@@ -711,7 +711,7 @@ export default function Dashboard() {
                             setSelectedCatName(name);
                             setShowCategoryPicker(false);
                           }}
-                          className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#415749] hover:bg-[#f5f6f1]"
                         >
                           {name}
                         </button>
@@ -726,8 +726,8 @@ export default function Dashboard() {
           <Card className="order-2">
             <CardContent className="space-y-4 p-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#1f2937]">カテゴリ別</p>
-                <div className="flex rounded-lg bg-[#e5e7eb] p-0.5">
+                <p className="text-sm font-semibold text-[#263c34]">カテゴリ別</p>
+                <div className="flex rounded-lg bg-[#e6eae3] p-0.5">
                   {(["expense", "income"] as const).map((mode) => (
                     <button
                       key={mode}
@@ -737,7 +737,7 @@ export default function Dashboard() {
                         setSelectedPieName(null);
                       }}
                       className={`rounded-md px-3.5 py-1.5 text-xs font-bold ${
-                        pieMode === mode ? "bg-[#3b82f6] text-white" : "text-[#6b7280]"
+                        pieMode === mode ? "bg-[#285d4d] text-white" : "text-[#748172]"
                       }`}
                     >
                       {mode === "expense" ? "支出" : "収入"}
@@ -793,16 +793,16 @@ export default function Dashboard() {
                           selectedPieName && selectedPieName !== category.name ? "opacity-40" : ""
                         }`}
                       >
-                        <span className="flex min-w-0 items-center gap-2 text-[#374151]">
+                        <span className="flex min-w-0 items-center gap-2 text-[#415749]">
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
                             style={{ background: category.color }}
                           />
                           <span className="truncate">{category.name}</span>
                         </span>
-                        <span className="shrink-0 text-right font-semibold text-[#1f2937]">
+                        <span className="shrink-0 text-right font-semibold text-[#263c34]">
                           {formatYen(category.total)}
-                          <span className="ml-1 text-xs text-[#6b7280]">
+                          <span className="ml-1 text-xs text-[#748172]">
                             {getSharePercent(category.total, pieTotal)}%
                           </span>
                         </span>
@@ -811,7 +811,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
-                <p className="py-10 text-center text-sm text-[#9ca3af]">データなし</p>
+                <p className="py-10 text-center text-sm text-[#8a9585]">データなし</p>
               )}
             </CardContent>
           </Card>
@@ -823,12 +823,12 @@ export default function Dashboard() {
             >
               <div className="flex items-center gap-1.5">
                 <ReportIcon className="h-[18px] w-[18px]" style={{ color: reportStyle.accent }} />
-                <p className="text-[11px] font-bold text-[#6b7280]">Monthly Report</p>
+                <p className="text-[11px] font-bold text-[#748172]">Monthly Report</p>
               </div>
               <p className="text-[15px] font-extrabold" style={{ color: reportStyle.accent }}>
                 {report.headline}
               </p>
-              <p className="text-[13px] leading-[19px] text-[#374151]">{report.advice}</p>
+              <p className="text-[13px] leading-[19px] text-[#415749]">{report.advice}</p>
             </div>
           ) : null}
           </div>
