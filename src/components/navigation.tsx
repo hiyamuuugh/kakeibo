@@ -17,8 +17,8 @@ const links = [
   { href: "/dashboard", label: "ダッシュボード", icon: ChartNoAxesCombined },
   { href: "/transactions", label: "一覧", icon: ReceiptText },
   { href: "/transactions/new", label: "入力", icon: PlusCircle },
-  { href: "/import", label: "取込", icon: FolderInput },
   { href: "/price-notes", label: "底値帖", icon: BookOpen },
+  { href: "/import", label: "取込", icon: FolderInput },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 

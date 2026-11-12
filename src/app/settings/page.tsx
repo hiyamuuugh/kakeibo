@@ -1,6 +1,6 @@
 "use client";
 
-import { categoryColor } from "@/lib/category-colors";
+import { categoryColor, categoryChoiceStyle } from "@/lib/category-colors";
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
@@ -355,7 +355,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-[#cdd5c7] hover:text-red-600"
+                      className="h-8 w-8 text-[#cdd5c7] hover:text-[#a65952]"
                       onClick={() => void handleDeleteExclusion(exclusion.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -429,8 +429,8 @@ export default function SettingsPage() {
                 className={`h-10 rounded-lg text-sm font-bold ${
                   kind === value
                     ? value === "expense"
-                      ? "bg-[#ef4444] text-white"
-                      : "bg-[#3b82f6] text-white"
+                      ? "bg-[#b56c64] text-white"
+                      : "bg-[#557f9f] text-white"
                     : "text-[#748172]"
                 }`}
               >
@@ -455,8 +455,11 @@ export default function SettingsPage() {
                       ? "border-[#285d4d] bg-[#eaf1e9] text-[#285d4d]"
                     : "border-[#dce3d7] bg-[#fafbf7] text-[#415749]"
                 }`}
+                aria-pressed={categoryId === category.id}
+                style={categoryChoiceStyle(category.name, categoryId === category.id)}
 
               >
+                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(category.name) }} />
                 {category.name}
               </button>
             ))}
@@ -529,7 +532,7 @@ export default function SettingsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#cdd5c7] hover:text-red-600"
+                          className="h-8 w-8 text-[#cdd5c7] hover:text-[#a65952]"
                           onClick={() => handleDelete(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />

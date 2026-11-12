@@ -63,19 +63,19 @@ type ChartMode = "expense" | "income" | "balance";
 type RangeMode = "monthly" | "yearly";
 
 const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive: string }> = {
-  expense: { label: "支出", active: "#ef4444", inactive: "#fecaca" },
-  income: { label: "収入", active: "#3b82f6", inactive: "#bfdbfe" },
+  expense: { label: "支出", active: "#b56c64", inactive: "#e7d0ca" },
+  income: { label: "収入", active: "#557f9f", inactive: "#d4e0e8" },
   balance: { label: "収支", active: "#285d4d", inactive: "#c7d9c0" },
 };
 
 const getBalanceColor = (value: number) =>
-  value > 0 ? "#3b82f6" : value < 0 ? "#ef4444" : "#285d4d";
+  value > 0 ? "#557f9f" : value < 0 ? "#b56c64" : "#285d4d";
 
 const REPORT_STYLE: Record<
   MonthlyReport["tone"],
   { bg: string; border: string; accent: string; icon: typeof AlertCircle }
 > = {
-  alert: { bg: "#fef2f2", border: "#fecaca", accent: "#dc2626", icon: AlertCircle },
+  alert: { bg: "#f7efec", border: "#e7d0ca", accent: "#a65952", icon: AlertCircle },
   warn: { bg: "#fffbeb", border: "#fde68a", accent: "#d97706", icon: AlertCircle },
   good: { bg: "#f0fdf4", border: "#bbf7d0", accent: "#16a34a", icon: CheckCircle2 },
   neutral: { bg: "#f5f6f1", border: "#e2e8f0", accent: "#64748b", icon: Info },
@@ -504,7 +504,7 @@ export default function Dashboard() {
               <p className="text-[10px] leading-none text-[#748172]">収支</p>
               <p
                 className="text-2xl font-extrabold leading-tight"
-                style={{ color: balance > 0 ? "#3b82f6" : balance < 0 ? "#ef4444" : "#263c34" }}
+                style={{ color: balance > 0 ? "#557f9f" : balance < 0 ? "#b56c64" : "#263c34" }}
               >
                 {formatBalance(balance)}
               </p>
@@ -515,13 +515,13 @@ export default function Dashboard() {
             <Card>
               <CardContent className="px-3 py-2">
                 <p className="text-[10px] leading-none text-[#748172]">収入</p>
-                <p className="text-base font-bold leading-tight text-[#3b82f6]">{formatYen(stats?.income ?? 0)}</p>
+                <p className="text-base font-bold leading-tight text-[#557f9f]">{formatYen(stats?.income ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="px-3 py-2">
                 <p className="text-[10px] leading-none text-[#748172]">支出</p>
-                <p className="text-base font-bold leading-tight text-[#ef4444]">{formatYen(stats?.total ?? 0)}</p>
+                <p className="text-base font-bold leading-tight text-[#b56c64]">{formatYen(stats?.total ?? 0)}</p>
               </CardContent>
             </Card>
           </div>
