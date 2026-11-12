@@ -12,7 +12,6 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
-import { categoryChipStyle, paletteColor } from "@/lib/theme-colors";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface MerchantRule {
@@ -302,7 +301,7 @@ export default function SettingsPage() {
                   >
                     <span
                       className="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: paletteColor(member.color) }}
+                      style={{ backgroundColor: member.color }}
                     />
                     {member.name}
                   </button>
@@ -354,7 +353,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-[#cdd5c7] hover:text-[#874b35]"
+                      className="h-8 w-8 text-[#cdd5c7] hover:text-red-600"
                       onClick={() => void handleDeleteExclusion(exclusion.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -428,8 +427,8 @@ export default function SettingsPage() {
                 className={`h-10 rounded-lg text-sm font-bold ${
                   kind === value
                     ? value === "expense"
-                      ? "bg-[#874b35] text-white"
-                      : "bg-[#3f6849] text-white"
+                      ? "bg-[#ef4444] text-white"
+                      : "bg-[#22c55e] text-white"
                     : "text-[#748172]"
                 }`}
               >
@@ -454,7 +453,11 @@ export default function SettingsPage() {
                       ? "border-[#285d4d] bg-[#eaf1e9]"
                     : "border-[#e6eae3] bg-white"
                 }`}
-                style={categoryChipStyle(category.color, categoryId === category.id)}
+                style={
+                  categoryId === category.id
+                    ? { borderColor: category.color ?? "#8a9585", backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color ?? "#8a9585" }
+                    : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color ?? "#8a9585" }
+                }
               >
                 {category.name}
               </button>
@@ -506,7 +509,7 @@ export default function SettingsPage() {
                   )}
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: paletteColor(group.category.color ?? "#8a9585") }}
+                    style={{ backgroundColor: group.category.color ?? "#8a9585" }}
                   />
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#263c34]">
                     {group.category.name}
@@ -528,7 +531,7 @@ export default function SettingsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#cdd5c7] hover:text-[#874b35]"
+                          className="h-8 w-8 text-[#cdd5c7] hover:text-red-600"
                           onClick={() => handleDelete(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />
