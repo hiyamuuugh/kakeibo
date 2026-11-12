@@ -6,7 +6,7 @@ export function LoadingSpinner({
   className?: string;
 }) {
   return (
-    <div className={`flex items-center justify-center text-sm text-[#8a9585] ${className}`}>
+    <div className={`flex items-center justify-center text-sm text-[#8a97a1] ${className}`}>
       <span>{label}</span>
     </div>
   );

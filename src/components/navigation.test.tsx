@@ -30,6 +30,16 @@ describe("Navigation", () => {
     }
   });
 
+  it("places cash flow immediately to the right of the dashboard in both menus", () => {
+    const html = renderToStaticMarkup(<Navigation />);
+    const navs = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/g) ?? [];
+    expect(navs).toHaveLength(2);
+    for (const nav of navs) {
+      const links = [...nav.matchAll(/href="([^"]*)"/g)].map(match => match[1]);
+      expect(links[links.indexOf("/dashboard") + 1]).toBe("/cash-flow");
+    }
+  });
+
   it.each(["/login", "/select-member"])("hides the menu on %s", (pathname) => {
     route.pathname = pathname;
     expect(renderToStaticMarkup(<Navigation />)).toBe("");

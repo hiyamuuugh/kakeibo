@@ -146,7 +146,7 @@ export default function NewTransactionPage() {
         onChange={handleScan}
       />
 
-      <div className="grid grid-cols-2 gap-1 rounded-[10px] bg-[#e6eae3] p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-[10px] bg-[#e2e8ed] p-1">
         {(["expense", "income"] as const).map((value) => (
           <button
             key={value}
@@ -159,8 +159,8 @@ export default function NewTransactionPage() {
               kind === value
                 ? value === "expense"
                   ? "bg-[#c1432f] text-white"
-                  : "bg-[#216aab] text-white"
-                : "text-[#748172]"
+                  : "bg-[#3f6f51] text-white"
+                : "text-[#72818b]"
             }`}
           >
             {value === "expense" ? "支出" : "収入"}
@@ -172,55 +172,55 @@ export default function NewTransactionPage() {
         <CardContent className="space-y-2.5 pt-3">
           <div
             className={`rounded-[12px] border-2 bg-white p-2 ${
-              kind === "expense" ? "border-[#efe0dc]" : "border-[#e2ebf0]"
+              kind === "expense" ? "border-[#efe0dc]" : "border-[#e5eee7]"
             }`}
           >
-            <label className="text-[11px] font-semibold text-[#748172]">金額</label>
+            <label className="text-[11px] font-semibold text-[#72818b]">金額</label>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-xl font-bold text-[#8a9585]">¥</span>
+              <span className="text-xl font-bold text-[#8a97a1]">¥</span>
               <input
                 inputMode="numeric"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="0"
-                className="min-w-0 flex-1 bg-transparent text-2xl font-extrabold text-[#263c34] outline-none"
+                className="min-w-0 flex-1 bg-transparent text-2xl font-extrabold text-[#253b4b] outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#748172]">内容</label>
+            <label className="text-xs font-semibold text-[#72818b]">内容</label>
             <input
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="例: セブンイレブン"
-              className="h-9 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
+              className="h-9 w-full rounded-lg border border-[#e2e8ed] bg-white px-3 text-sm outline-none focus:border-[#8faec5]"
             />
           </div>
 
           <div className="grid grid-cols-1 gap-2">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#748172]">日付</label>
+              <label className="text-xs font-semibold text-[#72818b]">日付</label>
               <input
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                className="h-9 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
+                className="h-9 w-full rounded-lg border border-[#e2e8ed] bg-white px-3 text-sm outline-none focus:border-[#8faec5]"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#748172]">メモ(任意)</label>
+              <label className="text-xs font-semibold text-[#72818b]">メモ(任意)</label>
               <input
                 value={memo}
                 onChange={(event) => setMemo(event.target.value)}
                 placeholder="例: プレゼント"
-                className="h-9 w-full rounded-lg border border-[#e6eae3] bg-white px-3 text-sm outline-none focus:border-[#8eaf94]"
+                className="h-9 w-full rounded-lg border border-[#e2e8ed] bg-white px-3 text-sm outline-none focus:border-[#8faec5]"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#748172]">カテゴリ(任意)</label>
+            <label className="text-xs font-semibold text-[#72818b]">カテゴリ(任意)</label>
             {categoriesLoading ? (
               <LoadingSpinner className="py-3" />
             ) : (
@@ -232,8 +232,8 @@ export default function NewTransactionPage() {
                   onClick={() => setCategoryId(category.id)}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                     categoryId === category.id
-                      ? "border-[#285d4d] bg-[#eaf1e9] text-[#285d4d]"
-                      : "border-[#dce3d7] bg-[#fafbf7] text-[#415749]"
+                      ? "border-[#245f8b] bg-[#e9f1f7] text-[#245f8b]"
+                      : "border-[#dce5ed] bg-[#f8fafc] text-[#415665]"
                   }`}
                   aria-pressed={categoryId === category.id}
                   style={categoryChoiceStyle(category.name, categoryId === category.id)}

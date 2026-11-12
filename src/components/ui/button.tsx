@@ -8,13 +8,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[#285d4d] text-white [a]:hover:bg-[#214e40] hover:bg-[#214e40]",
+        default: "bg-[#245f8b] text-white [a]:hover:bg-[#1f4f73] hover:bg-[#1f4f73]",
         outline:
-          "border-[#e6eae3] bg-white text-[#415749] hover:bg-[#edf1e8] hover:text-[#263c34] aria-expanded:bg-[#edf1e8] aria-expanded:text-[#263c34]",
+          "border-[#e2e8ed] bg-white text-[#415665] hover:bg-[#edf2f6] hover:text-[#253b4b] aria-expanded:bg-[#edf2f6] aria-expanded:text-[#253b4b]",
         secondary:
-          "bg-[#e6eae3] text-[#415749] hover:bg-[#cdd5c7] aria-expanded:bg-[#e6eae3] aria-expanded:text-[#415749]",
+          "bg-[#e2e8ed] text-[#415665] hover:bg-[#cbd5de] aria-expanded:bg-[#e2e8ed] aria-expanded:text-[#415665]",
         ghost:
-          "text-[#415749] hover:bg-[#edf1e8] hover:text-[#263c34] aria-expanded:bg-[#edf1e8] aria-expanded:text-[#263c34]",
+          "text-[#415665] hover:bg-[#edf2f6] hover:text-[#253b4b] aria-expanded:bg-[#edf2f6] aria-expanded:text-[#253b4b]",
         destructive:
           "bg-red-50 text-[#ad3929] hover:bg-red-100 focus-visible:border-red-300 focus-visible:ring-red-100",
         link: "text-primary underline-offset-4 hover:underline",

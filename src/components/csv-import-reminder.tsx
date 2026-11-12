@@ -31,10 +31,10 @@ export function CsvImportReminder() {
   };
 
   return (
-    <div className="border-b border-[#c7d9c0] bg-[#eaf1e9] px-4 py-2.5">
+    <div className="border-b border-[#c8dbe8] bg-[#e9f1f7] px-4 py-2.5">
       <div className="mx-auto flex max-w-5xl items-center gap-3">
-        <p className="min-w-0 flex-1 text-xs font-semibold text-[#214e40]">前月のCSVを取り込みましょう。</p>
-        <button type="button" onClick={dismiss} className="shrink-0 text-[#214e40]" aria-label="通知を閉じる">
+        <p className="min-w-0 flex-1 text-xs font-semibold text-[#1f4f73]">前月のCSVを取り込みましょう。</p>
+        <button type="button" onClick={dismiss} className="shrink-0 text-[#1f4f73]" aria-label="通知を閉じる">
           <X className="h-4 w-4" />
         </button>
       </div>
