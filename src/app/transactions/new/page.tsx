@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryColor, categoryChoiceStyle } from "@/lib/category-colors";
+
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Camera } from "lucide-react";
@@ -158,8 +160,8 @@ export default function NewTransactionPage() {
             className={`h-10 rounded-lg text-sm font-bold ${
               kind === value
                 ? value === "expense"
-                  ? "bg-[#ef4444] text-white"
-                  : "bg-[#3b82f6] text-white"
+                  ? "bg-[#b56c64] text-white"
+                  : "bg-[#557f9f] text-white"
                 : "text-[#748172]"
             }`}
           >
@@ -172,7 +174,7 @@ export default function NewTransactionPage() {
         <CardContent className="space-y-2.5 pt-3">
           <div
             className={`rounded-[12px] border-2 bg-white p-2 ${
-              kind === "expense" ? "border-[#fee2e2]" : "border-[#dbeafe]"
+              kind === "expense" ? "border-[#efe0dc]" : "border-[#e2ebf0]"
             }`}
           >
             <label className="text-[11px] font-semibold text-[#748172]">金額</label>
@@ -235,8 +237,11 @@ export default function NewTransactionPage() {
                       ? "border-[#285d4d] bg-[#eaf1e9] text-[#285d4d]"
                       : "border-[#dce3d7] bg-[#fafbf7] text-[#415749]"
                   }`}
+                  aria-pressed={categoryId === category.id}
+                  style={categoryChoiceStyle(category.name, categoryId === category.id)}
 
                 >
+                  <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(category.name) }} />
                   {category.name}
                 </button>
               ))}

@@ -18,6 +18,18 @@ describe("Navigation", () => {
     expect(html).toContain('href="/settings"');
   });
 
+  it("places the price notebook immediately to the right of input in both menus", () => {
+    const html = renderToStaticMarkup(<Navigation />);
+    const navs = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/g) ?? [];
+    expect(navs).toHaveLength(2);
+    for (const nav of navs) {
+      const links = [...nav.matchAll(/href="([^"]*)"/g)].map(match => match[1]);
+      const input = links.indexOf("/transactions/new");
+      expect(links[input + 1]).toBe("/price-notes");
+      expect(links[input + 2]).toBe("/import");
+    }
+  });
+
   it.each(["/login", "/select-member"])("hides the menu on %s", (pathname) => {
     route.pathname = pathname;
     expect(renderToStaticMarkup(<Navigation />)).toBe("");

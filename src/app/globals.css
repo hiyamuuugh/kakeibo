@@ -64,13 +64,13 @@
   --muted-foreground: #748172;
   --accent: #eaf1e9;
   --accent-foreground: #285d4d;
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #a65952;
   --border: #e6eae3;
   --input: #e6eae3;
   --ring: #8eaf94;
   --chart-1: #285d4d;
-  --chart-2: #3b82f6;
-  --chart-3: #ef4444;
+  --chart-2: #557f9f;
+  --chart-3: #b56c64;
   --chart-4: #f59e0b;
   --chart-5: #8b5cf6;
   --radius: 0.75rem;

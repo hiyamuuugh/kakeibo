@@ -128,13 +128,13 @@ const getFilterLabel = (value: string, categories: Category[], filterType: strin
 };
 
 const getTotalColor = (amount: number) => {
-  if (amount > 0) return "text-[#2563eb]";
-  if (amount < 0) return "text-[#dc2626]";
+  if (amount > 0) return "text-[#4b7192]";
+  if (amount < 0) return "text-[#a65952]";
   return "text-[#263c34]";
 };
 
 const getTransactionAmountColor = (amount: number) =>
-  amount < 0 ? "text-[#2563eb]" : "text-[#dc2626]";
+  amount < 0 ? "text-[#4b7192]" : "text-[#a65952]";
 
 const formatTransactionAmount = (amount: number) =>
   `${amount < 0 ? "+" : "-"}${formatYen(Math.abs(amount))}`;
@@ -656,7 +656,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-9 border-[#dc2626] bg-white px-2 font-normal text-[#dc2626] hover:bg-[#fef2f2]"
+                    className="h-9 border-[#a65952] bg-white px-2 font-normal text-[#a65952] hover:bg-[#f7efec]"
                     disabled={selectedTransactionIds.size === 0}
                     onClick={() => void deleteSelectedTransactions()}
                   >
@@ -803,7 +803,7 @@ export default function TransactionsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-[#cdd5c7] hover:text-red-600"
+                          className="h-7 w-7 text-[#cdd5c7] hover:text-[#a65952]"
                           onClick={() => deleteTransaction(transaction.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -902,7 +902,7 @@ export default function TransactionsPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-red-600"
+                    className="h-7 w-7 shrink-0 text-[#cdd5c7] hover:text-[#a65952]"
                     onClick={() => deleteTransaction(transaction.id)}
                   >
                     <Trash2 className="h-4 w-4" />
