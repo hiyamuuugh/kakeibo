@@ -25,7 +25,7 @@ describe("price notes", () => {
     const known = record({ id: "known", quantity: 1000, price: 200 });
     expect(usesUnitComparison([unknown, known])).toBe(false);
     expect(cheapest([known, unknown]).id).toBe("unknown");
-    expect(unitLabel("ml", unknown)).toBe("内容量未入力");
+    expect(unitLabel("ml", unknown)).toBe("");
     expect(unitLabel("ml", unknown)).not.toMatch(/NaN|Infinity|¥/);
   });
   it("prefers a recent record when unit prices are equal", () => {

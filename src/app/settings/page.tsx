@@ -12,7 +12,7 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
-import { categoryChipStyle, mutedColor } from "@/lib/theme-colors";
+import { categoryChipStyle, paletteColor } from "@/lib/theme-colors";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface MerchantRule {
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                   >
                     <span
                       className="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: mutedColor(member.color) }}
+                      style={{ backgroundColor: paletteColor(member.color) }}
                     />
                     {member.name}
                   </button>
@@ -354,7 +354,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-[#cdd5c7] hover:text-[#915950]"
+                      className="h-8 w-8 text-[#cdd5c7] hover:text-[#874b35]"
                       onClick={() => void handleDeleteExclusion(exclusion.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -428,8 +428,8 @@ export default function SettingsPage() {
                 className={`h-10 rounded-lg text-sm font-bold ${
                   kind === value
                     ? value === "expense"
-                      ? "bg-[#a1645d] text-white"
-                      : "bg-[#5c7d67] text-white"
+                      ? "bg-[#874b35] text-white"
+                      : "bg-[#3f6849] text-white"
                     : "text-[#748172]"
                 }`}
               >
@@ -506,7 +506,7 @@ export default function SettingsPage() {
                   )}
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: mutedColor(group.category.color ?? "#8a9585") }}
+                    style={{ backgroundColor: paletteColor(group.category.color ?? "#8a9585") }}
                   />
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#263c34]">
                     {group.category.name}
@@ -528,7 +528,7 @@ export default function SettingsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#cdd5c7] hover:text-[#915950]"
+                          className="h-8 w-8 text-[#cdd5c7] hover:text-[#874b35]"
                           onClick={() => handleDelete(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />
