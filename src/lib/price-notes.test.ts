@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cheapest, parsePriceInput, unitLabel, usesUnitComparison, type PriceRecord } from "./price-notes";
-const valid = { name: "牛乳", category: "食品", store: "スーパー", price: 200, shipping: 0, quantity: 1, unit: "L", date: "2026-11-12", online: false };
-const record = (overrides: Partial<PriceRecord> = {}): PriceRecord => ({ id: "1", store: "A", price: 200, shipping: 0, quantity: 1000, online: false, date: "2026-11-12", createdAt: "2026-11-12T00:00:00Z", ...overrides });
+const valid = { name: "牛乳", category: "食品", store: "スーパー", price: 200, shipping: 0, quantity: 1, unit: "L", date: "2026-11-12" };
+const record = (overrides: Partial<PriceRecord> = {}): PriceRecord => ({ id: "1", store: "A", price: 200, shipping: 0, quantity: 1000, date: "2026-11-12", createdAt: "2026-11-12T00:00:00Z", ...overrides });
 describe("price notes", () => {
   it("normalizes litres and kilograms to comparable units", () => {
     expect(parsePriceInput(valid)).toMatchObject({ unit: "ml", quantity: 1000 });
@@ -31,7 +31,7 @@ describe("price notes", () => {
   it("prefers a recent record when unit prices are equal", () => {
     expect(cheapest([record({ id: "old", date: "2026-10-01" }), record({ id: "new" })]).id).toBe("new");
   });
-  it.each([{ quantity: 0 }, { quantity: -1 }, { quantity: Infinity }, { quantity: "1" }, { price: 1.5 }, { shipping: -1 }, { price: 2147483648 }, { date: "2026-02-30" }, { date: "bad" }, { name: " " }, { store: "" }, { category: "その他" }, { unit: "unknown" }, { online: "false" }])("rejects invalid input %j", (change) => {
+  it.each([{ quantity: 0 }, { quantity: -1 }, { quantity: Infinity }, { quantity: "1" }, { price: 1.5 }, { shipping: -1 }, { price: 2147483648 }, { date: "2026-02-30" }, { date: "bad" }, { name: " " }, { store: "" }, { category: "その他" }, { unit: "unknown" }])("rejects invalid input %j", (change) => {
     expect(() => parsePriceInput({ ...valid, ...change })).toThrow();
   });
 });

@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryColor } from "@/lib/category-colors";
+
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -428,7 +430,7 @@ export default function SettingsPage() {
                   kind === value
                     ? value === "expense"
                       ? "bg-[#ef4444] text-white"
-                      : "bg-[#22c55e] text-white"
+                      : "bg-[#3b82f6] text-white"
                     : "text-[#748172]"
                 }`}
               >
@@ -450,14 +452,10 @@ export default function SettingsPage() {
                 onClick={() => setCategoryId(category.id)}
                 className={`flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold ${
                   categoryId === category.id
-                      ? "border-[#285d4d] bg-[#eaf1e9]"
-                    : "border-[#e6eae3] bg-white"
+                      ? "border-[#285d4d] bg-[#eaf1e9] text-[#285d4d]"
+                    : "border-[#dce3d7] bg-[#fafbf7] text-[#415749]"
                 }`}
-                style={
-                  categoryId === category.id
-                    ? { borderColor: category.color ?? "#8a9585", backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color ?? "#8a9585" }
-                    : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color ?? "#8a9585" }
-                }
+
               >
                 {category.name}
               </button>
@@ -509,7 +507,7 @@ export default function SettingsPage() {
                   )}
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: group.category.color ?? "#8a9585" }}
+                    style={{ backgroundColor: categoryColor(group.category.name) }}
                   />
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#263c34]">
                     {group.category.name}

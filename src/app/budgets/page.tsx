@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryColor } from "@/lib/category-colors";
+
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -149,7 +151,7 @@ export default function BudgetsPage() {
                 <CardTitle className="text-sm flex items-center gap-2">
                   <span
                     className="w-3 h-3 rounded-full"
-                    style={{ background: cat.color }}
+                    style={{ background: categoryColor(cat.name) }}
                   />
                   {cat.name}
                 </CardTitle>
