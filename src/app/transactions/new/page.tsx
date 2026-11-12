@@ -13,7 +13,6 @@ import {
   getCategoriesByKind,
 } from "@/lib/category-options";
 import { parseReceipt } from "@/lib/receipt-parser";
-import { categoryChipStyle } from "@/lib/theme-colors";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 const formatInputDate = (date: Date) => format(date, "yyyy-MM-dd");
@@ -159,8 +158,8 @@ export default function NewTransactionPage() {
             className={`h-10 rounded-lg text-sm font-bold ${
               kind === value
                 ? value === "expense"
-                  ? "bg-[#874b35] text-white"
-                  : "bg-[#3f6849] text-white"
+                  ? "bg-[#ef4444] text-white"
+                  : "bg-[#22c55e] text-white"
                 : "text-[#748172]"
             }`}
           >
@@ -173,7 +172,7 @@ export default function NewTransactionPage() {
         <CardContent className="space-y-2.5 pt-3">
           <div
             className={`rounded-[12px] border-2 bg-white p-2 ${
-              kind === "expense" ? "border-[#eee2dd]" : "border-[#e4ecdf]"
+              kind === "expense" ? "border-[#fee2e2]" : "border-[#dcfce7]"
             }`}
           >
             <label className="text-[11px] font-semibold text-[#748172]">金額</label>
@@ -236,7 +235,11 @@ export default function NewTransactionPage() {
                       ? "border-[#285d4d] bg-[#eaf1e9]"
                       : "border-[#e6eae3] bg-white text-[#748172]"
                   }`}
-                  style={categoryChipStyle(category.color, categoryId === category.id)}
+                  style={
+                    categoryId === category.id
+                      ? { borderColor: category.color, backgroundColor: `${category.color ?? "#8a9585"}20`, color: category.color }
+                      : { borderColor: `${category.color ?? "#8a9585"}66`, color: category.color }
+                  }
                 >
                   {category.name}
                 </button>
