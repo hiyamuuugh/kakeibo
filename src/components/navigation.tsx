@@ -18,7 +18,7 @@ const links = [
   { href: "/transactions", label: "一覧", icon: ReceiptText },
   { href: "/transactions/new", label: "入力", icon: PlusCircle },
   { href: "/import", label: "取込", icon: FolderInput },
-  { href: "https://kurashi-price-note-nov11.browncello4.chatgpt.site", label: "底値帖", icon: BookOpen },
+  { href: "/price-notes", label: "底値帖", icon: BookOpen },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 
@@ -31,7 +31,7 @@ export function Navigation() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 hidden border-b border-[#e6eae3] bg-white md:block">
+      <header className="sticky top-0 z-50 hidden border-b border-[#e6eae3] bg-white lg:block">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export function Navigation() {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "flex h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold transition-colors",
+                      "flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-sm font-semibold transition-colors",
                       active
                         ? "bg-[#285d4d] text-white"
                         : "text-[#748172] hover:bg-[#edf1e8] hover:text-[#263c34]"
@@ -72,8 +72,8 @@ export function Navigation() {
         </div>
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#e6eae3] bg-white px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 md:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-1">
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#e6eae3] bg-white px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 lg:hidden">
+        <div className="mx-auto flex max-w-lg items-stretch justify-between gap-1">
           {links.map((link) => {
             const Icon = link.icon;
             const active = pathname === link.href;
@@ -83,14 +83,14 @@ export function Navigation() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium transition-colors",
+                  "flex min-w-0 flex-1 flex-col items-center justify-start gap-1 rounded-lg px-0.5 py-2 text-[10px] font-medium transition-colors",
                   active
                     ? "bg-[#285d4d] text-white"
                     : "text-[#748172] hover:bg-[#edf1e8] hover:text-[#263c34]"
                 )}
               >
                 <Icon className="h-4 w-4" />
-                <span className="truncate">{link.label}</span>
+                <span className="min-h-7 w-full whitespace-normal break-all text-center leading-[14px]">{link.label}</span>
               </Link>
             );
           })}

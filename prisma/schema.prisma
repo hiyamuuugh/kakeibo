@@ -75,3 +75,29 @@ model Budget {
 
   @@unique([month, categoryId])
 }
+
+model PriceProduct {
+  id        String        @id @default(cuid())
+  name      String
+  category  String
+  unit      String
+  createdAt DateTime      @default(now())
+  records   PriceRecord[]
+
+  @@unique([name, category, unit])
+}
+
+model PriceRecord {
+  id        String       @id @default(cuid())
+  productId String
+  product   PriceProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store     String
+  price     Int
+  shipping  Int          @default(0)
+  quantity  Float
+  online    Boolean      @default(false)
+  date      DateTime     @db.Date
+  createdAt DateTime     @default(now())
+
+  @@index([productId, date])
+}
