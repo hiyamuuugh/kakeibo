@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "db:seed": "dotenv -e .env -- npx tsx prisma/seed.ts",
-    "db:price-notes": "prisma db execute --file prisma/migrations/20261112000000_add_price_notes/migration.sql"
+    "db:price-notes": "node scripts/prepare-price-notes.mjs --apply"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

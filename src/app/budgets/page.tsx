@@ -1,5 +1,7 @@
 "use client";
 
+import { mutedColor } from "@/lib/theme-colors";
+
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -149,7 +151,7 @@ export default function BudgetsPage() {
                 <CardTitle className="text-sm flex items-center gap-2">
                   <span
                     className="w-3 h-3 rounded-full"
-                    style={{ background: cat.color }}
+                    style={{ background: mutedColor(cat.color) }}
                   />
                   {cat.name}
                 </CardTitle>
@@ -179,13 +181,13 @@ export default function BudgetsPage() {
                   <div className="space-y-1">
                     <div className="relative h-2 w-full overflow-hidden rounded-full bg-[#edf1e8]">
                       <div
-                        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-[#285d4d]"}`}
+                        className={`h-full rounded-full transition-all ${over ? "bg-[#a1645d]" : "bg-[#285d4d]"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-xs text-[#748172]">
                       <span>使用: {formatYen(spent)}</span>
-                      <span className={over ? "text-red-500 font-medium" : ""}>
+                      <span className={over ? "text-[#a1645d] font-medium" : ""}>
                         {over
                           ? `¥${(spent - limit).toLocaleString("ja-JP")} オーバー`
                           : `残: ${formatYen(limit - spent)}`}

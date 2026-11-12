@@ -30,6 +30,14 @@ describe("price notes API", () => {
       update: { records: { create: { store: "イオン", price: 198, shipping: 0, quantity: 1000, online: false, date: new Date("2026-11-12") } } },
     }));
   });
+  it("stores an omitted quantity as null and defaults shipping to zero", async () => {
+    db.priceProduct.upsert.mockResolvedValue({ id: "p", records: [] });
+    const { quantity: _quantity, shipping: _shipping, ...withoutOptional } = input;
+    expect((await POST(request(withoutOptional))).status).toBe(201);
+    expect(db.priceProduct.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: { records: { create: expect.objectContaining({ quantity: null, shipping: 0 }) } },
+    }));
+  });
   it("returns persisted records without caching", async () => {
     db.priceProduct.findMany.mockResolvedValue([{ id: "p", records: [{ id: "r" }] }]);
     const res = await GET();

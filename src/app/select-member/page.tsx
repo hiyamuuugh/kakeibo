@@ -1,5 +1,7 @@
 "use client";
 
+import { mutedColor } from "@/lib/theme-colors";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,7 +57,7 @@ export default function SelectMemberPage() {
                 >
                   <span
                     className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold"
-                    style={{ backgroundColor: `${member.color}22`, color: member.color }}
+                    style={{ backgroundColor: `${mutedColor(member.color)}22`, color: mutedColor(member.color) }}
                   >
                     {member.name.charAt(0)}
                   </span>

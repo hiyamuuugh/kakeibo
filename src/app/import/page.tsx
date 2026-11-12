@@ -1,5 +1,7 @@
 "use client";
 
+import { mutedColor } from "@/lib/theme-colors";
+
 import { useCallback, useEffect, useState } from "react";
 import { Building2, CreditCard, ExternalLink, Landmark, ShoppingBag, Smartphone, WalletCards } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -38,7 +40,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     title: "PayPay",
     description: "PayPayアプリの利用履歴CSV",
     endpoint: "/api/import/paypay",
-    color: "#ef4444",
+    color: "#a1645d",
     icon: Smartphone,
     linkUrl: "https://apps.apple.com/jp/app/paypay/id1435783608",
     appUrl: "paypay://",
@@ -54,7 +56,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     title: "PayPayカード",
     description: "PayPayカードの利用明細CSV",
     endpoint: "/api/import/paypay-card",
-    color: "#f59e0b",
+    color: "#a3895b",
     icon: CreditCard,
     linkUrl: "https://apps.apple.com/jp/app/paypay/id1435783608",
     appUrl: "paypay://",
@@ -70,7 +72,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     title: "楽天カード",
     description: "楽天e-NAVIの利用明細CSV",
     endpoint: "/api/import/rakuten",
-    color: "#bf0000",
+    color: "#965d58",
     icon: ShoppingBag,
     linkUrl: "https://www.rakuten-card.co.jp/e-navi/members/statement/index.xhtml",
     linkLabel: "楽天e-NAVIを開く",
@@ -85,7 +87,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     title: "セゾンカード",
     description: "セゾンカードの利用明細CSV",
     endpoint: "/api/import/saison",
-    color: "#0f766e",
+    color: "#54766d",
     icon: WalletCards,
     linkUrl: "https://www.saisoncard.co.jp/",
     linkLabel: "セゾンカードを開く",
@@ -100,7 +102,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     title: "三菱UFJ銀行",
     description: "三菱UFJダイレクトの入出金明細CSV",
     endpoint: "/api/import/mufg",
-    color: "#dc2626",
+    color: "#915950",
     icon: Landmark,
     linkUrl: "https://direct.bk.mufg.jp/",
     linkLabel: "三菱UFJダイレクトを開く",
@@ -115,7 +117,7 @@ const IMPORT_SOURCES: ImportSource[] = [
     title: "三井住友銀行",
     description: "SMBCダイレクトの入出金明細CSV",
     endpoint: "/api/import/smbc",
-    color: "#16a34a",
+    color: "#52745d",
     icon: Building2,
     linkUrl: "https://direct.smbc.co.jp/",
     linkLabel: "SMBCダイレクトを開く",
@@ -240,7 +242,7 @@ function ImportSourceCard({
       >
         <span
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
-          style={{ backgroundColor: source.color }}
+          style={{ backgroundColor: mutedColor(source.color) }}
         >
           <source.icon className="h-4 w-4" />
         </span>
@@ -289,9 +291,9 @@ function ImportSourceCard({
           </div>
 
           {result ? (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm">
-              <p className="font-medium text-green-800">インポート完了</p>
-              <p className="text-green-700">
+            <div className="rounded-lg border border-[#d2e0cf] bg-[#f0f4eb] p-4 text-sm">
+              <p className="font-medium text-[#415f4a]">インポート完了</p>
+              <p className="text-[#52745d]">
                 取込済み: {result.imported}件 / スキップ: {result.skipped}件
               </p>
             </div>
