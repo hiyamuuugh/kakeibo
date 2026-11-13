@@ -13,7 +13,7 @@ describe("saved cash-flow simulation", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
   it("saves and restores a validated family plan", async () => {
-    const plan = { ...defaultCashPlan(), startAge: 30 };
+    const plan = { ...defaultCashPlan(), startAge: 30, initialCash: 123456, initialOtherAssets: 654321 };
     db.cashFlowPlan.upsert.mockResolvedValue({ data: plan, updatedAt: "2026-11-13T00:00:00Z" });
     expect((await PUT(request(plan))).status).toBe(200);
     expect(db.cashFlowPlan.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { scope: "family" }, update: { data: plan } }));

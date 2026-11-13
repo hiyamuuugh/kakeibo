@@ -4,8 +4,8 @@ export type AnnualRule = RuleBase & { kind: "annual"; ageAtStart: number | null;
 export type InvestmentRule = RuleBase & { kind: "investment"; from: number; to: number | null; monthly: number; rate: number; initial: number };
 export type EventRule = RuleBase & { kind: "event"; ageAtStart: number | null; age: number; amount: number };
 export type PlanRule = AnnualRule | InvestmentRule | EventRule;
-export type CashPlan = { version: 1; startAge: number | null; endAge: number; initialCash: number; monthlyNet: number | null; rules: PlanRule[] };
-export const defaultCashPlan = (): CashPlan => ({ version: 1, startAge: null, endAge: 90, initialCash: 0, monthlyNet: null, rules: [] });
+export type CashPlan = { version: 1; startAge: number | null; endAge: number; initialCash: number; initialOtherAssets: number; monthlyNet: number | null; rules: PlanRule[] };
+export const defaultCashPlan = (): CashPlan => ({ version: 1, startAge: null, endAge: 90, initialCash: 0, initialOtherAssets: 0, monthlyNet: null, rules: [] });
 const record = (value: unknown): Record<string, unknown> => { if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("入力内容を確認してください。"); return value as Record<string, unknown>; };
 function number(value: unknown, label: string, min: number, max: number, integer = true) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) throw new Error(`${label}を確認してください。`);
@@ -41,7 +41,7 @@ export function parseCashPlan(input: unknown): CashPlan {
     if (rule.kind === "event") return { ...base, kind: "event", ageAtStart: optionalAge(rule.ageAtStart), age: age(rule.age), amount: money(rule.amount) };
     throw new Error("ルールの種類を選択してください。");
   });
-  return { version: 1, startAge, endAge, initialCash: money(data.initialCash), monthlyNet: data.monthlyNet === null ? null : number(data.monthlyNet, "毎月の基本収支", -100000000, 100000000), rules };
+  return { version: 1, startAge, endAge, initialCash: money(data.initialCash), initialOtherAssets: money(data.initialOtherAssets === undefined ? 0 : data.initialOtherAssets), monthlyNet: data.monthlyNet === null ? null : number(data.monthlyNet, "毎月の基本収支", -100000000, 100000000), rules };
 }
 export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number) {
   if (plan.startAge === null) return [];
@@ -51,7 +51,7 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number) {
   const investments = new Map(investmentRules.map(rule => [rule.id, rule.initial]));
   const points: { label: string; age: number; cash: number; investment: number; total: number; expenses: number; contributions: number; gain: number }[] = [];
   function point(label: string, currentAge: number, expenses: number, contributions: number, gain: number) {
-    const invested = [...investments.values()].reduce((sum, value) => sum + value, 0);
+    const invested = plan.initialOtherAssets + [...investments.values()].reduce((sum, value) => sum + value, 0);
     if (![cash, invested].every(value => Number.isFinite(value) && Math.abs(value) < 1000000000000000)) throw new Error("計算額が大きすぎます。期間・利回り・金額を調整してください。");
     points.push({ label, age: currentAge, cash: Math.round(cash), investment: Math.round(invested), total: Math.round(cash) + Math.round(invested), expenses: Math.round(expenses), contributions: Math.round(contributions), gain: Math.round(gain) });
   }
