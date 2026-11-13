@@ -14,6 +14,7 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
+import { ImportExclusionsSettings } from "@/components/import-exclusions-settings";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface MerchantRule {
@@ -29,26 +30,17 @@ interface Member {
   color: string;
 }
 
-interface ImportExclusion {
-  id: string;
-  name: string;
-}
-
 export default function SettingsPage() {
   const [kind, setKind] = useState<CategoryKind>("expense");
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [rules, setRules] = useState<MerchantRule[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-  const [importExclusions, setImportExclusions] = useState<ImportExclusion[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
   const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
   const [accountOpen, setAccountOpen] = useState(false);
   const [mappingOpen, setMappingOpen] = useState(false);
-  const [exclusionOpen, setExclusionOpen] = useState(false);
-  const [exclusionPage, setExclusionPage] = useState(0);
   const [merchant, setMerchant] = useState("");
-  const [exclusionName, setExclusionName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,23 +82,14 @@ export default function SettingsPage() {
   }, [visibleCategories, visibleRules]);
 
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
-  const exclusionPageCount = Math.max(Math.ceil(importExclusions.length / 10), 1);
-  const safeExclusionPage = Math.min(exclusionPage, exclusionPageCount - 1);
-  const sortedImportExclusions = [...importExclusions].sort((a, b) => a.name.localeCompare(b.name, "ja"));
-  const pageExclusions = sortedImportExclusions.slice(safeExclusionPage * 10, safeExclusionPage * 10 + 10);
-
   const loadData = async () => {
-    const [categoryResponse, ruleResponse, memberResponse, exclusionResponse] = await Promise.all([
+    const [categoryResponse, ruleResponse, memberResponse] = await Promise.all([
       fetch("/api/categories"),
       fetch("/api/merchant-rules"),
       fetch("/api/members"),
-      fetch("/api/import-exclusions"),
     ]);
     setCategories((await categoryResponse.json()) as CategoryOption[]);
     setRules((await ruleResponse.json()) as MerchantRule[]);
-    setImportExclusions(
-      exclusionResponse.ok ? ((await exclusionResponse.json()) as ImportExclusion[]) : []
-    );
     const memberData = (await memberResponse.json()) as Member[];
     setMembers(memberData);
     const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
@@ -127,14 +110,10 @@ export default function SettingsPage() {
       fetch("/api/categories"),
       fetch("/api/merchant-rules"),
       fetch("/api/members"),
-      fetch("/api/import-exclusions"),
     ])
-      .then(async ([categoryResponse, ruleResponse, memberResponse, exclusionResponse]) => {
+      .then(async ([categoryResponse, ruleResponse, memberResponse]) => {
         setCategories((await categoryResponse.json()) as CategoryOption[]);
         setRules((await ruleResponse.json()) as MerchantRule[]);
-        setImportExclusions(
-          exclusionResponse.ok ? ((await exclusionResponse.json()) as ImportExclusion[]) : []
-        );
         const memberData = (await memberResponse.json()) as Member[];
         setMembers(memberData);
         const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
@@ -204,45 +183,6 @@ export default function SettingsPage() {
     }
 
     toast.success("ルールを削除しました");
-    await loadData();
-  };
-
-  const handleAddExclusion = async () => {
-    const name = exclusionName.trim();
-    if (!name) {
-      toast.error("スキップするワードを入力してください");
-      return;
-    }
-
-    const response = await fetch("/api/import-exclusions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    if (!response.ok) {
-      toast.error(response.status === 409 ? "同じワードが登録されています" : "ワードを登録できませんでした");
-      return;
-    }
-
-    setExclusionName("");
-    setExclusionPage(0);
-    toast.success("CSV取込スキップのワードを登録しました");
-    await loadData();
-  };
-
-  const handleDeleteExclusion = async (id: string) => {
-    if (!confirm("このワードを削除しますか？")) return;
-    const response = await fetch("/api/import-exclusions", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    if (!response.ok) {
-      toast.error("ワードを削除できませんでした");
-      return;
-    }
-    toast.success("CSV取込スキップのワードを削除しました");
-    setExclusionPage((current) => Math.min(current, Math.max(Math.ceil((importExclusions.length - 1) / 10) - 1, 0)));
     await loadData();
   };
 
@@ -318,83 +258,7 @@ export default function SettingsPage() {
         ) : null}
       </Card>
 
-      <Card className="order-3">
-        <button
-          type="button"
-          onClick={() => setExclusionOpen((value) => !value)}
-          className="flex w-full items-center justify-between p-4 text-left"
-        >
-          <CardTitle className="text-sm font-semibold">CSV取込スキップワード</CardTitle>
-          {exclusionOpen ? (
-            <ChevronDown className="h-4 w-4 text-[#8a97a1]" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-[#8a97a1]" />
-          )}
-        </button>
-        {exclusionOpen ? (
-          <CardContent className="space-y-3 border-t border-[#edf2f6]">
-            <div className="mt-2 flex gap-2">
-              <input
-                value={exclusionName}
-                onChange={(event) => setExclusionName(event.target.value)}
-                placeholder="例: 楽天証券"
-                className="h-10 min-w-0 flex-1 rounded-lg border border-[#e2e8ed] bg-white px-3 text-sm outline-none focus:border-[#8faec5]"
-              />
-              <Button type="button" className="h-10 shrink-0" onClick={() => void handleAddExclusion()}>
-                追加
-              </Button>
-            </div>
-            {importExclusions.length === 0 ? (
-              <p className="py-2 text-center text-sm text-[#8a97a1]">登録ワードがありません</p>
-            ) : (
-              <div className="space-y-2">
-                {pageExclusions.map((exclusion) => (
-                  <div key={exclusion.id} className="flex items-center gap-2 rounded-lg bg-[#f4f6f8] px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#253b4b]">{exclusion.name}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#cbd5de] hover:text-[#ad3929]"
-                      onClick={() => void handleDeleteExclusion(exclusion.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">削除</span>
-                    </Button>
-                  </div>
-                ))}
-                {exclusionPageCount > 1 ? (
-                  <div className="flex items-center justify-between pt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="bg-white"
-                      disabled={safeExclusionPage === 0}
-                      onClick={() => setExclusionPage(safeExclusionPage - 1)}
-                    >
-                      前へ
-                    </Button>
-                    <span className="text-xs font-semibold text-[#72818b]">
-                      {safeExclusionPage + 1} / {exclusionPageCount}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="bg-white"
-                      disabled={safeExclusionPage >= exclusionPageCount - 1}
-                      onClick={() => setExclusionPage(safeExclusionPage + 1)}
-                    >
-                      次へ
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </CardContent>
-        ) : null}
-      </Card>
+      <ImportExclusionsSettings />
 
       <Card className="order-2">
         <button

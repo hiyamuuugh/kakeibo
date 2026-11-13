@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
   const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
-  const exclusions = await prisma.importExclusion.findMany({ select: { name: true } });
+  const exclusions = await prisma.importExclusion.findMany({ where: { source: "paypay" }, select: { name: true } });
 
   const headers = Object.keys(rows[0]);
 
