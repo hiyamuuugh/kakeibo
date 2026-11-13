@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Line, LineChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
 import { japanToday } from "@/lib/cash-flow";
@@ -32,6 +32,7 @@ function ruleDescription(rule: PlanRule) {
 
 export default function CashFlowPage() {
   const [plan, setPlan] = useState<CashPlan>(defaultCashPlan);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [savedKey, setSavedKey] = useState("");
   const [baseline, setBaseline] = useState({ monthly: 0, months: 0 });
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
@@ -68,6 +69,25 @@ export default function CashFlowPage() {
   const hasInvestments = plan.initialOtherAssets > 0 || plan.rules.some(rule => rule.kind === "investment");
   const shortfall = result.points.find(point => point.cash < 0);
   const dirty = savedKey !== JSON.stringify(plan);
+  useEffect(() => {
+    if (loading || error || saving || dirty) return;
+    let cancelled = false;
+    async function refreshSharedPlan() {
+      if (document.visibilityState !== "visible" || dialog.current?.open) return;
+      try {
+        const response = await fetch("/api/cash-flow/plan", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (cancelled || dialog.current?.open) return;
+        const shared = parseCashPlan(data.plan);
+        setPlan(shared); setSavedKey(JSON.stringify(shared));
+      } catch { /* Keep the displayed plan if a background refresh fails. */ }
+    }
+    const timer = window.setInterval(() => void refreshSharedPlan(), 15000);
+    window.addEventListener("focus", refreshSharedPlan);
+    document.addEventListener("visibilitychange", refreshSharedPlan);
+    return () => { cancelled = true; window.clearInterval(timer); window.removeEventListener("focus", refreshSharedPlan); document.removeEventListener("visibilitychange", refreshSharedPlan); };
+  }, [loading, error, saving, dirty, editorKey]);
   async function save(next: CashPlan) {
     if (saving) return false;
     setSaving(true);
@@ -109,12 +129,12 @@ export default function CashFlowPage() {
     {loading ? <div className={`${card} py-14 text-center text-sm text-muted-foreground`} role="status">読み込み中…</div> : error ? <div className={card} role="alert"><p className="text-sm text-destructive">{error}</p><button className={`${primary} mt-4`} onClick={() => setRetry(value => value + 1)}>再読み込み</button></div> : <>
       <section className={card} aria-labelledby="forecast-title"><div className="flex flex-wrap items-center justify-between gap-2"><h2 id="forecast-title" className="text-base font-semibold">今後の見通し</h2><span className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground">年単位のシミュレーション</span></div>
         <div className="mt-4 h-80 w-full min-w-0" role="img" aria-label="年齢別の現預金・非現金資産・合計資産の見通しグラフ">
-          {result.error ? <p className="py-20 text-center text-sm text-destructive" role="alert">{result.error}</p> : !result.points.length ? <p className="py-24 text-center text-sm text-muted-foreground">下の基本設定で開始年齢を入力してください。</p> : <ResponsiveContainer width="100%" height="100%"><LineChart data={result.points} margin={{ top: 12, right: 12, left: -6, bottom: 0 }}><CartesianGrid vertical={false} stroke="#e2e8ed" /><XAxis dataKey="label" minTickGap={30} tick={{ fontSize: 10 }} /><YAxis width={60} tickFormatter={value => `${Number(value) < 0 ? "−" : ""}${formatShortAmount(Number(value))}`} tick={{ fontSize: 10 }} /><Tooltip content={<ChartTip />} /><ReferenceLine y={0} stroke="#ad3929" strokeDasharray="3 3" />{hasInvestments && <Line dataKey="cash" name="現預金" stroke="#245f8b" dot={false} strokeWidth={2} isAnimationActive={false} />}{hasInvestments && <Line dataKey="investment" name="非現金資産" stroke="#96651a" dot={false} strokeWidth={2} isAnimationActive={false} />}<Line dataKey="total" name="資産合計" stroke="#3f6f51" dot={false} strokeWidth={2.5} isAnimationActive={false} /></LineChart></ResponsiveContainer>}
+          {result.error ? <p className="py-20 text-center text-sm text-destructive" role="alert">{result.error}</p> : !result.points.length ? <p className="py-24 text-center text-sm text-muted-foreground">下の基本設定で開始年齢を入力してください。</p> : <ResponsiveContainer width="100%" height="100%"><LineChart data={result.points} margin={{ top: 12, right: 12, left: -6, bottom: 0 }}><CartesianGrid vertical={false} stroke="#e2e8ed" /><XAxis dataKey="label" minTickGap={30} tick={{ fontSize: 10 }} /><YAxis width={82} tickFormatter={value => `${Number(value) < 0 ? "−" : ""}${formatShortAmount(Number(value))}`} tick={{ fontSize: 10 }} /><Tooltip content={<ChartTip />} /><ReferenceLine y={0} stroke="#ad3929" strokeDasharray="3 3" />{hasInvestments && <Line dataKey="cash" name="現預金" stroke="#245f8b" dot={false} strokeWidth={2} isAnimationActive={false} />}{hasInvestments && <Line dataKey="investment" name="非現金資産" stroke="#96651a" dot={false} strokeWidth={2} isAnimationActive={false} />}<Line dataKey="total" name="資産合計" stroke="#3f6f51" dot={false} strokeWidth={2.5} isAnimationActive={false} /></LineChart></ResponsiveContainer>}
         </div>
         <div className="mt-2 flex flex-wrap gap-4 text-[11px]"><span className="text-[#3f6f51]">● 資産合計</span>{hasInvestments && <><span className="text-[#245f8b]">● 現預金</span><span className="text-[#96651a]">● 非現金資産</span></>}</div><p className="mt-3 text-[10px] leading-5 text-muted-foreground">各年齢の1年間を反映。積立は月末・想定年率を月換算して複利計算します。</p>
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
-      <section className={card}><div className="mb-4 flex items-center justify-between"><h2 className="text-base font-semibold">基本設定</h2><span className="text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span></div><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">現在の現預金（円）<NumberField min="0" max="1000000000000" required value={plan.initialCash} onChange={e => setPlan({ ...plan, initialCash: Number(e.target.value) })} className={input} /></label>
+      <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">現在の現預金（円）<NumberField min="0" max="1000000000000" required value={plan.initialCash} onChange={e => setPlan({ ...plan, initialCash: Number(e.target.value) })} className={input} /></label>
         <div className="space-y-3 rounded-xl border border-border bg-background p-3"><h3 className="text-sm font-semibold">現在の非現金資産の残高</h3>
           {plan.rules.filter(rule => rule.kind === "investment").map(rule => rule.kind === "investment" && <label key={rule.id} className="block text-sm">{rule.name}の現在残高（円）<NumberField min="0" max="1000000000000" required value={rule.initial} onChange={e => setPlan({ ...plan, rules: plan.rules.map(item => item.id === rule.id ? { ...rule, initial: Number(e.target.value) } : item) })} className={input} /><span className="mt-1 block text-[10px] text-muted-foreground">この残高に想定年率 {rule.rate}% を適用します。</span></label>)}
           <label className="block text-sm">その他の非現金資産（円）<NumberField min="0" max="1000000000000" required value={plan.initialOtherAssets} onChange={e => setPlan({ ...plan, initialOtherAssets: Number(e.target.value) })} className={input} /></label>
@@ -123,7 +143,7 @@ export default function CashFlowPage() {
         <p className="text-[11px] text-muted-foreground">残高を変更するとグラフにすぐ反映されます。再訪時にも使うには基本設定を保存してください。</p>
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={plan.monthlyNet === null} onChange={e => setPlan({ ...plan, monthlyNet: e.target.checked ? null : baseline.monthly })} className="mt-1" />家族全員の家計簿平均を基本収支に使う</label>
         {plan.monthlyNet === null ? <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">月額 {yen(baseline.monthly)}{baseline.months ? `（過去${baseline.months}か月の実績平均）` : "（過去実績なし・0円）"}</p> : <label className="block text-sm">毎月の基本収支（円）<NumberField required min="-100000000" max="100000000" value={plan.monthlyNet} onChange={e => setPlan({ ...plan, monthlyNet: Number(e.target.value) })} className={input} /><span className="mt-1 block text-[10px] text-muted-foreground">収入から生活費を引いた金額。赤字はマイナスで入力。</span></label>}
-        <p className="text-[11px] text-muted-foreground">ルールの収入・支出は基本収支に加算します。給料・保険料などをルールに含める場合は、基本収支に同じ金額を含めないよう調整してください。積立額は現預金から非現金資産へ移します。</p><button className={primary}>{saving ? "保存中…" : "基本設定を保存"}</button></fieldset></form></section>
+        <p className="text-[11px] text-muted-foreground">ルールの収入・支出は基本収支に加算します。給料・保険料などをルールに含める場合は、基本収支に同じ金額を含めないよう調整してください。積立額は現預金から非現金資産へ移します。</p><button className={primary}>{saving ? "保存中…" : "基本設定を保存"}</button></fieldset></form></div></section>
       <section className={card}><div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">シミュレーションのルール</h2><button type="button" disabled={saving} className={primary} onClick={() => openEditor()}><Plus className="h-4 w-4" />追加</button></div>
         {!plan.rules.length && <p className="py-8 text-center text-xs leading-6 text-muted-foreground">給料・保険料・教育費・積立NISA・住宅や車の購入などを設定できます。</p>}
         <div className="mt-4 divide-y divide-border">{plan.rules.map(rule => <article key={rule.id} className="flex items-start justify-between gap-2 py-4"><div className="min-w-0"><h3 className="break-words text-sm font-semibold">{rule.name}</h3><p className="mt-2 break-words text-xs leading-6 text-muted-foreground">{ruleDescription(rule)}</p></div><div className="flex shrink-0"><button type="button" disabled={saving} aria-label={`${rule.name}を編集`} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted" onClick={() => openEditor(rule)}><Pencil className="h-4 w-4" /></button><button type="button" disabled={saving} aria-label={`${rule.name}を削除`} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => void removeRule(rule)}><Trash2 className="h-4 w-4" /></button></div></article>)}</div>
