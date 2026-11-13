@@ -14,7 +14,6 @@ export function ImportExclusionsSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [open, setOpen] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError("");
@@ -28,15 +27,12 @@ export function ImportExclusionsSettings() {
     return () => controller.abort();
   }, [retry]);
   return <Card className="order-3">
-    <button type="button" aria-expanded={open} aria-controls="csv-exclusion-sources" onClick={() => setOpen(value => !value)} className="flex w-full items-center justify-between p-4 text-left">
-      <CardTitle className="text-sm font-semibold">CSV取込の除外名称</CardTitle>
-      {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-    </button>
-    {open && <CardContent id="csv-exclusion-sources" className="space-y-3 border-t border-border pt-3">
+    <div className="p-4"><CardTitle className="text-sm font-semibold">CSV取込の除外名称</CardTitle></div>
+    <CardContent id="csv-exclusion-sources" className="space-y-3 border-t border-border pt-3">
       <p className="text-xs leading-5 text-muted-foreground">名称を含む明細を、選んだ取り込み元のCSVから除外します。登録済みの家計簿は変更しません。</p>
       {loading ? <p role="status" className="py-3 text-center text-sm text-muted-foreground">読み込み中…</p> : error ? <div role="alert"><p className="text-sm text-destructive">{error}</p><Button variant="outline" className="mt-2" onClick={() => setRetry(value => value + 1)}>再読み込み</Button></div> :
         csvImportSources.map(source => <SourceExclusions key={source.id} source={source.id} label={source.label} items={items.filter(item => item.source === source.id)} onAdd={item => setItems(current => [...current, item])} onDelete={id => setItems(current => current.filter(item => item.id !== id))} />)}
-    </CardContent>}
+    </CardContent>
   </Card>;
 }
 
