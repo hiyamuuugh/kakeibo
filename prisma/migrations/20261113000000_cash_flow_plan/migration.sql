@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS "CashFlowPlan" (
+  "scope" TEXT NOT NULL,
+  "data" JSONB NOT NULL,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CashFlowPlan_pkey" PRIMARY KEY ("scope")
+);
