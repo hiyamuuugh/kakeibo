@@ -1,6 +1,6 @@
 export type AgeRange = { from: number; to: number | null; amount: number };
 type RuleBase = { id: string; name: string };
-export type AnnualRule = RuleBase & { kind: "annual"; ageAtStart: number | null; flow: "expense" | "income"; ranges: AgeRange[] };
+export type AnnualRule = RuleBase & { kind: "annual"; ageAtStart: number | null; flow: "expense" | "income"; frequency?: "monthly" | "yearly"; ranges: AgeRange[] };
 export type InvestmentRule = RuleBase & { kind: "investment"; from: number; to: number | null; monthly: number; rate: number; initial: number };
 export type EventRule = RuleBase & { kind: "event"; ageAtStart: number | null; age: number; amount: number };
 export type PlanRule = AnnualRule | InvestmentRule | EventRule;
@@ -29,9 +29,10 @@ export function parseCashPlan(input: unknown): CashPlan {
     if (rule.kind === "annual") {
       if (rule.flow !== "income" && rule.flow !== "expense") throw new Error("収入・支出を選択してください。");
       if (!Array.isArray(rule.ranges) || !rule.ranges.length || rule.ranges.length > 20) throw new Error("年齢区分は1〜20件で設定してください。");
+      if (rule.frequency !== undefined && rule.frequency !== "monthly" && rule.frequency !== "yearly") throw new Error("金額の単位を確認してください。");
       const ranges = rule.ranges.map(item => { const range = record(item); const from = age(range.from), to = optionalAge(range.to); if (to !== null && to < from) throw new Error("年齢区分の終了を確認してください。"); return { from, to, amount: money(range.amount) }; }).sort((a, b) => a.from - b.from);
       if (ranges.some((range, i) => i > 0 && range.from <= (ranges[i - 1].to ?? 120))) throw new Error("同じルールの年齢区分を重複させないでください。");
-      return { ...base, kind: "annual", ageAtStart: optionalAge(rule.ageAtStart), flow: rule.flow, ranges };
+      return { ...base, kind: "annual", ageAtStart: optionalAge(rule.ageAtStart), flow: rule.flow, ...(rule.frequency === "monthly" ? { frequency: "monthly" as const } : {}), ranges };
     }
     if (rule.kind === "investment") {
       const from = age(rule.from), to = optionalAge(rule.to);
@@ -65,7 +66,7 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number) {
       if (rule.kind === "event" && targetAge === rule.age) { annualNet -= rule.amount; expenses += rule.amount; }
       if (rule.kind === "annual") {
         const range = rule.ranges.find(range => targetAge >= range.from && targetAge <= (range.to ?? 120));
-        if (range) { annualNet += rule.flow === "income" ? range.amount : -range.amount; if (rule.flow === "expense") expenses += range.amount; }
+        if (range) { const amount = range.amount * (rule.frequency === "monthly" ? 12 : 1); annualNet += rule.flow === "income" ? amount : -amount; if (rule.flow === "expense") expenses += amount; }
       }
     }
     cash += annualNet;
@@ -82,4 +83,21 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number) {
     point(`${currentAge}歳`, currentAge, expenses, contributions, gain);
   }
   return points;
+}
+
+export const ruleTemplates = [
+  { key: "salary", label: "給料" }, { key: "insurance", label: "保険料" },
+  { key: "education", label: "教育費" }, { key: "home", label: "住宅購入" },
+  { key: "car", label: "車購入" }, { key: "loan", label: "ローン返済" },
+  { key: "living", label: "生活費" }, { key: "pension", label: "年金" },
+  { key: "investment", label: "積立NISA" }, { key: "trip", label: "旅行" },
+] as const;
+export function cashRuleTemplate(key: string, startAge: number | null): PlanRule {
+  const from = startAge ?? 0;
+  const name = ruleTemplates.find(template => template.key === key)?.label ?? "その他";
+  const base = { id: "template", name };
+  if (key === "investment") return { ...base, kind: "investment", from, to: null, monthly: 0, rate: 0, initial: 0 };
+  if (["home", "car", "trip"].includes(key)) return { ...base, kind: "event", ageAtStart: null, age: from, amount: 0 };
+  if (key === "education") return { ...base, kind: "annual", ageAtStart: 0, flow: "expense", ranges: [{ from: 0, to: 5, amount: 0 }, { from: 6, to: null, amount: 0 }] };
+  return { ...base, kind: "annual", ageAtStart: null, flow: key === "salary" || key === "pension" ? "income" : "expense", frequency: "monthly", ranges: [{ from, to: null, amount: 0 }] };
 }

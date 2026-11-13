@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultCashPlan, parseCashPlan, simulateCashPlan, type CashPlan } from "./cash-flow-plan";
+import { defaultCashPlan, parseCashPlan, simulateCashPlan, type CashPlan, cashRuleTemplate } from "./cash-flow-plan";
 const plan = (changes: Partial<CashPlan> = {}): CashPlan => ({ ...defaultCashPlan(), startAge: 30, endAge: 31, monthlyNet: 0, ...changes });
 describe("age-based cash flow rules", () => {
   it("does not assume a starting age or bank balance", () => {
@@ -44,6 +44,27 @@ describe("age-based cash flow rules", () => {
     const result = simulateCashPlan(plan({ monthlyNet: 100, rules: [{ id: "income", name: "収入", kind: "annual", ageAtStart: null, flow: "income", ranges: [{ from: 30, to: 30, amount: 1000 }] }] }), 500);
     expect(result[1].cash).toBe(2200);
     expect(result[2].cash).toBe(3400);
+  });
+
+  it("supports salary and insurance monthly across inclusive age bands", () => {
+    const salary = { ...cashRuleTemplate("salary", 30), id: "salary" };
+    const insurance = { ...cashRuleTemplate("insurance", 30), id: "insurance" };
+    if (salary.kind !== "annual" || insurance.kind !== "annual") throw new Error("template");
+    salary.ranges = [{ from: 30, to: 30, amount: 300000 }];
+    insurance.ranges = [{ from: 30, to: null, amount: 10000 }];
+    const settings = parseCashPlan(plan({ rules: [salary, insurance] }));
+    expect(simulateCashPlan(settings, 0).map(point => point.cash)).toEqual([0, 3480000, 3360000]);
+    expect(settings.rules[0]).toMatchObject({ frequency: "monthly", flow: "income" });
+    expect(() => parseCashPlan({ ...settings, rules: [{ ...salary, frequency: "weekly" }] })).toThrow();
+  });
+  it("models house and car down payments once plus recurring loan repayments", () => {
+    const home = { ...cashRuleTemplate("home", 30), id: "home", amount: 1000000 };
+    const car = { ...cashRuleTemplate("car", 31), id: "car", amount: 500000 };
+    const loan = { ...cashRuleTemplate("loan", 30), id: "loan" };
+    if (loan.kind !== "annual") throw new Error("template");
+    loan.ranges = [{ from: 30, to: 30, amount: 50000 }];
+    const points = simulateCashPlan(parseCashPlan(plan({ initialCash: 3000000, rules: [home, car, loan] })), 0);
+    expect(points.map(point => point.cash)).toEqual([3000000, 1400000, 900000]);
   });
   it("preserves negative cash to expose shortfalls", () => {
     expect(simulateCashPlan(plan({ monthlyNet: -100 }), 0)[1].cash).toBe(-1200);
