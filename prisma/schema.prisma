@@ -61,8 +61,11 @@ model MerchantRule {
 
 model ImportExclusion {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
+  source    String
   createdAt DateTime @default(now())
+
+  @@unique([source, name])
 }
 
 model Budget {

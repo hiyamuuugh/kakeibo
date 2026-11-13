@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   if (rows.length === 0) return NextResponse.json({ imported: 0, skipped: 0 });
 
   const merchantRules = await prisma.merchantRule.findMany({ include: { category: true } });
-  const exclusions = await prisma.importExclusion.findMany({ select: { name: true } });
+  const exclusions = await prisma.importExclusion.findMany({ where: { source: "paypay-card" }, select: { name: true } });
 
   const headers = Object.keys(rows[0]);
   const normalizedHeaders = headers.map((header) => [
