@@ -6,6 +6,22 @@ describe("age-based cash flow rules", () => {
     expect(defaultCashPlan().startAge).toBeNull();
     expect(simulateCashPlan(defaultCashPlan(), 10000)).toEqual([]);
   });
+  it("reads existing saved plans without other assets", () => {
+    const { initialOtherAssets: _old, ...legacy } = plan();
+    expect(parseCashPlan(legacy).initialOtherAssets).toBe(0);
+  });
+  it("recalculates from manual balances without double counting investments", () => {
+    const settings = plan({ initialCash: 10000, initialOtherAssets: 500, rules: [{ id: "nisa", name: "NISA", kind: "investment", from: 30, to: null, monthly: 100, rate: 10, initial: 1000 }] });
+    const points = simulateCashPlan(settings, 0);
+    expect(points[0]).toMatchObject({ cash: 10000, investment: 1500, total: 11500 });
+    const updated = simulateCashPlan({ ...settings, initialCash: 20000, initialOtherAssets: 700, rules: settings.rules.map(rule => ({ ...rule, initial: 2000 })) }, 0);
+    expect(updated[0]).toMatchObject({ cash: 20000, investment: 2700, total: 22700 });
+    expect(updated[1].total - points[1].total).toBe(11300);
+  });
+  it("retains other assets without an investment rule or assumed growth", () => {
+    expect(simulateCashPlan(plan({ initialOtherAssets: 500 }), 0).map(point => point.investment)).toEqual([500, 500, 500]);
+    for (const value of [-1, null, Infinity, 1.5]) expect(() => parseCashPlan({ ...plan(), initialOtherAssets: value })).toThrow();
+  });
   it("switches a child's education expense from age 5 to age 6", () => {
     const result = simulateCashPlan(plan({ initialCash: 1000, rules: [{ id: "edu", name: "教育費", kind: "annual", ageAtStart: 5, flow: "expense", ranges: [{ from: 0, to: 5, amount: 100 }, { from: 6, to: null, amount: 200 }] }] }), 0);
     expect(result.map(point => point.cash)).toEqual([1000, 900, 700]);
