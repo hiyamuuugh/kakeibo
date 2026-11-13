@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
-import { japanToday } from "@/lib/cash-flow";
+import type { CashFlowHistory } from "@/lib/cash-flow-history";
+import { CashFlowCalculation } from "@/components/cash-flow-calculation";
 import { CashFlowForecastChart } from "@/components/cash-flow-forecast-chart";
 
 const card = "rounded-2xl border border-border bg-white p-4 sm:p-6";
@@ -29,7 +30,8 @@ export default function CashFlowPage() {
   const [plan, setPlan] = useState<CashPlan>(defaultCashPlan);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [savedKey, setSavedKey] = useState("");
-  const [baseline, setBaseline] = useState({ monthly: 0, months: 0 });
+  const [history, setHistory] = useState<CashFlowHistory | null>(null);
+  const baseline = { monthly: history?.averageNet ?? 0, months: history?.months.length ?? 0 };
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
   const [saving, setSaving] = useState(false), [retry, setRetry] = useState(0);
   const [editor, setEditor] = useState<PlanRule | null>(null);
@@ -46,12 +48,12 @@ export default function CashFlowPage() {
     async function load() {
       setLoading(true); setError("");
       try {
-        const [settings, ledger] = await Promise.all([fetch("/api/cash-flow/plan", { signal: controller.signal, cache: "no-store" }), fetch(`/api/cash-flow?month=${japanToday().slice(0, 7)}&memberId=all`, { signal: controller.signal, cache: "no-store" })]);
+        const [settings, ledger] = await Promise.all([fetch("/api/cash-flow/plan", { signal: controller.signal, cache: "no-store" }), fetch("/api/cash-flow/history", { signal: controller.signal, cache: "no-store" })]);
         const [settingsData, ledgerData] = await Promise.all([settings.json(), ledger.json()]);
         if (!settings.ok || !ledger.ok) throw new Error(settingsData.error || ledgerData.error || "読み込めませんでした。");
         const loaded = parseCashPlan(settingsData.plan);
         setPlan(loaded); setSavedKey(JSON.stringify(loaded));
-        setBaseline({ monthly: ledgerData.outlook.averageNet, months: ledgerData.outlook.baseline.length });
+        setHistory(ledgerData.history);
       } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "読み込めませんでした。"); }
       finally { if (!controller.signal.aborted) setLoading(false); }
     }
@@ -60,7 +62,7 @@ export default function CashFlowPage() {
   const result = useMemo(() => {
     try { return { points: simulateCashPlan(parseCashPlan(plan), baseline.monthly), error: "" }; }
     catch (e) { return { points: [], error: e instanceof Error ? e.message : "設定を確認してください。" }; }
-  }, [plan, baseline]);
+  }, [plan, baseline.monthly]);
   const hasInvestments = plan.initialOtherAssets > 0 || plan.rules.some(rule => rule.kind === "investment");
   const shortfall = result.points.find(point => point.cash < 0);
   const dirty = savedKey !== JSON.stringify(plan);
@@ -126,6 +128,7 @@ export default function CashFlowPage() {
         <CashFlowForecastChart points={result.points} error={result.error} hasInvestments={hasInvestments} />
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
+      {history && <CashFlowCalculation history={history} monthlyNet={plan.monthlyNet} />}
       <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
         <div className="space-y-3 rounded-xl border border-border bg-background p-3"><h3 className="text-sm font-semibold">現在の非現金資産の残高</h3>
           {plan.rules.filter(rule => rule.kind === "investment").map(rule => rule.kind === "investment" && <label key={rule.id} className="block text-sm">{rule.name}の現在残高（万円）<NumberField min="0" max="100000000" step="0.0001" required value={rule.initial / 10000} onChange={e => setPlan({ ...plan, rules: plan.rules.map(item => item.id === rule.id ? { ...rule, initial: toYen(Number(e.target.value)) } : item) })} className={input} /><span className="mt-1 block text-[10px] text-muted-foreground">この残高に想定年率 {rule.rate}% を適用します。</span></label>)}
