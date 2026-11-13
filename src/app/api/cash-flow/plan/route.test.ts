@@ -20,6 +20,24 @@ describe("saved cash-flow simulation", () => {
     db.cashFlowPlan.findUnique.mockResolvedValue({ data: plan, updatedAt: "2026-11-13T00:00:00Z" });
     expect((await (await GET()).json()).plan).toEqual(plan);
   });
+  it("shares one family plan and lets the last save replace a stale earlier plan", async () => {
+    let shared = defaultCashPlan();
+    db.cashFlowPlan.upsert.mockImplementation(async ({ update, where }) => {
+      expect(where).toEqual({ scope: "family" });
+      shared = update.data;
+      return { data: shared, updatedAt: "2026-11-13T00:00:00Z" };
+    });
+    db.cashFlowPlan.findUnique.mockImplementation(async ({ where }) => {
+      expect(where).toEqual({ scope: "family" });
+      return { data: shared, updatedAt: "2026-11-13T00:00:00Z" };
+    });
+    const first = { ...defaultCashPlan(), initialCash: 100 };
+    const second = { ...defaultCashPlan(), initialCash: 200 };
+    await Promise.all([PUT(request(first)), PUT(request(second))]);
+    expect((await (await GET()).json()).plan.initialCash).toBe(200);
+    await PUT(request(first));
+    expect((await (await GET()).json()).plan.initialCash).toBe(100);
+  });
   it("rejects invalid settings before any write", async () => {
     expect((await PUT(request({ ...defaultCashPlan(), endAge: -1 }))).status).toBe(400);
     expect(db.cashFlowPlan.upsert).not.toHaveBeenCalled();

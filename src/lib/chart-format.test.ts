@@ -9,6 +9,15 @@ describe("chart-format", () => {
     expect(formatShortAmount(-98765)).toBe("9.9万");
   });
 
+  it("uses Japanese large-number units without large counts of man", () => {
+    expect(formatShortAmount(810000000)).toBe("8億1000万");
+    expect(formatShortAmount(-810000000)).toBe("8億1000万");
+    expect(formatShortAmount(100000000)).toBe("1億");
+    expect(formatShortAmount(199999999)).toBe("2億");
+    expect(formatShortAmount(1000000000000)).toBe("1兆");
+    expect(formatShortAmount(1234567890000)).toBe("1兆2345億6789万");
+  });
+
   it("calculates rounded share percentages", () => {
     expect(getSharePercent(25, 100)).toBe(25);
     expect(getSharePercent(1, 3)).toBe(33);

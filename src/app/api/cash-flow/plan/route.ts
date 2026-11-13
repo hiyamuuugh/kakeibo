@@ -13,6 +13,7 @@ export async function PUT(req: Request) {
   try { plan = parseCashPlan(await req.json()); }
   catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "入力内容を確認してください。" }, { status: 400 }); }
   try {
+    // One family-wide row. Every save replaces the full plan; the last DB write wins.
     const saved = await prisma.cashFlowPlan.upsert({ where: { scope: "family" }, create: { scope: "family", data: JSON.parse(JSON.stringify(plan)) }, update: { data: JSON.parse(JSON.stringify(plan)) } });
     return NextResponse.json({ plan: parseCashPlan(saved.data), updatedAt: saved.updatedAt });
   } catch { return NextResponse.json({ error: "設定を保存できませんでした。もう一度お試しください。" }, { status: 503 }); }
