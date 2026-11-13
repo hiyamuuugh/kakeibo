@@ -101,3 +101,9 @@ model PriceRecord {
 
   @@index([productId, date])
 }
+
+model CashFlowPlan {
+  scope     String   @id
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
