@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Line, LineChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
 import { japanToday } from "@/lib/cash-flow";
-import { formatShortAmount } from "@/lib/chart-format";
+import { CashFlowForecastChart } from "@/components/cash-flow-forecast-chart";
 
 const card = "rounded-2xl border border-border bg-white p-4 sm:p-6";
 const input = "mt-1.5 w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring";
@@ -20,11 +19,6 @@ function NumberField({ value, onChange, ...props }: React.InputHTMLAttributes<HT
   return <input {...props} type="number" value={text} onChange={e => { setText(e.target.value); onChange?.(e); }} />;
 }
 type RangeDraft = { from: string; to: string; amount: string };
-function ChartTip({ active, payload }: { active?: boolean; payload?: readonly { payload?: { label: string; cash: number; investment: number; total: number; expenses: number; contributions: number; gain: number } }[] }) {
-  const row = payload?.[0]?.payload;
-  if (!active || !row) return null;
-  return <div className="rounded-xl border border-border bg-white p-3 text-xs shadow-lg"><p className="font-semibold">{row.label}</p><p className="mt-2">資産合計　{yen(row.total)}</p><p className="mt-1">現預金　{yen(row.cash)}</p><p className="mt-1">非現金資産　{yen(row.investment)}</p><p className="mt-2 text-muted-foreground">ルールの支出　{yen(row.expenses)}</p><p className="mt-1 text-muted-foreground">積立額　{yen(row.contributions)}</p><p className="mt-1 text-muted-foreground">運用損益　{yen(row.gain)}</p></div>;
-}
 function ruleDescription(rule: PlanRule) {
   if (rule.kind === "annual") return `${rule.ageAtStart === null ? "本人の年齢" : `対象の開始年齢 ${rule.ageAtStart}歳`} / ${rule.flow === "income" ? "収入" : "支出"} · ${rule.ranges.map(range => `${ageSpan(range.from, range.to)} ${yen(range.amount)}/${rule.frequency === "monthly" ? "月" : "年"}`).join(" · ")}`;
   if (rule.kind === "investment") return `${ageSpan(rule.from, rule.to)}に月${yen(rule.monthly)}積立 · 想定年率${rule.rate}%${rule.initial ? ` · 開始非現金資産${yen(rule.initial)}` : ""}`;
@@ -129,10 +123,7 @@ export default function CashFlowPage() {
     <h1 className="text-xl font-bold">キャッシュフロー</h1>
     {loading ? <div className={`${card} py-14 text-center text-sm text-muted-foreground`} role="status">読み込み中…</div> : error ? <div className={card} role="alert"><p className="text-sm text-destructive">{error}</p><button className={`${primary} mt-4`} onClick={() => setRetry(value => value + 1)}>再読み込み</button></div> : <>
       <section className={card} aria-labelledby="forecast-title"><div className="flex flex-wrap items-center justify-between gap-2"><h2 id="forecast-title" className="text-base font-semibold">今後の見通し</h2><span className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground">年単位のシミュレーション</span></div>
-        <div className="mt-4 h-80 w-full min-w-0" role="img" aria-label="年齢別の現預金・非現金資産・合計資産の見通しグラフ">
-          {result.error ? <p className="py-20 text-center text-sm text-destructive" role="alert">{result.error}</p> : !result.points.length ? <p className="py-24 text-center text-sm text-muted-foreground">下の基本設定で開始年齢を入力してください。</p> : <ResponsiveContainer width="100%" height="100%"><LineChart data={result.points} margin={{ top: 12, right: 12, left: -6, bottom: 0 }}><CartesianGrid vertical={false} stroke="#e2e8ed" /><XAxis dataKey="label" minTickGap={30} tick={{ fontSize: 10 }} /><YAxis width={82} tickFormatter={value => `${Number(value) < 0 ? "−" : ""}${formatShortAmount(Number(value))}`} tick={{ fontSize: 10 }} /><Tooltip content={<ChartTip />} /><ReferenceLine y={0} stroke="#ad3929" strokeDasharray="3 3" />{hasInvestments && <Line dataKey="cash" name="現預金" stroke="#245f8b" dot={false} strokeWidth={2} isAnimationActive={false} />}{hasInvestments && <Line dataKey="investment" name="非現金資産" stroke="#96651a" dot={false} strokeWidth={2} isAnimationActive={false} />}<Line dataKey="total" name="資産合計" stroke="#3f6f51" dot={false} strokeWidth={2.5} isAnimationActive={false} /></LineChart></ResponsiveContainer>}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-4 text-[11px]"><span className="text-[#3f6f51]">● 資産合計</span>{hasInvestments && <><span className="text-[#245f8b]">● 現預金</span><span className="text-[#96651a]">● 非現金資産</span></>}</div><p className="mt-3 text-[10px] leading-5 text-muted-foreground">各年齢の1年間を反映。積立は月末・想定年率を月換算して複利計算します。</p>
+        <CashFlowForecastChart points={result.points} error={result.error} hasInvestments={hasInvestments} />
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
       <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
