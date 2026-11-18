@@ -111,3 +111,13 @@ model CashFlowPlan {
   data      Json
   updatedAt DateTime @default(now()) @updatedAt
 }
+
+model CsvImportMonth {
+  id          String   @id @default(cuid())
+  source      String
+  memberScope String
+  month       String
+  createdAt   DateTime @default(now())
+
+  @@unique([source, memberScope, month])
+}

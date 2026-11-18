@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordCsvMonths } from "@/lib/record-csv-months";
 import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 import { isImportExcluded } from "@/lib/import-exclusion";
 import Papa from "papaparse";
@@ -134,5 +135,6 @@ export async function POST(req: NextRequest) {
     imported++;
   }
 
+  await recordCsvMonths("rakuten", memberId, rows.map(row => parseAmount(row[amountKey] ?? "") > 0 ? parseDate(row[dateKey] ?? "") : null));
   return NextResponse.json({ imported, skipped });
 }
