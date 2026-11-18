@@ -35,3 +35,13 @@ export function compareMonthlyBudget(plan: MonthlyBudgetPlan, spent: number, cat
     unbudgetedSpent: categories.filter(row => !limits.has(row.id)).reduce((sum, row) => sum + row.total, 0),
   };
 }
+
+/** Budget inputs use 万円; stored/API amounts remain integer yen. */
+export const budgetYenToManInput = (yen: number) => String(yen / 10000);
+export function budgetManInputToYen(value: string): number {
+  if (!/^(?:\d+(?:\.\d{0,4})?|\.\d{1,4})$/.test(value)) throw new Error("予算は0以上の万円単位で、小数点以下4桁まで入力してください。");
+  const [whole, fraction = ""] = value.split(".");
+  const yen = Number(whole || "0") * 10000 + Number(fraction.padEnd(4, "0"));
+  if (!Number.isSafeInteger(yen) || yen > 2147483647) throw new Error("予算は214748.3647万円以下で入力してください。");
+  return yen;
+}
