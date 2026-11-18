@@ -5,7 +5,7 @@ import { categoryColor } from "@/lib/category-colors";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { ja } from "date-fns/locale";
-import { AlertCircle, CheckCircle2, ChevronDown, Info } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -28,7 +28,8 @@ import {
   INCOME_CATEGORY_ORDER,
 } from "@/lib/category-options";
 import { formatShortAmount, getSharePercent } from "@/lib/chart-format";
-import { buildMonthlyReport, MonthlyReport } from "@/lib/monthly-report";
+import { CategoryMonthlyReport } from "@/components/category-monthly-report";
+import { MonthlyBudgetPanel } from "@/components/monthly-budget-panel";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
 interface CategoryStat {
@@ -70,16 +71,6 @@ const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive
 
 const getBalanceColor = (value: number) =>
   value > 0 ? "#3f6f51" : value < 0 ? "#c1432f" : "#245f8b";
-
-const REPORT_STYLE: Record<
-  MonthlyReport["tone"],
-  { bg: string; border: string; accent: string; icon: typeof AlertCircle }
-> = {
-  alert: { bg: "#f7efec", border: "#e7d0ca", accent: "#ad3929", icon: AlertCircle },
-  warn: { bg: "#fffbeb", border: "#fde68a", accent: "#d97706", icon: AlertCircle },
-  good: { bg: "#f0fdf4", border: "#bbf7d0", accent: "#16a34a", icon: CheckCircle2 },
-  neutral: { bg: "#f4f6f8", border: "#e2e8f0", accent: "#64748b", icon: Info },
-};
 
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
 
@@ -214,6 +205,7 @@ export default function Dashboard() {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [memberReady, setMemberReady] = useState(false);
   const [stats, setStats] = useState<MonthlyStats | null>(null);
+  const [statsKey, setStatsKey] = useState("");
   const [monthBars, setMonthBars] = useState<MonthBar[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
@@ -267,6 +259,7 @@ export default function Dashboard() {
         const results = await Promise.all(months.map((targetMonth) => fetchMonthly(targetMonth, memberId)));
         if (!active) return;
         setStats(current);
+        setStatsKey(`${month}:${viewMode}:${selectedMemberId}`);
         setMonthBars(
           results.map((result, index) => ({
             month: months[index],
@@ -303,6 +296,7 @@ export default function Dashboard() {
       if (!active) return;
 
       setStats(current);
+      setStatsKey(`${month}:${viewMode}:${selectedMemberId}`);
       if (rangeMode === "monthly") {
         setMonthBars(
           results.map((result, index) => ({
@@ -396,14 +390,6 @@ export default function Dashboard() {
   }, [chartLoading, rangeMode, selectedYear]);
 
   const balance = (stats?.income ?? 0) - (stats?.total ?? 0);
-  const report = stats
-    ? buildMonthlyReport(
-        stats,
-        rangeMode === "monthly" ? monthBars.slice(0, -1).map((bar) => bar.expense) : []
-      )
-    : null;
-  const reportStyle = report ? REPORT_STYLE[report.tone] : null;
-  const ReportIcon = reportStyle?.icon;
   const categoryKind: CategoryKind = chartMode === "income" ? "income" : "expense";
   const categoryEnabled = chartMode === "expense" || chartMode === "income";
   const categoryNames = useMemo(() => {
@@ -495,7 +481,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {!memberReady || statsLoading || stats === null ? (
+      {!memberReady || statsLoading || stats === null || statsKey !== `${month}:${viewMode}:${selectedMemberId}` ? (
         <LoadingSpinner className="py-16" />
       ) : (
         <>
@@ -525,6 +511,8 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          <MonthlyBudgetPanel key={`budget:${month}:${viewMode}:${selectedMemberId}`} month={month} memberId={viewMode === "personal" ? selectedMemberId : null} total={stats.total} categories={stats.categories} />
 
           <div className="flex flex-col gap-3">
           <Card className="order-1 overflow-visible">
@@ -818,21 +806,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {report && reportStyle && ReportIcon ? (
-            <div
-              className="order-4 space-y-1.5 rounded-[12px] border p-3.5"
-              style={{ backgroundColor: reportStyle.bg, borderColor: reportStyle.border }}
-            >
-              <div className="flex items-center gap-1.5">
-                <ReportIcon className="h-[18px] w-[18px]" style={{ color: reportStyle.accent }} />
-                <p className="text-[11px] font-bold text-[#72818b]">Monthly Report</p>
-              </div>
-              <p className="text-[15px] font-extrabold" style={{ color: reportStyle.accent }}>
-                {report.headline}
-              </p>
-              <p className="text-[13px] leading-[19px] text-[#415665]">{report.advice}</p>
-            </div>
-          ) : null}
+          <CategoryMonthlyReport key={`report:${month}:${viewMode}:${selectedMemberId}`} current={stats} memberId={viewMode === "personal" ? selectedMemberId : null} />
           </div>
         </>
       )}

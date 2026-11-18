@@ -14,6 +14,7 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
+import { MonthlyBudgetSettings } from "@/components/monthly-budget-settings";
 import { ProfileSettings } from "@/components/profile-settings";
 import { ImportExclusionsSettings } from "@/components/import-exclusions-settings";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
@@ -260,6 +261,7 @@ export default function SettingsPage() {
         ) : null}
       </Card>
 
+      <MonthlyBudgetSettings />
       <ProfileSettings />
       <ImportExclusionsSettings />
 

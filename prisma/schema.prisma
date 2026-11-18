@@ -121,3 +121,9 @@ model CsvImportMonth {
 
   @@unique([source, memberScope, month])
 }
+
+model MonthlyBudgetPlan {
+  scope     String   @id
+  data      Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
