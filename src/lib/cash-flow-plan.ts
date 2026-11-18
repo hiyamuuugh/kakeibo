@@ -60,11 +60,16 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number, month
   let cash = plan.initialCash;
   const investmentRules = plan.rules.filter((r): r is InvestmentRule => r.kind === "investment");
   const investments = new Map(investmentRules.map(rule => [rule.id, rule.initial]));
-  const points: { label: string; age: number; cash: number; investment: number; total: number; expenses: number; contributions: number; gain: number }[] = [];
+  const principals = new Map(investmentRules.map(rule => [rule.id, rule.initial]));
+  const points: { label: string; age: number; year: number | null; cash: number; investment: number; otherAssets: number; total: number; expenses: number; contributions: number; gain: number; investmentBreakdown: { id: string; name: string; balance: number; principal: number; profit: number }[] }[] = [];
   function point(label: string, currentAge: number, expenses: number, contributions: number, gain: number) {
     const invested = plan.initialOtherAssets + [...investments.values()].reduce((sum, value) => sum + value, 0);
     if (![cash, invested].every(value => Number.isFinite(value) && Math.abs(value) < 1000000000000000)) throw new Error("計算額が大きすぎます。期間・利回り・金額を調整してください。");
-    points.push({ label, age: currentAge, cash: Math.round(cash), investment: Math.round(invested), total: Math.round(cash) + Math.round(invested), expenses: Math.round(expenses), contributions: Math.round(contributions), gain: Math.round(gain) });
+    const investmentBreakdown = investmentRules.map(rule => {
+      const balance = Math.round(investments.get(rule.id)!), principal = principals.get(rule.id)!;
+      return { id: rule.id, name: rule.name, balance, principal, profit: balance - principal };
+    });
+    points.push({ label, age: currentAge, year: label === "開始時" ? null : startYear + currentAge - plan.startAge!, otherAssets: plan.initialOtherAssets, investmentBreakdown, cash: Math.round(cash), investment: Math.round(invested), total: Math.round(cash) + Math.round(invested), expenses: Math.round(expenses), contributions: Math.round(contributions), gain: Math.round(gain) });
   }
   point("開始時", plan.startAge, 0, 0, 0);
   for (let currentAge = plan.startAge; currentAge <= plan.endAge; currentAge++) {
@@ -88,6 +93,7 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number, month
         const contributionAge = rule.basis === "year" ? startYear + offset : currentAge;
         const contribution = contributionAge >= rule.from && contributionAge <= (rule.to ?? Infinity) ? rule.monthly : 0;
         investments.set(rule.id, balance + profit + contribution);
+        principals.set(rule.id, principals.get(rule.id)! + contribution);
         cash -= contribution; contributions += contribution; gain += profit;
       }
     }
