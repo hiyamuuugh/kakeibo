@@ -39,7 +39,7 @@ export function ProfileSettings() {
     <div id="profile-settings" hidden={!open} className="mt-4">
       {loading ? <p className="text-sm text-muted-foreground">読み込み中…</p> : !members.length ? <p className="text-sm text-muted-foreground">アカウントを作成してから登録してください。</p> : <form onSubmit={save}><fieldset disabled={saving} className="space-y-4">
         <label className="block text-sm">プロフィール<select aria-label="編集するプロフィール" value={memberId} onChange={e => { setMemberId(e.target.value); setBirthDate(members.find(member => member.id === e.target.value)?.birthDate?.slice(0, 10) ?? ""); setError(""); }} className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base">{members.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>
-        <label className="block text-sm">生年月日(任意)<input type="date" min="1900-01-01" max={today} value={birthDate} onChange={e => setBirthDate(e.target.value)} className="mt-1.5 w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2.5 text-base" /></label>
+        <label className="block text-sm">生年月日<input type="date" min="1900-01-01" max={today} value={birthDate} onChange={e => setBirthDate(e.target.value)} className="mt-1.5 w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2.5 text-base" /></label>
         {age !== null && <p className="text-sm">現在の年齢：{age}歳</p>}
         <p className="text-xs leading-5 text-muted-foreground">キャッシュフローの開始年齢を、その時点の満年齢で自動計算します。家族共通の画面では、基本設定で選んだプロフィールを基準にします。</p>
         <button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">{saving ? "保存中…" : "プロフィールを保存"}</button>
