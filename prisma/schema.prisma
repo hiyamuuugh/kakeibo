@@ -135,3 +135,9 @@ model CsvReminderAcknowledgement {
 
   @@id([memberScope, month])
 }
+
+model AppDataMigration {
+  key          String   @id
+  affectedRows Int      @default(0)
+  appliedAt    DateTime @default(now())
+}

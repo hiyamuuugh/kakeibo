@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { SettingsPanel } from "@/components/settings-panel";
 import { toast } from "sonner";
 import { japanToday } from "@/lib/cash-flow";
 import { currentAge, type AgeProfile } from "@/lib/profile-age";
@@ -34,9 +34,7 @@ export function ProfileSettings() {
     } catch (e) { setError(e instanceof Error ? e.message : "保存できませんでした。"); }
     finally { setSaving(false); }
   }
-  return <section className="order-1 rounded-2xl border border-border bg-white p-4">
-    <button type="button" aria-expanded={open} aria-controls="profile-settings" onClick={() => setOpen(value => !value)} className="flex w-full items-center justify-between text-left"><span className="text-sm font-semibold">プロフィール</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} /></button>
-    <div id="profile-settings" hidden={!open} className="mt-4">
+  return <SettingsPanel title="プロフィール" open={open} onToggle={() => setOpen(value => !value)} contentId="profile-settings" className="order-1">
       {loading ? <p className="text-sm text-muted-foreground">読み込み中…</p> : !members.length ? <p className="text-sm text-muted-foreground">アカウントを作成してから登録してください。</p> : <form onSubmit={save}><fieldset disabled={saving} className="space-y-4">
         <label className="block text-sm">プロフィール<select aria-label="編集するプロフィール" value={memberId} onChange={e => { setMemberId(e.target.value); setBirthDate(members.find(member => member.id === e.target.value)?.birthDate?.slice(0, 10) ?? ""); setError(""); }} className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base">{members.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>
         <label className="block text-sm">生年月日<input type="date" min="1900-01-01" max={today} value={birthDate} onChange={e => setBirthDate(e.target.value)} className="mt-1.5 w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2.5 text-base" /></label>
@@ -45,6 +43,5 @@ export function ProfileSettings() {
         <button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">{saving ? "保存中…" : "プロフィールを保存"}</button>
       </fieldset></form>}
       {error && <div role="alert" className="mt-3 text-sm text-destructive">{error}{loading || members.length ? null : <button type="button" onClick={() => setRetry(value => value + 1)} className="ml-2 underline">再読み込み</button>}</div>}
-    </div>
-  </section>;
+  </SettingsPanel>;
 }
