@@ -7,6 +7,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "入力内容を確認してください。" }, { status: 400 }); }
   const { name, color, emoji, birthDate } = body ?? {};
+  if (color !== undefined && (typeof color !== "string" || !/^#[0-9a-f]{6}$/i.test(color))) return NextResponse.json({ error: "色を確認してください。" }, { status: 400 });
   if (birthDate !== undefined && birthDate !== null && birthDate !== "" && !validBirthDate(birthDate, japanToday())) return NextResponse.json({ error: "生年月日を確認してください。" }, { status: 400 });
   try {
     const member = await prisma.member.update({ where: { id }, data: {

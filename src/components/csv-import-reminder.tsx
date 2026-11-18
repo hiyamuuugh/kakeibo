@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,7 +25,7 @@ export function CsvImportReminder() {
     const refresh = async () => {
       const request = ++revision;
       try {
-        const membersResponse = await fetch("/api/members", { cache: "no-store" });
+        const membersResponse = await fetchReference("/api/members", { cache: "no-store" });
         if (!membersResponse.ok) throw new Error("members");
         const members: { id: string; name: string }[] = await membersResponse.json();
         if (!Array.isArray(members)) throw new Error("members");

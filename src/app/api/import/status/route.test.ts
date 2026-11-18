@@ -19,6 +19,8 @@ describe("CSV reminder account scope", () => {
       db.csvReminderAcknowledgement.findUnique.mockResolvedValue({ month: "2026-11" });
       const res = await GET(new NextRequest("https://example.test/api/import/status?memberId=member-a"));
       expect((await res.json()).acknowledged).toBe(true);
+      expect(db.transaction.findMany).not.toHaveBeenCalled();
+      expect(db.csvImportMonth.findMany).not.toHaveBeenCalled();
       expect(db.csvReminderAcknowledgement.findUnique).toHaveBeenCalledWith({ where: { memberScope_month: { memberScope: "member:member-a", month: "2026-11" } }, select: { month: true } });
     } finally { vi.useRealTimers(); }
   });

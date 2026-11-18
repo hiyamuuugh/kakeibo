@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import { categoryColor, categoryChoiceStyle } from "@/lib/category-colors";
 
@@ -34,7 +35,7 @@ export default function NewTransactionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/categories")
+    fetchReference("/api/categories")
       .then((response) => response.json())
       .then((data: CategoryOption[]) => {
         setCategories(data);

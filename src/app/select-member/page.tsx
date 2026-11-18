@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +19,7 @@ export default function SelectMemberPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/members")
+    fetchReference("/api/members")
       .then((response) => response.json())
       .then((data: Member[]) => setMembers(data))
       .finally(() => setLoading(false));

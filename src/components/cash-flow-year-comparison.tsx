@@ -30,7 +30,7 @@ export function CashFlowYearComparison({ points, predictionPoints }: { points: C
         <button type="button" aria-pressed={usingAi} disabled={!hasAi} onClick={() => setModel("ai")} className={`rounded-md px-3 py-2 text-xs font-semibold disabled:opacity-40 ${usingAi ? "bg-[#7a678c] text-white" : "text-muted-foreground"}`}>AI予測</button>
       </div>
       {!hasAi && <p className="mt-2 text-[11px] text-muted-foreground">AI予測は、学習に必要な記録がそろうと比較できます。</p>}
-      {!left || !right ? <p className="py-6 text-center text-sm text-muted-foreground">プロフィールの生年月日と基本設定を登録すると、年ごとの資産を比較できます。</p> : <>
+      {!left || !right ? <p className="py-6 text-center text-sm text-muted-foreground">アカウントの生年月日と基本設定を登録すると、年ごとの資産を比較できます。</p> : <>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <label className="min-w-0 text-sm">比較元<select aria-label="比較元" value={left.year!} onChange={e => setLeftYear(Number(e.target.value))} className="mt-1.5 w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2.5 text-base">{years.map(year => <option key={year} value={year}>{year}年</option>)}</select></label>
           <label className="min-w-0 text-sm">比較先<select aria-label="比較先" value={right.year!} onChange={e => setRightYear(Number(e.target.value))} className="mt-1.5 w-full min-w-0 rounded-lg border border-border bg-white px-3 py-2.5 text-base">{years.map(year => <option key={year} value={year}>{year}年</option>)}</select></label>

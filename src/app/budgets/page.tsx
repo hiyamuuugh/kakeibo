@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import { budgetManInputToYen, budgetYenToManInput } from "@/lib/monthly-budget";
 import { categoryColor } from "@/lib/category-colors";
@@ -47,7 +48,7 @@ export default function BudgetsPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/categories")
+    fetchReference("/api/categories")
       .then((r) => r.json())
       .then(setCategories)
       .finally(() => setCategoriesLoading(false));

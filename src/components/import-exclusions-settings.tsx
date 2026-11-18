@@ -16,6 +16,7 @@ export function ImportExclusionsSettings() {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   useEffect(() => {
+    if (!open) return;
     const controller = new AbortController();
     setLoading(true); setError("");
     fetch("/api/import-exclusions", { cache: "no-store", signal: controller.signal })
@@ -26,7 +27,7 @@ export function ImportExclusionsSettings() {
       .catch(e => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "読み込めませんでした"); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [retry]);
+  }, [retry, open]);
   return <SettingsPanel title="CSV取込の除外ワード" open={open} onToggle={() => setOpen(value => !value)} contentId="csv-exclusion-sources" className="order-3">
       <p className="text-xs leading-5 text-muted-foreground">登録したワードを含む明細を、選んだ取り込み元のCSVから除外します。登録済みの家計簿は変更しません。</p>
       {loading ? <p role="status" className="py-3 text-center text-sm text-muted-foreground">読み込み中…</p> : error ? <div role="alert"><p className="text-sm text-destructive">{error}</p><Button variant="outline" className="mt-2" onClick={() => setRetry(value => value + 1)}>再読み込み</Button></div> :

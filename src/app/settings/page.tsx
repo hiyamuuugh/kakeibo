@@ -1,9 +1,10 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import { categoryColor, categoryChoiceStyle } from "@/lib/category-colors";
 
-import { useEffect, useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,9 +17,12 @@ import {
 } from "@/lib/category-options";
 import { SettingsPanel } from "@/components/settings-panel";
 import { MonthlyBudgetSettings } from "@/components/monthly-budget-settings";
-import { ProfileSettings } from "@/components/profile-settings";
+import dynamic from "next/dynamic";
+import type { AccountProfile } from "@/components/account-edit-dialog";
 import { ImportExclusionsSettings } from "@/components/import-exclusions-settings";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
+
+const AccountEditDialog = dynamic(() => import("@/components/account-edit-dialog").then(module => module.AccountEditDialog), { ssr: false });
 
 interface MerchantRule {
   id: string;
@@ -27,11 +31,7 @@ interface MerchantRule {
   category: CategoryOption;
 }
 
-interface Member {
-  id: string;
-  name: string;
-  color: string;
-}
+type Member = AccountProfile;
 
 export default function SettingsPage() {
   const [kind, setKind] = useState<CategoryKind>("expense");
@@ -41,6 +41,10 @@ export default function SettingsPage() {
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [rulePageByCategory, setRulePageByCategory] = useState<Record<string, number>>({});
   const [closedRuleCategories, setClosedRuleCategories] = useState<Set<string>>(new Set());
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const editTrigger = useRef<HTMLButtonElement | null>(null);
+  const [membersLoading, setMembersLoading] = useState(true), [membersError, setMembersError] = useState(""), [memberRetry, setMemberRetry] = useState(0);
+  const [mappingLoaded, setMappingLoaded] = useState(false), [mappingError, setMappingError] = useState(""), [mappingRetry, setMappingRetry] = useState(0);
   const [accountOpen, setAccountOpen] = useState(false);
   const [mappingOpen, setMappingOpen] = useState(false);
   const [merchant, setMerchant] = useState("");
@@ -85,51 +89,50 @@ export default function SettingsPage() {
   }, [visibleCategories, visibleRules]);
 
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
-  const loadData = async () => {
-    const [categoryResponse, ruleResponse, memberResponse] = await Promise.all([
-      fetch("/api/categories"),
-      fetch("/api/merchant-rules"),
-      fetch("/api/members"),
-    ]);
-    setCategories((await categoryResponse.json()) as CategoryOption[]);
-    setRules((await ruleResponse.json()) as MerchantRule[]);
-    const memberData = (await memberResponse.json()) as Member[];
-    setMembers(memberData);
-    const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
-    const nextMember =
-      memberData.find((member) => member.id === selectedMemberId) ??
-      memberData.find((member) => member.id === savedMemberId) ??
-      memberData[0] ??
-      null;
-    if (nextMember) {
-      setSelectedMemberId(nextMember.id);
-      localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMember.id);
+  useEffect(() => {
+    if (window.location.hash === "#account-settings") {
+      // The link fragment is only available after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAccountOpen(true);
     }
-    setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/categories"),
-      fetch("/api/merchant-rules"),
-      fetch("/api/members"),
-    ])
-      .then(async ([categoryResponse, ruleResponse, memberResponse]) => {
-        setCategories((await categoryResponse.json()) as CategoryOption[]);
-        setRules((await ruleResponse.json()) as MerchantRule[]);
-        const memberData = (await memberResponse.json()) as Member[];
-        setMembers(memberData);
-        const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
-        const nextMember =
-          memberData.find((member) => member.id === savedMemberId) ?? memberData[0] ?? null;
-        if (nextMember) {
-          setSelectedMemberId(nextMember.id);
-          localStorage.setItem(SELECTED_MEMBER_ID_KEY, nextMember.id);
-        }
-      })
-      .catch(() => toast.error("設定を読み込めませんでした"))
-      .finally(() => setLoading(false));
-  }, []);
+    let active = true;
+    const load = async () => {
+      setMembersLoading(true); setMembersError("");
+      try {
+        const response = await fetchReference("/api/members");
+        if (!response.ok) throw new Error("アカウントを読み込めませんでした。");
+        const data: Member[] = await response.json();
+        if (!active) return;
+        setMembers(data);
+        const selected = data.find(member => member.id === localStorage.getItem(SELECTED_MEMBER_ID_KEY)) ?? data[0];
+        setSelectedMemberId(selected?.id ?? "");
+      } catch (e) { if (active) setMembersError(e instanceof Error ? e.message : "読み込めませんでした。"); }
+      finally { if (active) setMembersLoading(false); }
+    };
+    void load(); return () => { active = false; };
+  }, [memberRetry]);
+
+  useEffect(() => {
+    if (!mappingOpen || mappingLoaded) return;
+    const controller = new AbortController();
+    const load = async () => {
+      setLoading(true); setMappingError("");
+      try {
+        const responses = await Promise.all([fetchReference("/api/categories", { signal: controller.signal }), fetch("/api/merchant-rules", { signal: controller.signal })]);
+        if (responses.some(response => !response.ok)) throw new Error("カテゴリマッピングを読み込めませんでした。");
+        const [categoryData, ruleData] = await Promise.all(responses.map(response => response.json()));
+        if (controller.signal.aborted) return;
+        setCategories(categoryData); setRules(ruleData); setMappingLoaded(true);
+      } catch (e) { if (!controller.signal.aborted) setMappingError(e instanceof Error ? e.message : "読み込めませんでした。"); }
+      finally { if (!controller.signal.aborted) setLoading(false); }
+    };
+    void load(); return () => controller.abort();
+  }, [mappingOpen, mappingLoaded, mappingRetry]);
+
+  const closeEditor = () => { setEditingMember(null); requestAnimationFrame(() => editTrigger.current?.focus()); };
 
   const handleSelectMember = (member: Member) => {
     setSelectedMemberId(member.id);
@@ -169,7 +172,7 @@ export default function SettingsPage() {
     toast.success(`ルールを登録しました（${data.appliedCount ?? 0}件に適用）`);
     setMerchant("");
     setCategoryId("");
-    await loadData();
+    setRules(current => [...current.filter(rule => rule.id !== data.id), data]);
   };
 
   const handleDelete = async (id: string) => {
@@ -187,7 +190,7 @@ export default function SettingsPage() {
     }
 
     toast.success("ルールを削除しました");
-    await loadData();
+    setRules(current => current.filter(rule => rule.id !== id));
   };
 
   const toggleRuleCategory = (categoryName: string) => {
@@ -212,8 +215,8 @@ export default function SettingsPage() {
         <h1 className="text-xl font-bold text-[#253b4b]">設定</h1>
       </div>
 
-      <SettingsPanel title="アカウント" open={accountOpen} onToggle={() => setAccountOpen(value => !value)} contentId="settings-account" className="order-1">
-          {loading ? (
+      <SettingsPanel id="account-settings" title="アカウント" open={accountOpen} onToggle={() => setAccountOpen(value => !value)} contentId="settings-account" className="order-1">
+          {membersError ? <div role="alert"><p className="text-sm text-destructive">{membersError}</p><button type="button" onClick={() => setMemberRetry(value => value + 1)} className="mt-2 text-sm text-primary underline">再読み込み</button></div> : membersLoading ? (
             <LoadingSpinner className="py-4" />
           ) : members.length === 0 ? (
             <p className="py-4 text-center text-sm text-[#8a97a1]">アカウントがありません</p>
@@ -221,22 +224,10 @@ export default function SettingsPage() {
             <>
               <div className="grid grid-cols-2 gap-2">
                 {members.map((member) => (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => handleSelectMember(member)}
-                    className={`rounded-lg border px-3 py-2 text-left text-sm font-bold ${
-                      selectedMemberId === member.id
-                        ? "border-[#245f8b] bg-[#e9f1f7] text-[#1f4f73]"
-                        : "border-[#e2e8ed] bg-white text-[#415665]"
-                    }`}
-                  >
-                    <span
-                      className="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: member.color }}
-                    />
-                    {member.name}
-                  </button>
+                  <div key={member.id} className={`flex min-w-0 items-center rounded-lg border ${selectedMemberId === member.id ? "border-[#245f8b] bg-[#e9f1f7] text-[#1f4f73]" : "border-[#e2e8ed] bg-white text-[#415665]"}`}>
+                    <button type="button" onClick={() => handleSelectMember(member)} aria-pressed={selectedMemberId === member.id} className="flex min-w-0 flex-1 items-center gap-2 px-3 py-3 text-left text-sm font-bold"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: member.color }} /><span className="truncate">{member.name}</span></button>
+                    <button type="button" aria-label={`${member.name}のプロフィールを編集`} onClick={event => { editTrigger.current = event.currentTarget; setEditingMember(member); }} className="shrink-0 rounded-lg p-3 text-muted-foreground hover:bg-muted"><Pencil className="h-4 w-4" /></button>
+                  </div>
                 ))}
               </div>
               <Button type="button" className="h-10 w-full" onClick={handleSwitchMember}>
@@ -247,10 +238,10 @@ export default function SettingsPage() {
       </SettingsPanel>
 
       <MonthlyBudgetSettings />
-      <ProfileSettings />
       <ImportExclusionsSettings />
 
       <SettingsPanel title="カテゴリマッピング" open={mappingOpen} onToggle={() => setMappingOpen(value => !value)} contentId="settings-mapping" className="order-2">
+      {mappingError && <div role="alert" className="text-sm text-destructive">{mappingError}<button type="button" onClick={() => setMappingRetry(value => value + 1)} className="ml-2 underline">再読み込み</button></div>}
       <div className="space-y-4 pt-3">
         <p className="text-sm font-semibold text-[#253b4b]">ルール追加</p>
           {loading ? (
@@ -390,6 +381,7 @@ export default function SettingsPage() {
         )}
       </div>
       </SettingsPanel>
+      {editingMember && <AccountEditDialog member={editingMember} onClose={closeEditor} onSaved={member => { setMembers(current => current.map(item => item.id === member.id ? member : item)); closeEditor(); }} />}
     </div>
   );
 }
