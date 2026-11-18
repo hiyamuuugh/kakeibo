@@ -26,3 +26,17 @@ export function parsePredictionSettings(input: unknown): PredictionSettings {
   if ([incomeChange, expenseChange].some(value => typeof value !== "number" || !Number.isFinite(value) || value < -90 || value > 100)) throw new Error("収入・支出の補正は−90〜100%で指定してください。");
   return { lookbackMonths, incomeChange: incomeChange as number, expenseChange: expenseChange as number, instructions };
 }
+
+/** Show legacy numeric settings in the text-only editor without losing saved values. */
+export function predictionInstructionText(settings: PredictionSettings) {
+  if (settings.instructions.trim()) return settings.instructions;
+  const parts = [`過去${settings.lookbackMonths}か月を考慮して。`];
+  for (const [name, value] of [["収入", settings.incomeChange], ["支出", settings.expenseChange]] as const) {
+    if (value !== 0) parts.push(`${name}を${Math.abs(value)}%${value < 0 ? "減らす" : "増やす"}。`);
+  }
+  return parts.join("\n");
+}
+export function summarizePredictionSettings(settings: PredictionSettings) {
+  const adjustment = (name: string, percent: number) => percent === 0 ? `${name}は予測額をそのまま使う` : `${name}は予測額から${Math.abs(percent)}% ${percent < 0 ? "減らす" : "増やす"}`;
+  return [`今月を除く過去${settings.lookbackMonths}か月の、記録がある月を学習する`, adjustment("収入", settings.incomeChange), adjustment("支出", settings.expenseChange)];
+}
