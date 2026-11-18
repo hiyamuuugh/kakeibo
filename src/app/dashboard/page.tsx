@@ -1,25 +1,14 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
+import { japanToday, monthAt } from "@/lib/cash-flow";
+import { fetchMonthlyHistory } from "@/lib/monthly-history-client";
 import { categoryColor } from "@/lib/category-colors";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
-import { ja } from "date-fns/locale";
 import { ChevronDown } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  LabelList,
-  Pie,
-  PieChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import {
@@ -27,10 +16,13 @@ import {
   getChartCategoryNames,
   INCOME_CATEGORY_ORDER,
 } from "@/lib/category-options";
-import { formatShortAmount, getSharePercent } from "@/lib/chart-format";
+import { getSharePercent } from "@/lib/chart-format";
 import { CategoryMonthlyReport } from "@/components/category-monthly-report";
 import { MonthlyBudgetPanel } from "@/components/monthly-budget-panel";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
+
+const DashboardTrendPlot = dynamic(() => import("@/components/dashboard-plots").then(module => module.DashboardTrendPlot), { ssr: false, loading: () => <LoadingSpinner className="h-full" /> });
+const DashboardPiePlot = dynamic(() => import("@/components/dashboard-plots").then(module => module.DashboardPiePlot), { ssr: false, loading: () => <LoadingSpinner className="h-full" /> });
 
 interface CategoryStat {
   id: string;
@@ -69,9 +61,6 @@ const CHART_CONFIGS: Record<ChartMode, { label: string; active: string; inactive
   balance: { label: "収支", active: "#245f8b", inactive: "#c8dbe8" },
 };
 
-const getBalanceColor = (value: number) =>
-  value > 0 ? "#3f6f51" : value < 0 ? "#c1432f" : "#245f8b";
-
 const formatYen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
 
 const formatBalance = (amount: number) => {
@@ -95,114 +84,23 @@ const filterIncomeCategories = (categories: CategoryStat[]) =>
         INCOME_CATEGORY_ORDER.indexOf(a.name) - INCOME_CATEGORY_ORDER.indexOf(b.name)
     );
 
-const fetchMonthly = async (month: string, memberId: string | null): Promise<MonthlyStats> => {
+const fetchMonthly = async (month: string, memberId: string | null, signal?: AbortSignal): Promise<MonthlyStats> => {
   const params = new URLSearchParams({ month });
   if (memberId) params.set("memberId", memberId);
-  const response = await fetch(`/api/stats/monthly?${params.toString()}`);
+  const response = await fetch(`/api/stats/monthly?${params.toString()}`, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error("集計を読み込めませんでした。");
   return (await response.json()) as MonthlyStats;
-};
-
-const fetchEarliestMonth = async (memberId: string | null) => {
-  const params = memberId ? `?memberId=${encodeURIComponent(memberId)}` : "";
-  const response = await fetch(`/api/stats/range${params}`);
-  const data = (await response.json()) as { earliestMonth: string | null };
-  return data.earliestMonth;
 };
 
 const getBarCategories = (bar: MonthBar, chartMode: ChartMode) =>
   chartMode === "income" ? bar.incomeCategories : bar.categories;
 
-const ChartTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { value?: number }[];
-  label?: string;
-}) => {
-  if (!active || !payload?.[0] || typeof payload[0].value !== "number") {
-    return null;
-  }
-
-  return (
-    <div className="rounded-lg border border-[#e2e8ed] bg-white px-3 py-2 text-xs shadow">
-      <p className="font-semibold text-[#415665]">{label}</p>
-      <p className="mt-1 font-bold text-[#253b4b]">{formatBalance(payload[0].value)}</p>
-    </div>
-  );
-};
-
-const toNumber = (value: unknown) => {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return Number(value);
-  return Number.NaN;
-};
-
-const BarValueLabel = (props: unknown) => {
-  const { x, y, width, value } = props as {
-    x?: number | string;
-    y?: number | string;
-    width?: number | string;
-    height?: number | string;
-    value?: number | string;
-  };
-  const labelX = toNumber(x);
-  const labelY = toNumber(y);
-  const labelWidth = toNumber(width);
-  const labelHeight = toNumber((props as { height?: number | string }).height);
-  const amount = toNumber(value);
-
-  if (
-    !Number.isFinite(labelX) ||
-    !Number.isFinite(labelY) ||
-    !Number.isFinite(labelWidth) ||
-    !Number.isFinite(labelHeight) ||
-    !Number.isFinite(amount) ||
-    amount === 0
-  ) {
-    return null;
-  }
-
-  return (
-    <text
-      x={labelX + labelWidth / 2}
-      y={amount < 0 ? labelY + labelHeight + 12 : labelY - 5}
-      textAnchor="middle"
-      className="fill-[#415665] text-[10px] font-bold"
-    >
-      {amount < 0 ? `-${formatShortAmount(amount)}` : formatShortAmount(amount)}
-    </text>
-  );
-};
-
-const PieTooltip = ({
-  active,
-  payload,
-  total,
-}: {
-  active?: boolean;
-  payload?: { name?: string; value?: number }[];
-  total: number;
-}) => {
-  if (!active || !payload?.[0] || typeof payload[0].value !== "number") {
-    return null;
-  }
-
-  return (
-    <div className="rounded-lg border border-[#e2e8ed] bg-white px-3 py-2 text-xs shadow">
-      <p className="font-semibold text-[#415665]">{payload[0].name}</p>
-      <p className="mt-1 font-bold text-[#253b4b]">
-        {formatYen(payload[0].value)} / {getSharePercent(payload[0].value, total)}%
-      </p>
-    </div>
-  );
-};
-
 export default function Dashboard() {
   const [month, setMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [viewMode, setViewMode] = useState<"personal" | "family">("personal");
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [memberError, setMemberError] = useState("");
+  const [memberRetry, setMemberRetry] = useState(0);
   const [memberReady, setMemberReady] = useState(false);
   const [stats, setStats] = useState<MonthlyStats | null>(null);
   const [statsKey, setStatsKey] = useState("");
@@ -218,162 +116,73 @@ export default function Dashboard() {
   const [selectedPieName, setSelectedPieName] = useState<string | null>(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
-  const loadedRef = useRef(false);
-  const loadedMonthRef = useRef(month);
+  const [statsError, setStatsError] = useState("");
+  const [chartError, setChartError] = useState("");
+  const [retry, setRetry] = useState(0);
   const chartScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadMember = async () => {
-      const response = await fetch("/api/members");
-      if (response.ok) {
-        const members = (await response.json()) as { id: string }[];
+      setMemberError("");
+      try {
+        const response = await fetchReference("/api/members", { signal: controller.signal });
+        if (!response.ok) throw new Error("アカウントを読み込めませんでした。");
+        const members = await response.json() as { id: string }[];
+        if (!Array.isArray(members)) throw new Error("アカウントを読み込めませんでした。");
+        if (controller.signal.aborted) return;
         const savedMemberId = localStorage.getItem(SELECTED_MEMBER_ID_KEY);
-        setSelectedMemberId(members.find((member) => member.id === savedMemberId)?.id ?? members[0]?.id ?? null);
-      }
-      setMemberReady(true);
+        setSelectedMemberId(members.find(member => member.id === savedMemberId)?.id ?? members[0]?.id ?? null);
+        setMemberReady(true);
+      } catch (e) { if (!controller.signal.aborted) setMemberError(e instanceof Error ? e.message : "読み込めませんでした。"); }
     };
-
-    void loadMember();
-  }, []);
+    void loadMember(); return () => controller.abort();
+  }, [memberRetry]);
 
   useEffect(() => {
     if (!memberReady) return;
-    let active = true;
-
+    const controller = new AbortController();
     const load = async () => {
-      const monthChanged = loadedRef.current && loadedMonthRef.current !== month;
-      if (!loadedRef.current || monthChanged) {
-        setStatsLoading(true);
-      }
-      setChartLoading(true);
-      const now = new Date();
-      const memberId = viewMode === "personal" ? selectedMemberId : null;
-      const current = await fetchMonthly(month, memberId);
-
-      if (rangeMode === "monthly" && selectedYear !== null) {
-        const lastMonth = selectedYear === now.getFullYear() ? now.getMonth() + 1 : 12;
-        const months = Array.from(
-          { length: lastMonth },
-          (_, index) => `${selectedYear}-${String(index + 1).padStart(2, "0")}`
-        );
-        const results = await Promise.all(months.map((targetMonth) => fetchMonthly(targetMonth, memberId)));
-        if (!active) return;
-        setStats(current);
-        setStatsKey(`${month}:${viewMode}:${selectedMemberId}`);
-        setMonthBars(
-          results.map((result, index) => ({
-            month: months[index],
-            label: `${index + 1}月`,
-            expense: result.total,
-            income: result.income,
-            balance: result.income - result.total,
-            categories: toCategoryMap(result.categories),
-            incomeCategories: toCategoryMap(filterIncomeCategories(result.incomeCategories)),
-          }))
-        );
-        loadedMonthRef.current = month;
-        loadedRef.current = true;
-        setStatsLoading(false);
-        setChartLoading(false);
-        return;
-      }
-
-      const earliestMonth = await fetchEarliestMonth(memberId);
-      const earliest = earliestMonth ?? format(subMonths(now, 11), "yyyy-MM");
-      let cursor = new Date(`${earliest}-01`);
-      if (rangeMode === "monthly") {
-        const startMin = subMonths(now, 11);
-        if (cursor > startMin) cursor = startMin;
-      }
-
-      const months: string[] = [];
-      while (cursor <= now) {
-        months.push(format(cursor, "yyyy-MM"));
-        cursor = addMonths(cursor, 1);
-      }
-
-      const results = await Promise.all(months.map((targetMonth) => fetchMonthly(targetMonth, memberId)));
-      if (!active) return;
-
-      setStats(current);
-      setStatsKey(`${month}:${viewMode}:${selectedMemberId}`);
-      if (rangeMode === "monthly") {
-        setMonthBars(
-          results.map((result, index) => ({
-            month: months[index],
-            label: format(new Date(`${months[index]}-01`), "M月", { locale: ja }),
-            expense: result.total,
-            income: result.income,
-            balance: result.income - result.total,
-            categories: toCategoryMap(result.categories),
-            incomeCategories: toCategoryMap(filterIncomeCategories(result.incomeCategories)),
-          }))
-        );
-      } else {
-        const byYear = new Map<
-          string,
-          {
-            expense: number;
-            income: number;
-            categories: Record<string, number>;
-            incomeCategories: Record<string, number>;
-          }
-        >();
-        months.forEach((targetMonth, index) => {
-          const year = targetMonth.slice(0, 4);
-          const result = results[index];
-          const acc = byYear.get(year) ?? {
-            expense: 0,
-            income: 0,
-            categories: {},
-            incomeCategories: {},
-          };
-          acc.expense += result.total;
-          acc.income += result.income;
-          for (const category of result.categories) {
-            acc.categories[category.name] = (acc.categories[category.name] ?? 0) + category.total;
-          }
-          for (const category of filterIncomeCategories(result.incomeCategories)) {
-            acc.incomeCategories[category.name] =
-              (acc.incomeCategories[category.name] ?? 0) + category.total;
-          }
-          byYear.set(year, acc);
-        });
-
-        const thisYear = now.getFullYear();
-        setMonthBars(
-          Array.from({ length: 10 }, (_, index) => thisYear - 9 + index).map((year) => {
-            const value = byYear.get(String(year)) ?? {
-              expense: 0,
-              income: 0,
-              categories: {},
-              incomeCategories: {},
-            };
-            return {
-              month: String(year),
-              label: String(year),
-              expense: value.expense,
-              income: value.income,
-              balance: value.income - value.expense,
-              categories: value.categories,
-              incomeCategories: value.incomeCategories,
-            };
-          })
-        );
-      }
-
-      loadedMonthRef.current = month;
-      loadedRef.current = true;
-      setStatsLoading(false);
-      setChartLoading(false);
+      setStatsLoading(true); setStatsError("");
+      try {
+        const current = await fetchMonthly(month, viewMode === "personal" ? selectedMemberId : null, controller.signal);
+        if (controller.signal.aborted) return;
+        setStats(current); setStatsKey(`${month}:${viewMode}:${selectedMemberId}`);
+      } catch (e) { if (!controller.signal.aborted) setStatsError(e instanceof Error ? e.message : "集計を読み込めませんでした。"); }
+      finally { if (!controller.signal.aborted) setStatsLoading(false); }
     };
+    void load(); return () => controller.abort();
+  }, [memberReady, month, selectedMemberId, viewMode, retry]);
 
-    void load();
-
-    return () => {
-      active = false;
+  useEffect(() => {
+    if (!memberReady) return;
+    const controller = new AbortController();
+    const load = async () => {
+      setChartLoading(true); setChartError("");
+      const currentMonth = japanToday().slice(0, 7), thisYear = Number(currentMonth.slice(0, 4));
+      const from = rangeMode === "yearly" ? `${thisYear - 9}-01` : selectedYear === null ? monthAt(currentMonth, -11) : `${selectedYear}-01`;
+      const to = rangeMode === "monthly" && selectedYear !== null && selectedYear !== thisYear ? `${selectedYear}-12` : currentMonth;
+      try {
+        const results = await fetchMonthlyHistory(from, to, viewMode === "personal" ? selectedMemberId : null, controller.signal);
+        if (controller.signal.aborted) return;
+        if (rangeMode === "monthly") {
+          setMonthBars(results.map(result => ({ month: result.month, label: `${Number(result.month.slice(5))}月`, expense: result.total, income: result.income, balance: result.income - result.total, categories: toCategoryMap(result.categories), incomeCategories: toCategoryMap(filterIncomeCategories(result.incomeCategories)) })));
+        } else {
+          const byYear = new Map<string, MonthBar>();
+          for (const result of results) {
+            const year = result.month.slice(0, 4), row = byYear.get(year) ?? { month: year, label: year, expense: 0, income: 0, balance: 0, categories: {}, incomeCategories: {} };
+            row.expense += result.total; row.income += result.income; row.balance += result.income - result.total;
+            for (const category of result.categories) row.categories[category.name] = (row.categories[category.name] ?? 0) + category.total;
+            for (const category of filterIncomeCategories(result.incomeCategories)) row.incomeCategories[category.name] = (row.incomeCategories[category.name] ?? 0) + category.total;
+            byYear.set(year, row);
+          }
+          setMonthBars([...byYear.values()]);
+        }
+      } catch (e) { if (!controller.signal.aborted) { setMonthBars([]); setChartError(e instanceof Error ? e.message : "グラフを読み込めませんでした。"); } }
+      finally { if (!controller.signal.aborted) setChartLoading(false); }
     };
-  }, [memberReady, month, rangeMode, selectedMemberId, selectedYear, viewMode]);
+    void load(); return () => controller.abort();
+  }, [memberReady, rangeMode, selectedMemberId, selectedYear, viewMode, retry]);
 
   useEffect(() => {
     const shouldScrollRight =
@@ -481,7 +290,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {!memberReady || statsLoading || stats === null || statsKey !== `${month}:${viewMode}:${selectedMemberId}` ? (
+      {memberError ? <div role="alert" className="rounded-xl border border-border bg-white p-4 text-sm"><p>{memberError}</p><button type="button" onClick={() => setMemberRetry(value => value + 1)} className="mt-2 text-primary underline">再読み込み</button></div> : statsError ? <div role="alert" className="rounded-xl border border-border bg-white p-4 text-sm"><p>{statsError}</p><button type="button" onClick={() => setRetry(value => value + 1)} className="mt-2 text-primary underline">再読み込み</button></div> : !memberReady || statsLoading || stats === null || statsKey !== `${month}:${viewMode}:${selectedMemberId}` ? (
         <LoadingSpinner className="py-16" />
       ) : (
         <>
@@ -630,43 +439,11 @@ export default function Dashboard() {
               </div>
 
               <div ref={chartScrollRef} className="h-48 overflow-x-auto">
-                {chartLoading ? (
+                {chartError ? <div role="alert" className="py-10 text-center text-sm"><p>{chartError}</p><button type="button" onClick={() => setRetry(value => value + 1)} className="mt-2 text-primary underline">再読み込み</button></div> : chartLoading ? (
                   <LoadingSpinner className="h-full" />
                 ) : (
                   <div className="h-full min-w-[560px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ left: -20, right: 8, top: 28, bottom: 18 }}>
-                        <CartesianGrid vertical={false} stroke="#edf2f6" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#8a97a1" }} />
-                        <YAxis
-                          domain={yDomain}
-                          tickFormatter={(value) => formatShortAmount(Number(value))}
-                          tick={{ fontSize: 10, fill: "#8a97a1" }}
-                        />
-                        {chartMode === "balance" ? <ReferenceLine y={0} stroke="#cbd5de" /> : null}
-                        <Tooltip content={<ChartTooltip />} cursor={false} />
-                        <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                          <LabelList dataKey="value" content={BarValueLabel} />
-                          {chartData.map((item) => (
-                            <Cell
-                              key={item.month}
-                              fill={chartMode === "balance"
-                                ? getBalanceColor(item.value)
-                                : CHART_CONFIGS[chartMode].active}
-                              opacity={
-                                hasSelectedChartMonth
-                                  ? item.selected ? 1 : 0.28
-                                  : rangeMode === "monthly" && selectedYear === null
-                                    ? item.active ? 1 : 0.28
-                                    : 1
-                              }
-                              onClick={() => setSelectedChartMonth((current) => current === item.month ? null : item.month)}
-                              className="cursor-pointer"
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <DashboardTrendPlot data={chartData} domain={yDomain} mode={chartMode} color={CHART_CONFIGS[chartMode].active} selected={hasSelectedChartMonth} fadeUnselected={rangeMode === "monthly" && selectedYear === null} onSelect={month => setSelectedChartMonth(current => current === month ? null : month)} />
                   </div>
                 )}
               </div>
@@ -738,36 +515,7 @@ export default function Dashboard() {
               {pieTabData.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-[220px,1fr]">
                   <div className="h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={pieTabData}
-                          dataKey="total"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={78}
-                          onClick={(data: unknown) => {
-                            const item = data as { name?: string };
-                            setSelectedPieName((current) =>
-                              current === item.name ? null : item.name ?? null
-                            );
-                          }}
-                        >
-                          {pieTabData.map((category) => (
-                            <Cell
-                              key={category.id}
-                              fill={categoryColor(category.name)}
-                              opacity={
-                                selectedPieName && selectedPieName !== category.name ? 0.28 : 1
-                              }
-                              className="cursor-pointer"
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<PieTooltip total={pieTotal} />} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <DashboardPiePlot categories={pieTabData} total={pieTotal} selectedName={selectedPieName} onSelect={name => setSelectedPieName(current => current === name ? null : name)} />
                   </div>
                   <div className="space-y-2">
                     {pieTabData.map((category) => (

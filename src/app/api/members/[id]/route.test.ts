@@ -17,6 +17,15 @@ describe("profile birthday", () => {
     expect((await PATCH(request(date), context)).status).toBe(400);
     expect(db.member.update).not.toHaveBeenCalled();
   });
+  it("updates color and date together and rejects invalid colors", async () => {
+    const req = (color: unknown) => new NextRequest("https://example.test/api/members/a", { method: "PATCH", body: JSON.stringify({ color, birthDate: "1998-01-01" }) });
+    db.member.update.mockResolvedValue({ id: "a", color: "#123456" });
+    expect((await PATCH(req("#123456"), context)).status).toBe(200);
+    expect(db.member.update).toHaveBeenCalledWith({ where: { id: "a" }, data: { color: "#123456", birthDate: new Date("1998-01-01Z") } });
+    db.member.update.mockClear();
+    for (const color of ["red", "url(test)", null, 123]) expect((await PATCH(req(color), context)).status).toBe(400);
+    expect(db.member.update).not.toHaveBeenCalled();
+  });
   it("allows clearing a birthday and reports a database failure", async () => {
     db.member.update.mockResolvedValue({ id: "a", birthDate: null });
     expect((await PATCH(request(null), context)).status).toBe(200);

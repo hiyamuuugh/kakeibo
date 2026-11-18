@@ -5,7 +5,7 @@ export function parsePredictionSettings(input: unknown): PredictionSettings {
   const data = input as Record<string, unknown>;
   let { lookbackMonths, incomeChange, expenseChange } = data;
   const instructions = typeof data.instructions === "string" ? data.instructions.trim() : "";
-  if (instructions.length > 500) throw new Error("指示文は500文字以内で入力してください。");
+  if (instructions.length > 500) throw new Error("プロンプトは500文字以内で入力してください。");
   const text = instructions.normalize("NFKC").replace(/[ \t　]+/g, "");
   const seen = new Set<string>();
   for (const sentence of text.split(/[。、,;；\n]+/).filter(Boolean)) {

@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import { categoryColor } from "@/lib/category-colors";
 
@@ -202,10 +203,10 @@ export default function TransactionsPage() {
   }, [filterCat, membersReady, month, selectedMemberId, viewMode]);
 
   useEffect(() => {
-    fetch("/api/categories")
+    fetchReference("/api/categories")
       .then((response) => response.json())
       .then(setCategories);
-    fetch("/api/members")
+    fetchReference("/api/members")
       .then((response) => response.json())
       .then((data: Member[]) => {
         setMembers(data);

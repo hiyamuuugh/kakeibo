@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 import { useEffect, useState } from "react";
 import { SettingsPanel } from "@/components/settings-panel";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ export function MonthlyBudgetSettings() {
     // Hide the previous account draft while its replacement is loading.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true); setReady(false); setError("");
-    const read = async (url: string) => { const response = await fetch(url, { signal: controller.signal, cache: "no-store" }); if (!response.ok) throw new Error("毎月の予算を読み込めませんでした。"); return response.json(); };
+    const read = async (url: string) => { const response = await (url === "/api/members" || url === "/api/categories" ? fetchReference(url, { signal: controller.signal }) : fetch(url, { signal: controller.signal, cache: "no-store" })); if (!response.ok) throw new Error("毎月の予算を読み込めませんでした。"); return response.json(); };
     Promise.all([read("/api/members"), read("/api/categories"), read(endpoint)]).then(([memberData, categoryData, data]) => {
       if (controller.signal.aborted) return;
       const plan = parseMonthlyBudget(data.plan);

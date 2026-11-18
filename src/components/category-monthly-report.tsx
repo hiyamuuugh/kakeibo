@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { categoryColor } from "@/lib/category-colors";
+import { fetchMonthlyHistory } from "@/lib/monthly-history-client";
 import { monthAt } from "@/lib/cash-flow";
 import { buildCategoryMonthlyReport, type ReportMonth } from "@/lib/category-monthly-report";
 const yen = (value: number) => `¥${value.toLocaleString("ja-JP")}`;
@@ -12,15 +13,7 @@ export function CategoryMonthlyReport({ current, memberId }: { current: ReportMo
     // Reset the comparison when its selected month/account request changes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true); setError(false); setPrevious([]);
-    Promise.all([-3, -2, -1].map(async offset => {
-      const params = new URLSearchParams({ month: monthAt(current.month, offset) });
-      if (memberId) params.set("memberId", memberId);
-      const response = await fetch(`/api/stats/monthly?${params}`, { signal: controller.signal, cache: "no-store" });
-      if (!response.ok) throw new Error("history");
-      const data = await response.json();
-      if (!Array.isArray(data.categories) || typeof data.total !== "number") throw new Error("history");
-      return data as ReportMonth;
-    })).then(data => { if (!controller.signal.aborted) setPrevious(data); }).catch(() => { if (!controller.signal.aborted) setError(true); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    fetchMonthlyHistory(monthAt(current.month, -3), monthAt(current.month, -1), memberId, controller.signal).then(data => { if (!controller.signal.aborted) setPrevious(data); }).catch(() => { if (!controller.signal.aborted) setError(true); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [current.month, memberId, retry]);
   const report = buildCategoryMonthlyReport(current, previous);

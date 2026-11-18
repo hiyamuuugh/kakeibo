@@ -1,4 +1,5 @@
 "use client";
+import { fetchReference } from "@/lib/reference-fetch";
 
 import { useCallback, useEffect, useState } from "react";
 import { Building2, CreditCard, ExternalLink, Landmark, ShoppingBag, Smartphone, WalletCards } from "lucide-react";
@@ -133,7 +134,7 @@ export default function ImportPage() {
 
   useEffect(() => {
     const loadMember = async () => {
-      const response = await fetch("/api/members");
+      const response = await fetchReference("/api/members");
       if (!response.ok) return;
 
       const members = (await response.json()) as Member[];
