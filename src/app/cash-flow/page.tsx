@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
+import { learnCashFlowPrediction, simulateLearnedCashPlan } from "@/lib/cash-flow-prediction";
 import type { CashFlowHistory } from "@/lib/cash-flow-history";
 import { CashFlowCalculation } from "@/components/cash-flow-calculation";
 import { CashFlowForecastChart } from "@/components/cash-flow-forecast-chart";
@@ -63,6 +64,11 @@ export default function CashFlowPage() {
     try { return { points: simulateCashPlan(parseCashPlan(plan), baseline.monthly), error: "" }; }
     catch (e) { return { points: [], error: e instanceof Error ? e.message : "設定を確認してください。" }; }
   }, [plan, baseline.monthly]);
+  const prediction = useMemo(() => history ? learnCashFlowPrediction(history) : null, [history]);
+  const learned = useMemo(() => {
+    try { return { points: prediction ? simulateLearnedCashPlan(parseCashPlan(plan), prediction) : [], error: "" }; }
+    catch (e) { return { points: [], error: e instanceof Error ? e.message : "予測設定を確認してください。" }; }
+  }, [plan, prediction]);
   const hasInvestments = plan.initialOtherAssets > 0 || plan.rules.some(rule => rule.kind === "investment");
   const shortfall = result.points.find(point => point.cash < 0);
   const dirty = savedKey !== JSON.stringify(plan);
@@ -125,10 +131,10 @@ export default function CashFlowPage() {
     <h1 className="text-xl font-bold">キャッシュフロー</h1>
     {loading ? <div className={`${card} py-14 text-center text-sm text-muted-foreground`} role="status">読み込み中…</div> : error ? <div className={card} role="alert"><p className="text-sm text-destructive">{error}</p><button className={`${primary} mt-4`} onClick={() => setRetry(value => value + 1)}>再読み込み</button></div> : <>
       <section className={card} aria-labelledby="forecast-title"><div className="flex flex-wrap items-center justify-between gap-2"><h2 id="forecast-title" className="text-base font-semibold">今後の見通し</h2><span className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground">年単位のシミュレーション</span></div>
-        <CashFlowForecastChart points={result.points} error={result.error} hasInvestments={hasInvestments} />
+        <CashFlowForecastChart points={result.points} error={result.error} hasInvestments={hasInvestments} predictionPoints={learned.points} predictionError={learned.error} />
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
-      {history && <CashFlowCalculation history={history} monthlyNet={plan.monthlyNet} />}
+      {history && <CashFlowCalculation history={history} monthlyNet={plan.monthlyNet} prediction={prediction} />}
       <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
         <div className="space-y-3 rounded-xl border border-border bg-background p-3"><h3 className="text-sm font-semibold">現在の非現金資産の残高</h3>
           {plan.rules.filter(rule => rule.kind === "investment").map(rule => rule.kind === "investment" && <label key={rule.id} className="block text-sm">{rule.name}の現在残高（万円）<NumberField min="0" max="100000000" step="0.0001" required value={rule.initial / 10000} onChange={e => setPlan({ ...plan, rules: plan.rules.map(item => item.id === rule.id ? { ...rule, initial: toYen(Number(e.target.value)) } : item) })} className={input} /><span className="mt-1 block text-[10px] text-muted-foreground">この残高に想定年率 {rule.rate}% を適用します。</span></label>)}

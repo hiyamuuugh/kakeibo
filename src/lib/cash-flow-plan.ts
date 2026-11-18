@@ -44,7 +44,7 @@ export function parseCashPlan(input: unknown): CashPlan {
   });
   return { version: 1, startAge, endAge, initialCash: money(data.initialCash), initialOtherAssets: money(data.initialOtherAssets === undefined ? 0 : data.initialOtherAssets), monthlyNet: data.monthlyNet === null ? null : number(data.monthlyNet, "毎月の基本収支", -100000000, 100000000), rules };
 }
-export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number) {
+export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number, monthlyNetAt?: (age: number, month: number) => number) {
   if (plan.startAge === null) return [];
   const monthlyNet = plan.monthlyNet ?? ledgerMonthlyNet;
   let cash = plan.initialCash;
@@ -71,7 +71,7 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number) {
     }
     cash += annualNet;
     for (let month = 0; month < 12; month++) {
-      cash += monthlyNet;
+      cash += monthlyNetAt ? monthlyNetAt(currentAge, month) : monthlyNet;
       for (const rule of investmentRules) {
         const balance = investments.get(rule.id)!;
         const profit = balance * ((1 + rule.rate / 100) ** (1 / 12) - 1);
