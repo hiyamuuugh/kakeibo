@@ -36,7 +36,7 @@ export function CashFlowPredictionForm({ settings, saving, onSave, onEditingChan
         </div>
         <p className="text-[11px] leading-5 text-muted-foreground">指示はアプリ内で設定に変換し、回帰モデルに反映します。対象期間は3〜120か月、収入・支出の補正は−90〜100%です。自由な予定や支出条件はルールに追加してください。</p>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50" disabled={saving}>{saving ? "保存中…" : "予測に適用して保存"}</button>
+        <button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50" disabled={saving}>{saving ? "保存中…" : "保存"}</button>
       </fieldset></form>
     </div>
   </section>;
