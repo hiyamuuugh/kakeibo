@@ -1,9 +1,13 @@
+"use client";
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { CashFlowHistory } from "@/lib/cash-flow-history";
 import type { CashFlowPrediction } from "@/lib/cash-flow-prediction";
 const yen = (amount: number) => amount.toLocaleString("ja-JP") + "円";
 export function CashFlowCalculation({ history, monthlyNet, prediction }: { history: CashFlowHistory; monthlyNet: number | null; prediction: CashFlowPrediction | null }) {
-  return <details className="rounded-2xl border border-border bg-white p-4 sm:p-6" aria-labelledby="calculation-title">
-    <summary id="calculation-title" className="cursor-pointer text-base font-semibold">計算の根拠</summary><div className="mt-4">
+  const [open, setOpen] = useState(false);
+  return <section className="rounded-2xl border border-border bg-white p-4 sm:p-6" aria-labelledby="calculation-title">
+    <button type="button" aria-expanded={open} aria-controls="cash-flow-calculation" onClick={() => setOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span id="calculation-title" className="text-base font-semibold">計算の根拠</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} /></button><div id="cash-flow-calculation" hidden={!open} className="mt-4">
     <p className="mt-2 text-xs leading-6 text-muted-foreground">{history.months.length ? `${history.months[0].month}〜${history.months.at(-1)!.month}の記録がある${history.months.length}か月・${history.count}件（家族全員）を集計。` : "今月より前の記録がないため、実績の基本収支は0円です。"}今月は途中のため平均から除き、記録のない月は0円扱いせず計算対象から除きます。</p>
     {history.months.length > 0 && <div className="mt-3 space-y-2 rounded-xl bg-background p-3 text-xs leading-6">
       <p>月平均収入：{yen(history.income)} ÷ {history.months.length}か月 ＝ {yen(history.averageIncome)}</p>
@@ -35,5 +39,5 @@ export function CashFlowCalculation({ history, monthlyNet, prediction }: { histo
       {history.months.length > 0 && <div className="max-h-60 overflow-auto rounded-lg border border-border"><table className="w-full text-left text-[11px]"><caption className="p-2 text-left">平均の対象月</caption><thead><tr><th className="p-2">月</th><th className="p-2">収入</th><th className="p-2">支出</th></tr></thead><tbody>{history.months.map(month => <tr key={month.month} className="border-t border-border"><td className="p-2">{month.month}</td><td className="p-2">{yen(month.income)}</td><td className="p-2">{yen(month.expense)}</td></tr>)}</tbody></table></div>}
     </div></details>
     {history.months.length > 0 && history.months.length < 3 && <p className="mt-3 text-xs text-muted-foreground">対象が3か月未満のため、月ごとの変動の影響を受けやすい試算です。</p>}
-  </div></details>;
+  </div></section>;
 }
