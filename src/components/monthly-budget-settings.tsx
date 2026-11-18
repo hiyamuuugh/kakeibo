@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { SettingsPanel } from "@/components/settings-panel";
 import { toast } from "sonner";
 import { categoryColor } from "@/lib/category-colors";
 import { getCategoriesByKind, type CategoryOption } from "@/lib/category-options";
@@ -56,9 +56,7 @@ export function MonthlyBudgetSettings() {
     try { return sum + budgetManInputToYen(amount); } catch { return sum; }
   }, 0);
   const sum = sumYen / 10000;
-  return <section id="monthly-budget" aria-label="毎月の予算設定" className="order-1 rounded-2xl border border-border bg-white p-4">
-    <button type="button" aria-expanded={open} aria-controls="monthly-budget-form" onClick={() => setOpen(value => !value)} className="flex w-full items-center justify-between text-left"><h2 className="text-sm font-semibold">毎月の予算</h2><ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} /></button>
-    <div id="monthly-budget-form" hidden={!open} className="mt-4 space-y-4">
+  return <SettingsPanel id="monthly-budget" label="毎月の予算設定" title="毎月の予算" open={open} onToggle={() => setOpen(value => !value)} contentId="monthly-budget-form" className="order-1">
       <label className="block text-sm">予算の対象<select aria-label="予算の対象" value={scope} disabled={saving || dirty} onChange={event => setScope(event.target.value)} className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base disabled:opacity-60"><option value="family">家族全員</option>{members.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>
       {dirty && <p className="text-xs text-muted-foreground">変更を保存するか、<button type="button" disabled={saving} onClick={() => { setDirty(false); setRetry(value => value + 1); }} className="underline">変更を戻す</button>と対象を切り替えられます。</p>}
       {loading ? <p className="text-sm text-muted-foreground">読み込み中…</p> : !ready ? null : <form onSubmit={save}><fieldset disabled={saving || !!error && !categories.length} className="space-y-4">
@@ -71,6 +69,5 @@ export function MonthlyBudgetSettings() {
         <button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">{saving ? "保存中…" : "毎月の予算を保存"}</button>
       </fieldset></form>}
       {error && <div role="alert" className="text-sm text-destructive">{error}<button type="button" disabled={saving} onClick={() => setRetry(value => value + 1)} className="ml-2 underline">再読み込み</button></div>}
-    </div>
-  </section>;
+  </SettingsPanel>;
 }

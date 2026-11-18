@@ -3,10 +3,10 @@
 import { categoryColor, categoryChoiceStyle } from "@/lib/category-colors";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   CategoryKind,
@@ -14,6 +14,7 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
+import { SettingsPanel } from "@/components/settings-panel";
 import { MonthlyBudgetSettings } from "@/components/monthly-budget-settings";
 import { ProfileSettings } from "@/components/profile-settings";
 import { ImportExclusionsSettings } from "@/components/import-exclusions-settings";
@@ -211,21 +212,7 @@ export default function SettingsPage() {
         <h1 className="text-xl font-bold text-[#253b4b]">設定</h1>
       </div>
 
-      <Card className="order-1">
-        <button
-          type="button"
-          onClick={() => setAccountOpen((value) => !value)}
-          className="flex w-full items-center justify-between p-4 text-left"
-        >
-          <CardTitle className="text-sm font-semibold">アカウント</CardTitle>
-          {accountOpen ? (
-            <ChevronDown className="h-4 w-4 text-[#8a97a1]" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-[#8a97a1]" />
-          )}
-        </button>
-        {accountOpen ? (
-        <CardContent className="space-y-4 border-t border-[#edf2f6] pt-2">
+      <SettingsPanel title="アカウント" open={accountOpen} onToggle={() => setAccountOpen(value => !value)} contentId="settings-account" className="order-1">
           {loading ? (
             <LoadingSpinner className="py-4" />
           ) : members.length === 0 ? (
@@ -257,29 +244,13 @@ export default function SettingsPage() {
               </Button>
             </>
           )}
-        </CardContent>
-        ) : null}
-      </Card>
+      </SettingsPanel>
 
       <MonthlyBudgetSettings />
       <ProfileSettings />
       <ImportExclusionsSettings />
 
-      <Card className="order-2">
-        <button
-          type="button"
-          onClick={() => setMappingOpen((value) => !value)}
-          className="flex w-full items-center justify-between p-4 text-left"
-        >
-          <CardTitle className="text-sm font-semibold">カテゴリマッピング</CardTitle>
-          {mappingOpen ? (
-            <ChevronDown className="h-4 w-4 text-[#8a97a1]" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-[#8a97a1]" />
-          )}
-        </button>
-        {mappingOpen ? (
-        <CardContent className="space-y-4 border-t border-[#edf2f6]">
+      <SettingsPanel title="カテゴリマッピング" open={mappingOpen} onToggle={() => setMappingOpen(value => !value)} contentId="settings-mapping" className="order-2">
       <div className="space-y-4 pt-3">
         <p className="text-sm font-semibold text-[#253b4b]">ルール追加</p>
           {loading ? (
@@ -366,30 +337,7 @@ export default function SettingsPage() {
             const closed = !closedRuleCategories.has(group.category.name);
 
             return (
-              <Card key={group.category.name}>
-                <button
-                  type="button"
-                  onClick={() => toggleRuleCategory(group.category.name)}
-                  className="flex w-full items-center gap-3 p-3 text-left"
-                >
-                  {closed ? (
-                    <ChevronRight className="h-4 w-4 text-[#8a97a1]" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-[#8a97a1]" />
-                  )}
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: categoryColor(group.category.name) }}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#253b4b]">
-                    {group.category.name}
-                  </span>
-                  <span className="text-xs font-semibold text-[#8a97a1]">
-                    {group.rules.length}件
-                  </span>
-                </button>
-                {closed ? null : (
-                  <CardContent className="space-y-2 border-t border-[#edf2f6] p-3">
+              <SettingsPanel key={group.category.name} nested open={!closed} onToggle={() => toggleRuleCategory(group.category.name)} contentId={"settings-mapping-category-" + group.category.id} title={<><span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(group.category.name) }} /><span className="min-w-0 flex-1 truncate">{group.category.name}</span><span className="text-xs text-muted-foreground">{group.rules.length}件</span></>}>
                     {pageRules.map((rule) => (
                       <div key={rule.id} className="flex items-center gap-3 rounded-lg bg-[#f4f6f8] p-2">
                         <div className="min-w-0 flex-1">
@@ -436,16 +384,12 @@ export default function SettingsPage() {
                         </Button>
                       </div>
                     ) : null}
-                  </CardContent>
-                )}
-              </Card>
+              </SettingsPanel>
             );
           })
         )}
       </div>
-        </CardContent>
-        ) : null}
-      </Card>
+      </SettingsPanel>
     </div>
   );
 }

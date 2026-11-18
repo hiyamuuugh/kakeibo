@@ -46,7 +46,7 @@ export function CashFlowForecastChart({ points, error, hasInvestments, predictio
     <div role="group" aria-label="グラフの表示方法" className="flex w-fit flex-wrap gap-1 rounded-lg bg-muted p-1">
       {([["all", "全期間"], [1, "1年単位"], [5, "5年単位"], [10, "10年単位"]] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)} className={`rounded-md px-3 py-2 text-xs font-semibold ${mode === value ? "bg-[#3f6f51] text-white" : "text-muted-foreground"}`}>{label}</button>)}
     </div>
-    <label className="mt-3 flex items-center gap-2 text-xs text-[#7a678c]"><input type="checkbox" checked={showPrediction} disabled={!hasPrediction} onChange={e => setShowPrediction(e.target.checked)} className="accent-[#7a678c]" />AI予測（回帰モデル）を重ねる</label>
+    <label className="mt-3 flex items-center gap-2 text-xs text-[#7a678c]"><input type="checkbox" checked={showPrediction} disabled={!hasPrediction} onChange={e => setShowPrediction(e.target.checked)} className="accent-[#7a678c]" />AI予測も表示する</label>
     {scrolling && hasInvestments && <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={showBreakdown} onChange={e => setShowBreakdown(e.target.checked)} />現預金・非現金資産の内訳も表示</label>}
     {offset !== 0 && <p className="mt-3 text-[11px] text-muted-foreground" aria-label="縦軸の基準額">基準額 ¥{offset.toLocaleString("ja-JP")}（縦軸は基準額からの差額）</p>}
     <div className="mt-4 flex min-w-0">
