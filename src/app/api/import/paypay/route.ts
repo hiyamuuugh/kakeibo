@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordCsvMonths } from "@/lib/record-csv-months";
 import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 import { isImportExcluded } from "@/lib/import-exclusion";
 import Papa from "papaparse";
@@ -152,5 +153,6 @@ export async function POST(req: NextRequest) {
     imported++;
   }
 
+  await recordCsvMonths("paypay", memberId, rows.map(row => (incomeKey || expenseKey ? (incomeKey ? parseAmount(row[incomeKey] ?? "") : 0) + (expenseKey ? parseAmount(row[expenseKey] ?? "") : 0) : parseAmount(row[amountKey!] ?? "")) > 0 ? parsePayPayDate(row[dateKey] ?? "") : null));
   return NextResponse.json({ imported, skipped });
 }

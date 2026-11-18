@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordCsvMonths } from "@/lib/record-csv-months";
 import { decodeBuffer, parseMufgCsv } from "@/lib/import/mufg";
 import { findMatchingRuleCategoryId } from "@/lib/merchant-rule-match";
 import { isImportExcluded } from "@/lib/import-exclusion";
@@ -48,5 +49,6 @@ export async function POST(req: NextRequest) {
     imported++;
   }
 
+  await recordCsvMonths("mufg", memberId, rows.map(row => row.date));
   return NextResponse.json({ imported, skipped });
 }

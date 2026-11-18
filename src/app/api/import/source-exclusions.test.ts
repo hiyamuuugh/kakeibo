@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-const db = vi.hoisted(() => ({ category: { findMany: vi.fn() }, merchantRule: { findMany: vi.fn() }, importExclusion: { findMany: vi.fn() }, transaction: { findFirst: vi.fn(), create: vi.fn() } }));
+const db = vi.hoisted(() => ({ csvImportMonth: { createMany: vi.fn() }, category: { findMany: vi.fn() }, merchantRule: { findMany: vi.fn() }, importExclusion: { findMany: vi.fn() }, transaction: { findFirst: vi.fn(), create: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
 import { POST as paypay } from "./paypay/route";
 import { POST as paypayCard } from "./paypay-card/route";
@@ -31,6 +31,12 @@ describe("CSV import exclusion isolation across all six sources", () => {
     expect(await (await handler(request(csv))).json()).toEqual({ imported: 1, skipped: 1 });
     expect(db.importExclusion.findMany).toHaveBeenCalledWith({ where: { source }, select: { name: true } });
     expect(db.transaction.create).toHaveBeenCalledTimes(1);
+    expect(db.csvImportMonth.createMany).toHaveBeenCalledWith({ data: [{ source, memberScope: "unassigned", month: "2026-11" }], skipDuplicates: true });
+  });
+  it.each(cases)("records $source months even when all rows are excluded", async ({ source, handler, csv }) => {
+    db.importExclusion.findMany.mockResolvedValue([{ name: "証券" }, { name: "スーパー" }]);
+    expect(await (await handler(request(csv))).json()).toEqual({ imported: 0, skipped: 2 });
+    expect(db.csvImportMonth.createMany).toHaveBeenCalledWith({ data: [{ source, memberScope: "unassigned", month: "2026-11" }], skipDuplicates: true });
   });
   it.each(cases)("does not apply another source's words to $source", async ({ source, handler, csv }) => {
     const other = source === "mufg" ? "smbc" : "mufg";

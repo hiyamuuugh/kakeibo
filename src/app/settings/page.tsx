@@ -140,6 +140,7 @@ export default function SettingsPage() {
     }
 
     localStorage.setItem(SELECTED_MEMBER_ID_KEY, selectedMember.id);
+    window.dispatchEvent(new Event("kakeibo:member-changed"));
     toast.success("アカウントを切り替えました");
   };
 

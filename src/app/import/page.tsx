@@ -224,6 +224,7 @@ function ImportSourceCard({
 
     const data = (await response.json()) as ImportResult;
     setResult(data);
+    window.dispatchEvent(new Event("kakeibo:csv-imported"));
     toast.success(`${data.imported}件インポートしました`);
   };
 
