@@ -1,5 +1,6 @@
 "use client";
 
+import { budgetManInputToYen, budgetYenToManInput } from "@/lib/monthly-budget";
 import { categoryColor } from "@/lib/category-colors";
 
 import { useEffect, useState, useCallback } from "react";
@@ -62,7 +63,7 @@ export default function BudgetsPage() {
       setStats(s.categories ?? []);
       const init: Record<string, string> = {};
       (b as Budget[]).forEach((budget) => {
-        init[budget.categoryId] = String(budget.amount);
+        init[budget.categoryId] = budgetYenToManInput(budget.amount);
       });
       setInputs(init);
       setLoading(false);
@@ -81,7 +82,7 @@ export default function BudgetsPage() {
       setStats(s.categories ?? []);
       const init: Record<string, string> = {};
       (b as Budget[]).forEach((budget) => {
-        init[budget.categoryId] = String(budget.amount);
+        init[budget.categoryId] = budgetYenToManInput(budget.amount);
       });
       setInputs(init);
       setLoading(false);
@@ -93,8 +94,9 @@ export default function BudgetsPage() {
   }, [month]);
 
   async function saveBudget(categoryId: string) {
-    const amount = parseInt(inputs[categoryId] ?? "0", 10);
-    if (isNaN(amount)) return;
+    let amount: number;
+    try { amount = budgetManInputToYen(inputs[categoryId] || "0"); }
+    catch (error) { toast.error((error as Error).message); return; }
     setSaving(categoryId);
     const res = await fetch("/api/budgets", {
       method: "POST",
@@ -160,7 +162,9 @@ export default function BudgetsPage() {
                 <div className="flex gap-2">
                   <Input
                     type="number"
-                    placeholder="予算額（円）"
+                    placeholder="予算額（万円）"
+                    aria-label={`${cat.name}の予算額（万円）`}
+                    min="0" max="214748.3647" step="0.0001" inputMode="decimal"
                     value={inputs[cat.id] ?? ""}
                     onChange={(e) =>
                       setInputs((prev) => ({ ...prev, [cat.id]: e.target.value }))

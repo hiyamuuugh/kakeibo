@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { categoryColor } from "@/lib/category-colors";
 import { getCategoriesByKind, type CategoryOption } from "@/lib/category-options";
-import { parseMonthlyBudget, type MonthlyBudgetPlan } from "@/lib/monthly-budget";
+import { budgetManInputToYen, budgetYenToManInput, parseMonthlyBudget, type MonthlyBudgetPlan } from "@/lib/monthly-budget";
 
 export function MonthlyBudgetSettings() {
   const [open, setOpen] = useState(false), [members, setMembers] = useState<{ id: string; name: string }[]>([]), [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -31,8 +31,8 @@ export function MonthlyBudgetSettings() {
       if (controller.signal.aborted) return;
       const plan = parseMonthlyBudget(data.plan);
       setMembers(memberData); setCategories(getCategoriesByKind(categoryData, "expense"));
-      setTotal(plan.totalAmount === null ? "" : String(plan.totalAmount));
-      setAmounts(Object.fromEntries(plan.categories.map(row => [row.categoryId, String(row.amount)]))); setDirty(false); setReady(true);
+      setTotal(plan.totalAmount === null ? "" : budgetYenToManInput(plan.totalAmount));
+      setAmounts(Object.fromEntries(plan.categories.map(row => [row.categoryId, budgetYenToManInput(row.amount)]))); setDirty(false); setReady(true);
     }).catch(e => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "読み込めませんでした。"); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [endpoint, open, retry]);
@@ -41,7 +41,7 @@ export function MonthlyBudgetSettings() {
     setError("");
     let plan: MonthlyBudgetPlan;
     try {
-      const read = (value: string) => /^\d+$/.test(value) ? Number(value) : NaN;
+      const read = budgetManInputToYen;
       plan = parseMonthlyBudget({ version: 1, totalAmount: total === "" ? null : read(total), categories: Object.entries(amounts).filter(([, value]) => value !== "").map(([categoryId, value]) => ({ categoryId, amount: read(value) })) });
     } catch (e) { setError((e as Error).message); return; }
     setSaving(true);
@@ -52,7 +52,10 @@ export function MonthlyBudgetSettings() {
     } catch (e) { setError(e instanceof Error ? e.message : "保存できませんでした。"); }
     finally { setSaving(false); }
   }
-  const sum = Object.values(amounts).reduce((value, amount) => value + (Number(amount) || 0), 0);
+  const sumYen = Object.values(amounts).reduce((sum, amount) => {
+    try { return sum + budgetManInputToYen(amount); } catch { return sum; }
+  }, 0);
+  const sum = sumYen / 10000;
   return <section id="monthly-budget" aria-label="毎月の予算設定" className="order-1 rounded-2xl border border-border bg-white p-4">
     <button type="button" aria-expanded={open} aria-controls="monthly-budget-form" onClick={() => setOpen(value => !value)} className="flex w-full items-center justify-between text-left"><h2 className="text-sm font-semibold">毎月の予算</h2><ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} /></button>
     <div id="monthly-budget-form" hidden={!open} className="mt-4 space-y-4">
@@ -60,10 +63,10 @@ export function MonthlyBudgetSettings() {
       {dirty && <p className="text-xs text-muted-foreground">変更を保存するか、<button type="button" disabled={saving} onClick={() => { setDirty(false); setRetry(value => value + 1); }} className="underline">変更を戻す</button>と対象を切り替えられます。</p>}
       {loading ? <p className="text-sm text-muted-foreground">読み込み中…</p> : !ready ? null : <form onSubmit={save}><fieldset disabled={saving || !!error && !categories.length} className="space-y-4">
         <p className="text-xs leading-5 text-muted-foreground">設定した予算を毎月の支出と比較します。「自分」は対象アカウントの予算、「家族全員」は家族共通の予算を使用します。変更は過去の月の表示にも適用されます。</p>
-        <label className="block text-sm font-semibold">全体の月予算<div className="mt-1.5 flex items-center gap-2"><input aria-label="全体の月予算" type="number" min="0" max="2147483647" step="1" inputMode="numeric" placeholder="例：250000" value={total} onChange={event => { setTotal(event.target.value); setDirty(true); }} className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2.5 text-base font-normal" /><span className="font-normal">円</span></div></label>
+        <label className="block text-sm font-semibold">全体の月予算<div className="mt-1.5 flex items-center gap-2"><input aria-label="全体の月予算" type="number" min="0" max="214748.3647" step="0.0001" inputMode="decimal" placeholder="例：25" value={total} onChange={event => { setTotal(event.target.value); setDirty(true); }} className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2.5 text-base font-normal" /><span className="shrink-0 font-normal">万円</span></div></label>
         <p className="text-xs text-muted-foreground">全体額が空欄ならカテゴリ予算の合計を使用します。空欄は未設定、0は予算0円です。</p>
-        <div><h3 className="mb-2 text-sm font-semibold">カテゴリ別の月予算</h3><div className="divide-y divide-border">{categories.map(category => <label key={category.id} className="flex items-center justify-between gap-3 py-2 text-sm"><span className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: categoryColor(category.name) }} /><span>{category.name}</span></span><span className="flex w-36 shrink-0 items-center gap-2 sm:w-44"><input aria-label={`${category.name}の月予算`} type="number" min="0" max="2147483647" step="1" inputMode="numeric" placeholder="未設定" value={amounts[category.id] ?? ""} onChange={event => { setAmounts(current => ({ ...current, [category.id]: event.target.value })); setDirty(true); }} className="w-full min-w-0 rounded-lg border border-border px-2 py-2 text-base" />円</span></label>)}</div></div>
-        <p className="text-xs text-muted-foreground">カテゴリ予算の合計：¥{sum.toLocaleString("ja-JP")}</p>
+        <div><h3 className="mb-2 text-sm font-semibold">カテゴリ別の月予算</h3><div className="divide-y divide-border">{categories.map(category => <label key={category.id} className="flex items-center justify-between gap-3 py-2 text-sm"><span className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: categoryColor(category.name) }} /><span>{category.name}</span></span><span className="flex w-36 shrink-0 items-center gap-2 sm:w-44"><input aria-label={`${category.name}の月予算`} type="number" min="0" max="214748.3647" step="0.0001" inputMode="decimal" placeholder="未設定" value={amounts[category.id] ?? ""} onChange={event => { setAmounts(current => ({ ...current, [category.id]: event.target.value })); setDirty(true); }} className="w-full min-w-0 rounded-lg border border-border px-2 py-2 text-base" /><span className="shrink-0">万円</span></span></label>)}</div></div>
+        <p className="text-xs text-muted-foreground">カテゴリ予算の合計：{sum.toLocaleString("ja-JP", { maximumFractionDigits: 4 })}万円</p>
         {total !== "" && Number(total) < sum && <p className="text-xs text-[#ad3929]">カテゴリ予算の合計が全体の月予算を上回っています。全体の判定には入力した全体額を使います。</p>}
         <button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">{saving ? "保存中…" : "毎月の予算を保存"}</button>
       </fieldset></form>}
