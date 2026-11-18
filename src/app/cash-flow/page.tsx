@@ -10,6 +10,7 @@ import { japanToday } from "@/lib/cash-flow";
 import { resolveCurrentCashPlan, type AgeProfile } from "@/lib/profile-age";
 import { CashFlowCalculation } from "@/components/cash-flow-calculation";
 import { CashFlowPredictionForm } from "@/components/cash-flow-prediction-form";
+import { CashFlowYearComparison } from "@/components/cash-flow-year-comparison";
 import { CashFlowForecastChart } from "@/components/cash-flow-forecast-chart";
 
 const card = "rounded-2xl border border-border bg-white p-4 sm:p-6";
@@ -170,6 +171,7 @@ export default function CashFlowPage() {
         <CashFlowForecastChart points={result.points} error={result.error} hasInvestments={hasInvestments} predictionPoints={learned.points} predictionError={learned.error} />
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
+      <CashFlowYearComparison points={result.points} predictionPoints={learned.points} />
       <CashFlowPredictionForm settings={plan.predictionSettings} saving={saving} onEditingChange={setPredictionDirty} onSave={settings => save({ ...plan, predictionSettings: settings })} />
       <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">現在の年齢（自動）<input type="text" readOnly value={profile.age === null ? "生年月日未登録" : profile.age + "歳"} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">開始年（現在）<input type="text" readOnly value={planStartYear(plan) + "年"} className={input} /></label>
         <label className="block text-sm">基準プロフィール<select aria-label="基準プロフィール" value={profile.member?.id ?? ""} onChange={e => setPlan({ ...plan, referenceMemberId: e.target.value })} className={input}><option value="" disabled>プロフィールを選択</option>{members.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>
