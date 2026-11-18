@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cashFlowAxis, visibleCashFlowRange } from "./cash-flow-axis";
+import { cashFlowAxis, cashFlowAxisOffset, visibleCashFlowRange } from "./cash-flow-axis";
 describe("visible cash-flow axis", () => {
   it("fits early-year amounts instead of far-future hundreds of millions", () => {
     const early = cashFlowAxis([1000000, 1200000, 1500000]);
@@ -16,6 +16,13 @@ describe("visible cash-flow axis", () => {
       expect(axis.ticks.length).toBeGreaterThan(1);
       expect(axis.ticks.every(Number.isFinite)).toBe(true);
     }
+  });
+  it("uses a narrow scale and an explicit offset for large but nearly constant balances", () => {
+    const axis = cashFlowAxis([810000000, 810010000]);
+    expect(axis.domain[1] - axis.domain[0]).toBeLessThan(100000);
+    expect(cashFlowAxisOffset(axis.domain, true)).toBe(axis.domain[0]);
+    expect(cashFlowAxisOffset(axis.domain, false)).toBe(0);
+    expect(cashFlowAxisOffset([0, 800000000], true)).toBe(0);
   });
   it("tracks the visible time window and includes boundary neighbours", () => {
     const early = visibleCashFlowRange(0, 240, 5232, 72);

@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, planStartYear, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
 import { learnCashFlowPrediction, simulateLearnedCashPlan } from "@/lib/cash-flow-prediction";
 import type { CashFlowHistory } from "@/lib/cash-flow-history";
+import { japanToday } from "@/lib/cash-flow";
+import { resolveCurrentCashPlan, type AgeProfile } from "@/lib/profile-age";
 import { CashFlowCalculation } from "@/components/cash-flow-calculation";
 import { CashFlowPredictionForm } from "@/components/cash-flow-prediction-form";
 import { CashFlowForecastChart } from "@/components/cash-flow-forecast-chart";
@@ -30,7 +32,18 @@ function ruleDescription(rule: PlanRule) {
 }
 
 export default function CashFlowPage() {
-  const [plan, setPlan] = useState<CashPlan>(defaultCashPlan);
+  const [storedPlan, setPlan] = useState<CashPlan>(defaultCashPlan);
+  const [members, setMembers] = useState<AgeProfile[]>([]);
+  const [today, setToday] = useState(japanToday);
+  const profile = useMemo(() => resolveCurrentCashPlan(storedPlan, members, today), [storedPlan, members, today]);
+  const plan = profile.plan;
+  useEffect(() => {
+    const refreshDate = () => setToday(japanToday());
+    const timer = window.setInterval(refreshDate, 60000);
+    window.addEventListener("focus", refreshDate);
+    document.addEventListener("visibilitychange", refreshDate);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", refreshDate); document.removeEventListener("visibilitychange", refreshDate); };
+  }, []);
   const [predictionDirty, setPredictionDirty] = useState(false);
   const [templateKey, setTemplateKey] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -55,12 +68,12 @@ export default function CashFlowPage() {
     async function load() {
       setLoading(true); setError("");
       try {
-        const [settings, ledger] = await Promise.all([fetch("/api/cash-flow/plan", { signal: controller.signal, cache: "no-store" }), fetch("/api/cash-flow/history", { signal: controller.signal, cache: "no-store" })]);
-        const [settingsData, ledgerData] = await Promise.all([settings.json(), ledger.json()]);
-        if (!settings.ok || !ledger.ok) throw new Error(settingsData.error || ledgerData.error || "読み込めませんでした。");
+        const [settings, ledger, profiles] = await Promise.all([fetch("/api/cash-flow/plan", { signal: controller.signal, cache: "no-store" }), fetch("/api/cash-flow/history", { signal: controller.signal, cache: "no-store" }), fetch("/api/members", { signal: controller.signal, cache: "no-store" })]);
+        const [settingsData, ledgerData, profileData] = await Promise.all([settings.json(), ledger.json(), profiles.json()]);
+        if (!settings.ok || !ledger.ok || !profiles.ok) throw new Error(settingsData.error || ledgerData.error || "読み込めませんでした。");
         const loaded = parseCashPlan(settingsData.plan);
         setPlan(loaded); setSavedKey(JSON.stringify(loaded));
-        setHistory(ledgerData.history);
+        setHistory(ledgerData.history); setMembers(profileData); setToday(japanToday());
       } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "読み込めませんでした。"); }
       finally { if (!controller.signal.aborted) setLoading(false); }
     }
@@ -77,19 +90,19 @@ export default function CashFlowPage() {
   }, [plan, prediction]);
   const hasInvestments = plan.initialOtherAssets > 0 || plan.rules.some(rule => rule.kind === "investment");
   const shortfall = result.points.find(point => point.cash < 0);
-  const dirty = savedKey !== JSON.stringify(plan);
+  const dirty = savedKey !== JSON.stringify(storedPlan);
   useEffect(() => {
     if (loading || error || saving || dirty || predictionDirty) return;
     let cancelled = false;
     async function refreshSharedPlan() {
       if (document.visibilityState !== "visible" || dialog.current?.open) return;
       try {
-        const response = await fetch("/api/cash-flow/plan", { cache: "no-store" });
-        if (!response.ok) return;
-        const data = await response.json();
+        const [response, profiles] = await Promise.all([fetch("/api/cash-flow/plan", { cache: "no-store" }), fetch("/api/members", { cache: "no-store" })]);
+        if (!response.ok || !profiles.ok) return;
+        const [data, profileData] = await Promise.all([response.json(), profiles.json()]);
         if (cancelled || dialog.current?.open) return;
         const shared = parseCashPlan(data.plan);
-        setPlan(shared); setSavedKey(JSON.stringify(shared));
+        setPlan(shared); setSavedKey(JSON.stringify(shared)); setMembers(profileData); setToday(japanToday());
       } catch { /* Keep the displayed plan if a background refresh fails. */ }
     }
     const timer = window.setInterval(() => void refreshSharedPlan(), 15000);
@@ -101,7 +114,7 @@ export default function CashFlowPage() {
     if (saving) return false;
     setSaving(true);
     try {
-      const validated = parseCashPlan(next);
+      const validated = parseCashPlan(resolveCurrentCashPlan(next, members, japanToday()).plan);
       const response = await fetch("/api/cash-flow/plan", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validated) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "保存できませんでした。");
@@ -158,7 +171,9 @@ export default function CashFlowPage() {
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
       <CashFlowPredictionForm settings={plan.predictionSettings} saving={saving} onEditingChange={setPredictionDirty} onSave={settings => save({ ...plan, predictionSettings: settings })} />
-      <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">シミュレーション開始年（西暦）<NumberField min="1900" max="2200" required value={planStartYear(plan)} onChange={e => setPlan({ ...plan, startYear: Number(e.target.value) })} className={input} /></label><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
+      <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">現在の年齢（自動）<input type="text" readOnly value={profile.age === null ? "生年月日未登録" : profile.age + "歳"} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">開始年（現在）<input type="text" readOnly value={planStartYear(plan) + "年"} className={input} /></label>
+        <label className="block text-sm">基準プロフィール<select aria-label="基準プロフィール" value={profile.member?.id ?? ""} onChange={e => setPlan({ ...plan, referenceMemberId: e.target.value })} className={input}><option value="" disabled>プロフィールを選択</option>{members.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>
+        <p className="text-xs leading-5 text-muted-foreground">{profile.age === null ? <><a href="/settings" className="font-semibold text-primary underline">設定のプロフィール</a>で生年月日を登録してください。</> : <>{profile.member?.name}の生年月日から、{today}時点の満{profile.age}歳を自動計算しています。</>} 来年も、その時点の年齢・現在年から始まります。残高は手入力した金額を使います。</p><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
         <div className="space-y-3 rounded-xl border border-border bg-background p-3"><h3 className="text-sm font-semibold">現在の非現金資産の残高</h3>
           {plan.rules.filter(rule => rule.kind === "investment").map(rule => rule.kind === "investment" && <label key={rule.id} className="block text-sm">{rule.name}の現在残高（万円）<NumberField min="0" max="100000000" step="0.0001" required value={rule.initial / 10000} onChange={e => setPlan({ ...plan, rules: plan.rules.map(item => item.id === rule.id ? { ...rule, initial: toYen(Number(e.target.value)) } : item) })} className={input} /><span className="mt-1 block text-[10px] text-muted-foreground">この残高に想定年率 {rule.rate}% を適用します。</span></label>)}
           <label className="block text-sm">その他の非現金資産（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialOtherAssets / 10000} onChange={e => setPlan({ ...plan, initialOtherAssets: toYen(Number(e.target.value)) })} className={input} /></label>

@@ -14,6 +14,7 @@ import {
   getCategoriesByKind,
   isIncomeCategory,
 } from "@/lib/category-options";
+import { ProfileSettings } from "@/components/profile-settings";
 import { ImportExclusionsSettings } from "@/components/import-exclusions-settings";
 import { SELECTED_MEMBER_ID_KEY } from "@/lib/member-storage";
 
@@ -258,6 +259,7 @@ export default function SettingsPage() {
         ) : null}
       </Card>
 
+      <ProfileSettings />
       <ImportExclusionsSettings />
 
       <Card className="order-2">
