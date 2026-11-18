@@ -127,3 +127,11 @@ model MonthlyBudgetPlan {
   data      Json
   updatedAt DateTime @default(now()) @updatedAt
 }
+
+model CsvReminderAcknowledgement {
+  memberScope    String
+  month          String
+  acknowledgedAt DateTime @default(now())
+
+  @@id([memberScope, month])
+}

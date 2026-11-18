@@ -9,11 +9,12 @@ export async function GET(req: NextRequest) {
   try {
     const today = japanToday(), current = today.slice(0, 7), first = monthAt(current, -6);
     const sources = ["paypay", "paypay_card", "paypay-card", "rakuten", "saison", "mufg", "smbc"];
-    const [records, logs, used] = await Promise.all([
+    const [records, logs, used, acknowledgement] = await Promise.all([
       prisma.transaction.findMany({ where: { memberId, source: { in: sources }, date: { gte: new Date(first + "-01T00:00:00.000Z"), lt: new Date(current + "-01T00:00:00.000Z") } }, select: { source: true, date: true } }),
       prisma.csvImportMonth.findMany({ where: { memberScope: csvImportScope(memberId) }, select: { source: true, month: true } }),
       prisma.transaction.groupBy({ by: ["source"], where: { memberId, source: { in: sources } } }),
+      prisma.csvReminderAcknowledgement.findUnique({ where: { memberScope_month: { memberScope: csvImportScope(memberId), month: current } }, select: { month: true } }),
     ]);
-    return NextResponse.json(buildCsvImportStatus(today, records, logs, used.map(row => row.source)), { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ...buildCsvImportStatus(today, records, logs, used.map(row => row.source)), acknowledged: acknowledgement !== null }, { headers: { "Cache-Control": "no-store" } });
   } catch { return NextResponse.json({ error: "CSVの取り込み状況を確認できませんでした。" }, { status: 503 }); }
 }
