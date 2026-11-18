@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
+import { defaultCashPlan, parseCashPlan, simulateCashPlan, cashRuleTemplate, ruleTemplates, planStartYear, type CashPlan, type PlanRule } from "@/lib/cash-flow-plan";
 import { learnCashFlowPrediction, simulateLearnedCashPlan } from "@/lib/cash-flow-prediction";
 import type { CashFlowHistory } from "@/lib/cash-flow-history";
 import { CashFlowCalculation } from "@/components/cash-flow-calculation";
+import { CashFlowPredictionForm } from "@/components/cash-flow-prediction-form";
 import { CashFlowForecastChart } from "@/components/cash-flow-forecast-chart";
 
 const card = "rounded-2xl border border-border bg-white p-4 sm:p-6";
@@ -22,13 +23,16 @@ function NumberField({ value, onChange, ...props }: React.InputHTMLAttributes<HT
 }
 type RangeDraft = { from: string; to: string; amount: string };
 function ruleDescription(rule: PlanRule) {
-  if (rule.kind === "annual") return `${rule.ageAtStart === null ? "本人の年齢" : `対象の開始年齢 ${rule.ageAtStart}歳`} / ${rule.flow === "income" ? "収入" : "支出"} · ${rule.ranges.map(range => `${ageSpan(range.from, range.to)} ${yen(range.amount)}/${rule.frequency === "monthly" ? "月" : "年"}`).join(" · ")}`;
-  if (rule.kind === "investment") return `${ageSpan(rule.from, rule.to)}に月${yen(rule.monthly)}積立 · 想定年率${rule.rate}%${rule.initial ? ` · 開始非現金資産${yen(rule.initial)}` : ""}`;
-  return `${rule.ageAtStart === null ? "本人" : `開始${rule.ageAtStart}歳の対象`}が${rule.age}歳の年に ${yen(rule.amount)}`;
+  const span = (from: number, to: number | null) => rule.basis === "year" ? to === null ? `${from}年以降` : `${from}〜${to}年` : ageSpan(from, to);
+  if (rule.kind === "annual") return `${rule.basis === "year" ? "西暦" : rule.ageAtStart === null ? "本人の年齢" : `対象の開始年齢 ${rule.ageAtStart}歳`} / ${rule.flow === "income" ? "収入" : "支出"} · ${rule.ranges.map(range => `${span(range.from, range.to)} ${yen(range.amount)}/${rule.frequency === "monthly" ? "月" : "年"}`).join(" · ")}`;
+  if (rule.kind === "investment") return `${span(rule.from, rule.to)}に月${yen(rule.monthly)}積立 · 想定年率${rule.rate}%${rule.initial ? ` · 開始非現金資産${yen(rule.initial)}` : ""}`;
+  return rule.basis === "year" ? `${rule.age}年に ${yen(rule.amount)}` : `${rule.ageAtStart === null ? "本人" : `開始${rule.ageAtStart}歳の対象`}が${rule.age}歳の年に ${yen(rule.amount)}`;
 }
 
 export default function CashFlowPage() {
   const [plan, setPlan] = useState<CashPlan>(defaultCashPlan);
+  const [predictionDirty, setPredictionDirty] = useState(false);
+  const [templateKey, setTemplateKey] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [savedKey, setSavedKey] = useState("");
   const [history, setHistory] = useState<CashFlowHistory | null>(null);
@@ -40,7 +44,9 @@ export default function CashFlowPage() {
   const defaults = editor ?? template;
   const [frequency, setFrequency] = useState("yearly");
   const [kind, setKind] = useState<PlanRule["kind"]>("annual");
-  const [otherAge, setOtherAge] = useState(true);
+  const [pointAt, setPointAt] = useState("0"), [investFrom, setInvestFrom] = useState("0"), [investTo, setInvestTo] = useState("");
+  const [otherStartAge, setOtherStartAge] = useState("");
+  const [basis, setBasis] = useState<"self" | "other" | "year">("other");
   const [ranges, setRanges] = useState<RangeDraft[]>([]);
   const [editorKey, setEditorKey] = useState(0), [editorError, setEditorError] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -64,7 +70,7 @@ export default function CashFlowPage() {
     try { return { points: simulateCashPlan(parseCashPlan(plan), baseline.monthly), error: "" }; }
     catch (e) { return { points: [], error: e instanceof Error ? e.message : "設定を確認してください。" }; }
   }, [plan, baseline.monthly]);
-  const prediction = useMemo(() => history ? learnCashFlowPrediction(history) : null, [history]);
+  const prediction = useMemo(() => history ? learnCashFlowPrediction(history, plan.predictionSettings) : null, [history, plan.predictionSettings]);
   const learned = useMemo(() => {
     try { return { points: prediction ? simulateLearnedCashPlan(parseCashPlan(plan), prediction) : [], error: "" }; }
     catch (e) { return { points: [], error: e instanceof Error ? e.message : "予測設定を確認してください。" }; }
@@ -73,7 +79,7 @@ export default function CashFlowPage() {
   const shortfall = result.points.find(point => point.cash < 0);
   const dirty = savedKey !== JSON.stringify(plan);
   useEffect(() => {
-    if (loading || error || saving || dirty) return;
+    if (loading || error || saving || dirty || predictionDirty) return;
     let cancelled = false;
     async function refreshSharedPlan() {
       if (document.visibilityState !== "visible" || dialog.current?.open) return;
@@ -90,7 +96,7 @@ export default function CashFlowPage() {
     window.addEventListener("focus", refreshSharedPlan);
     document.addEventListener("visibilitychange", refreshSharedPlan);
     return () => { cancelled = true; window.clearInterval(timer); window.removeEventListener("focus", refreshSharedPlan); document.removeEventListener("visibilitychange", refreshSharedPlan); };
-  }, [loading, error, saving, dirty, editorKey]);
+  }, [loading, error, saving, dirty, editorKey, predictionDirty]);
   async function save(next: CashPlan) {
     if (saving) return false;
     setSaving(true);
@@ -104,23 +110,40 @@ export default function CashFlowPage() {
     } catch (e) { const message = e instanceof Error ? e.message : "保存できませんでした。"; toast.error(message); setEditorError(message); return false; }
     finally { setSaving(false); }
   }
-  function openEditor(rule: PlanRule | null = null, preset: PlanRule | null = null) {
-    const seed = rule ?? preset; setTemplate(preset); setFrequency(seed?.kind === "annual" ? seed.frequency ?? "yearly" : "yearly");
+  function openEditor(rule: PlanRule | null = null, preset: PlanRule | null = null, key = "") {
+    setTemplateKey(key);
+    setOtherStartAge(rule && rule.kind !== "investment" && rule.ageAtStart !== null ? String(rule.ageAtStart) : preset && preset.kind !== "investment" && preset.ageAtStart !== null ? String(preset.ageAtStart) : "");
+    const seed = rule ?? preset;
+    setPointAt(String(seed?.kind === "event" ? seed.age : plan.startAge ?? 0));
+    setInvestFrom(String(seed?.kind === "investment" ? seed.from : plan.startAge ?? 0));
+    setInvestTo(seed?.kind === "investment" && seed.to !== null ? String(seed.to) : "");
+    setTemplate(preset); setFrequency(seed?.kind === "annual" ? seed.frequency ?? "yearly" : "yearly");
     setEditor(rule); setKind(seed?.kind ?? "annual"); setEditorError(""); setEditorKey(value => value + 1);
-    setOtherAge(seed && seed.kind !== "investment" ? seed.ageAtStart !== null : true);
-    setRanges(seed?.kind === "annual" ? seed.ranges.map(range => ({ from: String(range.from), to: range.to === null ? "" : String(range.to), amount: String(range.amount / 10000) })) : [{ from: "0", to: "5", amount: "0" }, { from: "6", to: "", amount: "0" }]);
+    setBasis(seed?.basis === "year" ? "year" : seed && seed.kind !== "investment" ? seed.ageAtStart !== null ? "other" : "self" : seed ? "self" : "other");
+    setRanges(seed?.kind === "annual" ? seed.ranges.map(range => ({ from: String(range.from), to: range.to === null ? "" : String(range.to), amount: String(range.amount / 10000) })) : [{ from: "0", to: "", amount: "0" }]);
     dialog.current?.showModal();
+  }
+  function convertCoordinate(value: number, from: "self" | "other" | "year", to: "self" | "other" | "year") {
+    const other = Number(otherStartAge);
+    const origin = (type: "self" | "other" | "year") => type === "year" ? planStartYear(plan) : type === "self" ? plan.startAge ?? 0 : other;
+    return value - origin(from) + origin(to);
+  }
+  function changeBasis(next: "self" | "other" | "year") {
+    setRanges(current => current.map(range => ({ ...range, from: range.from === "" ? "" : String(convertCoordinate(Number(range.from), basis, next)), to: range.to === "" ? "" : String(convertCoordinate(Number(range.to), basis, next)) })));
+    const convert = (value: string) => value === "" ? "" : String(convertCoordinate(Number(value), basis, next));
+    setPointAt(convert); setInvestFrom(convert); setInvestTo(convert);
+    setBasis(next);
   }
   async function submitRule(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setEditorError("");
     const form = new FormData(e.currentTarget), number = (name: string) => Number(form.get(name));
     const optional = (name: string) => form.get(name) === "" ? null : number(name);
-    const base = { id: editor?.id ?? crypto.randomUUID(), name: String(form.get("name") ?? "") };
+    const base = { id: editor?.id ?? crypto.randomUUID(), name: String(form.get("name") ?? ""), ...(basis === "year" ? { basis: "year" as const } : {}) };
     let rule: PlanRule;
-    if (kind === "annual") rule = { ...base, kind, ageAtStart: otherAge ? number("ageAtStart") : null, flow: form.get("flow") === "income" ? "income" : "expense", frequency: frequency as "monthly" | "yearly", ranges: ranges.map(range => ({ from: Number(range.from), to: range.to === "" ? null : Number(range.to), amount: toYen(Number(range.amount)) })) };
+    if (kind === "annual") rule = { ...base, kind, ageAtStart: basis === "other" ? number("ageAtStart") : null, flow: form.get("flow") === "income" ? "income" : "expense", frequency: frequency as "monthly" | "yearly", ranges: ranges.map(range => ({ from: Number(range.from), to: range.to === "" ? null : Number(range.to), amount: toYen(Number(range.amount)) })) };
     else if (kind === "investment") rule = { ...base, kind, from: number("from"), to: optional("to"), monthly: toYen(number("monthly")), rate: number("rate"), initial: toYen(number("initial")) };
-    else rule = { ...base, kind, ageAtStart: otherAge ? number("ageAtStart") : null, age: number("age"), amount: toYen(number("amount")) };
-    const next = { ...plan, rules: editor ? plan.rules.map(item => item.id === editor.id ? rule : item) : [...plan.rules, rule] };
+    else rule = { ...base, kind, ageAtStart: basis === "other" ? number("ageAtStart") : null, age: number("age"), amount: toYen(number("amount")) };
+    const next = { ...plan, startYear: planStartYear(plan), rules: editor ? plan.rules.map(item => item.id === editor.id ? rule : item) : [...plan.rules, rule] };
     if (await save(next)) dialog.current?.close();
   }
   async function removeRule(rule: PlanRule) {
@@ -134,8 +157,9 @@ export default function CashFlowPage() {
         <CashFlowForecastChart points={result.points} error={result.error} hasInvestments={hasInvestments} predictionPoints={learned.points} predictionError={learned.error} />
         {shortfall && <p className="mt-3 rounded-lg bg-[#f7efec] px-3 py-2 text-xs text-destructive">{shortfall.label === "開始時" ? "開始時" : `${shortfall.age}歳の年`}に現預金が不足する試算です。</p>}
       </section>
+      <CashFlowPredictionForm settings={plan.predictionSettings} saving={saving} onEditingChange={setPredictionDirty} onSave={settings => save({ ...plan, predictionSettings: settings })} />
       {history && <CashFlowCalculation history={history} monthlyNet={plan.monthlyNet} prediction={prediction} />}
-      <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
+      <section className={card}><button type="button" aria-expanded={settingsOpen} aria-controls="cash-flow-settings" onClick={() => setSettingsOpen(value => !value)} className="flex w-full items-center justify-between gap-3 text-left"><span className="text-base font-semibold">基本設定</span><span className="ml-auto text-[10px] text-muted-foreground">{dirty ? "未保存の変更" : "保存済み"}</span><ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} /></button><div id="cash-flow-settings" hidden={!settingsOpen} className="mt-4"><form onSubmit={e => { e.preventDefault(); void save(plan); }}><fieldset disabled={saving} className="space-y-4"><div className="grid grid-cols-2 gap-3"><label className="text-sm">開始年齢（本人）<NumberField min="0" max="120" required value={plan.startAge ?? ""} onChange={e => setPlan({ ...plan, startAge: e.target.value === "" ? null : Number(e.target.value) })} className={input} /></label><label className="text-sm">終了年齢<NumberField min="0" max="120" required value={plan.endAge} onChange={e => setPlan({ ...plan, endAge: Number(e.target.value) })} className={input} /></label></div><label className="block text-sm">シミュレーション開始年（西暦）<NumberField min="1900" max="2200" required value={planStartYear(plan)} onChange={e => setPlan({ ...plan, startYear: Number(e.target.value) })} className={input} /></label><label className="block text-sm">現在の現預金（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialCash / 10000} onChange={e => setPlan({ ...plan, initialCash: toYen(Number(e.target.value)) })} className={input} /></label>
         <div className="space-y-3 rounded-xl border border-border bg-background p-3"><h3 className="text-sm font-semibold">現在の非現金資産の残高</h3>
           {plan.rules.filter(rule => rule.kind === "investment").map(rule => rule.kind === "investment" && <label key={rule.id} className="block text-sm">{rule.name}の現在残高（万円）<NumberField min="0" max="100000000" step="0.0001" required value={rule.initial / 10000} onChange={e => setPlan({ ...plan, rules: plan.rules.map(item => item.id === rule.id ? { ...rule, initial: toYen(Number(e.target.value)) } : item) })} className={input} /><span className="mt-1 block text-[10px] text-muted-foreground">この残高に想定年率 {rule.rate}% を適用します。</span></label>)}
           <label className="block text-sm">その他の非現金資産（万円）<NumberField min="0" max="100000000" step="0.0001" required value={plan.initialOtherAssets / 10000} onChange={e => setPlan({ ...plan, initialOtherAssets: toYen(Number(e.target.value)) })} className={input} /></label>
@@ -151,13 +175,13 @@ export default function CashFlowPage() {
       </section>
     </>}
     <dialog ref={dialog} aria-labelledby="rule-title" onCancel={e => { if (saving) e.preventDefault(); }} className="m-auto max-h-[90dvh] w-[calc(100%_-_24px)] max-w-lg overflow-y-auto rounded-2xl bg-white p-5 text-foreground shadow-xl backdrop:bg-black/40 sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="rule-title" className="text-lg font-bold">{editor ? "ルールを編集" : "ルールを追加"}</h2><button disabled={saving} aria-label="閉じる" onClick={() => dialog.current?.close()}><X className="h-5 w-5" /></button></div>
-      {!editor && <div className="mb-4"><p className="mb-2 text-xs text-muted-foreground">テンプレートから選ぶ</p><div className="flex flex-wrap gap-2">{ruleTemplates.map(item => <button key={item.key} type="button" disabled={saving} onClick={() => openEditor(null, cashRuleTemplate(item.key, plan.startAge))} className="rounded-lg border border-border px-3 py-2 text-xs hover:bg-muted">{item.label}</button>)}</div></div>}
-      <label className="block text-sm">種類<select value={kind} disabled={saving || editor !== null} onChange={e => { setTemplate(null); setKind(e.target.value as PlanRule["kind"]); setOtherAge(e.target.value === "annual"); }} className={input}><option value="annual">定期的な収入・支出（給料・保険料など）</option><option value="investment">積立・NISA</option><option value="event">単発の支出（住宅・車・旅行など）</option></select></label>
+      {!editor && <label className="mb-4 block text-sm">テンプレート<select aria-label="テンプレート" value={templateKey} disabled={saving} onChange={e => { if (e.target.value) openEditor(null, cashRuleTemplate(e.target.value, plan.startAge), e.target.value); else openEditor(); }} className={input}><option value="">一覧から選択</option>{ruleTemplates.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
+      <label className="block text-sm">種類<select value={kind} disabled={saving || editor !== null} onChange={e => { setTemplateKey(""); setTemplate(null); setKind(e.target.value as PlanRule["kind"]); setBasis(e.target.value === "annual" ? "other" : "self"); setPointAt(String(plan.startAge ?? 0)); setInvestFrom(String(plan.startAge ?? 0)); setInvestTo(""); }} className={input}><option value="annual">定期的な収入・支出（給料・保険料など）</option><option value="investment">積立・NISA</option><option value="event">単発の支出（住宅・車・旅行など）</option></select></label>
       <form key={`${editorKey}-${kind}`} onSubmit={submitRule} className="mt-4 space-y-4"><fieldset disabled={saving} className="space-y-4"><label className="block text-sm">ルール名<input name="name" required maxLength={80} defaultValue={defaults?.name ?? (kind === "annual" ? "教育費" : kind === "investment" ? "積立NISA" : "旅行")} className={input} /></label>
-        {kind !== "investment" && <><label className="block text-sm">年齢の基準<select value={otherAge ? "other" : "self"} onChange={e => setOtherAge(e.target.value === "other")} className={input}><option value="self">本人の年齢</option><option value="other">別の人（子どもなど）の年齢</option></select></label>{otherAge && <label className="block text-sm">対象の開始年齢<input name="ageAtStart" type="number" required min="0" max="120" defaultValue={defaults && defaults.kind !== "investment" ? defaults.ageAtStart ?? "" : ""} className={input} /></label>}</>}
-        {kind === "annual" && <><label className="block text-sm">収入・支出<select name="flow" defaultValue={defaults?.kind === "annual" ? defaults.flow : "expense"} className={input}><option value="expense">支出</option><option value="income">収入</option></select></label><label className="block text-sm">金額の単位<select value={frequency} onChange={e => setFrequency(e.target.value)} className={input}><option value="monthly">月額</option><option value="yearly">年額</option></select></label><div className="space-y-3">{ranges.map((range, i) => <div key={i} className="rounded-xl border border-border bg-background p-3"><div className="grid grid-cols-2 gap-2"><label className="text-xs">開始年齢<NumberField required min="0" max="120" value={range.from} onChange={e => setRanges(ranges.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} className={input} /></label><label className="text-xs">終了年齢(任意)<NumberField min="0" max="120" placeholder="以降ずっと" value={range.to} onChange={e => setRanges(ranges.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} className={input} /></label></div><label className="mt-3 block text-xs">{frequency === "monthly" ? "月額（万円）" : "年額（万円）"}<NumberField required min="0" max="100000000" step="0.0001" value={range.amount} onChange={e => setRanges(ranges.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))} className={input} /></label>{ranges.length > 1 && <button type="button" aria-label={`年齢区分${i + 1}を削除`} onClick={() => setRanges(ranges.filter((_, j) => j !== i))} className="mt-2 rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 aria-hidden="true" className="h-4 w-4" /></button>}</div>)}</div><button type="button" onClick={() => setRanges([...ranges, { from: "", to: "", amount: "0" }])} className="text-sm font-semibold text-primary">＋ 年齢区分を追加</button></>}
-        {kind === "investment" && <><div className="grid grid-cols-2 gap-3"><label className="text-sm">積立開始年齢<input name="from" type="number" required min="0" max="120" defaultValue={defaults?.kind === "investment" ? defaults.from : plan.startAge ?? 0} className={input} /></label><label className="text-sm">積立終了年齢(任意)<input name="to" type="number" min="0" max="120" placeholder="以降ずっと" defaultValue={defaults?.kind === "investment" ? defaults.to ?? "" : ""} className={input} /></label></div><label className="block text-sm">毎月の積立額（万円）<input name="monthly" type="number" required min="0" max="10000" step="0.0001" defaultValue={defaults?.kind === "investment" ? defaults.monthly / 10000 : 0} className={input} /></label><label className="block text-sm">想定利回り（年率%）<input name="rate" type="number" required min="-99" max="100" step="any" defaultValue={defaults?.kind === "investment" ? defaults.rate : 0} className={input} /></label><label className="block text-sm">現在の投資残高（万円）(任意)<input name="initial" type="number" min="0" max="100000000" step="0.0001" defaultValue={defaults?.kind === "investment" ? defaults.initial / 10000 : 0} className={input} /></label><p className="text-[11px] leading-5 text-muted-foreground">積立終了後も想定利回りで運用を続けます。税・手数料は計算に含めません。</p></>}
-        {kind === "event" && <><p className="text-[11px] leading-5 text-muted-foreground">住宅・車をローンで購入する場合は、ここには頭金や諸費用を入力し、返済額は「ローン返済」のルールに設定してください。購入後の資産価値や借入残高は自動計算しません。</p><label className="block text-sm">何歳のときに使うか<input name="age" type="number" required min="0" max="120" defaultValue={defaults?.kind === "event" ? defaults.age : plan.startAge ?? ""} className={input} /></label><label className="block text-sm">金額（万円）<input name="amount" type="number" required min="0" max="100000000" step="0.0001" defaultValue={defaults?.kind === "event" ? defaults.amount / 10000 : ""} placeholder="例：100" className={input} /></label></>}
+        <label className="block text-sm">年齢・西暦の基準<select aria-label="年齢・西暦の基準" value={basis} onChange={e => changeBasis(e.target.value as "self" | "other" | "year")} className={input}><option value="self">本人の年齢</option>{kind !== "investment" && <option value="other">別の人（子どもなど）の年齢</option>}<option value="year">西暦</option></select></label>{basis === "other" && <label className="block text-sm">対象の開始年齢<NumberField name="ageAtStart" required min="0" max="120" value={otherStartAge} onChange={e => setOtherStartAge(e.target.value)} className={input} /></label>}
+        {kind === "annual" && <><div className="grid grid-cols-2 gap-3"><label className="min-w-0 text-sm">収入・支出<select name="flow" defaultValue={defaults?.kind === "annual" ? defaults.flow : "expense"} className={input}><option value="expense">支出</option><option value="income">収入</option></select></label><label className="block text-sm">金額の単位<select value={frequency} onChange={e => setFrequency(e.target.value)} className={input}><option value="monthly">月額</option><option value="yearly">年額</option></select></label></div><div className="space-y-3">{ranges.map((range, i) => <div key={i} className="rounded-xl border border-border bg-background p-3"><div className="grid grid-cols-2 gap-2"><label className="text-xs">{basis === "year" ? "開始年（西暦）" : "開始年齢"}<NumberField required min={basis === "year" ? 1900 : 0} max={basis === "year" ? 2400 : 120} value={range.from} onChange={e => setRanges(ranges.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} className={input} /></label><label className="text-xs">{basis === "year" ? "終了年（西暦）(任意)" : "終了年齢(任意)"}<NumberField min={basis === "year" ? 1900 : 0} max={basis === "year" ? 2400 : 120} placeholder="以降ずっと" value={range.to} onChange={e => setRanges(ranges.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} className={input} /></label></div><label className="mt-3 block text-xs">{frequency === "monthly" ? "月額（万円）" : "年額（万円）"}<NumberField required min="0" max="100000000" step="0.0001" value={range.amount} onChange={e => setRanges(ranges.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))} className={input} /></label>{ranges.length > 1 && <button type="button" aria-label={`${basis === "year" ? "期間" : "年齢区分"}${i + 1}を削除`} onClick={() => setRanges(ranges.filter((_, j) => j !== i))} className="mt-2 rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 aria-hidden="true" className="h-4 w-4" /></button>}</div>)}</div><button type="button" onClick={() => setRanges([...ranges, { from: "", to: "", amount: "0" }])} className="text-sm font-semibold text-primary">{basis === "year" ? "＋ 期間を追加" : "＋ 年齢区分を追加"}</button></>}
+        {kind === "investment" && <><div className="grid grid-cols-2 gap-3"><label className="text-sm">{basis === "year" ? "積立開始年（西暦）" : "積立開始年齢"}<NumberField name="from" required min={basis === "year" ? 1900 : 0} max={basis === "year" ? 2400 : 120} value={investFrom} onChange={e => setInvestFrom(e.target.value)} className={input} /></label><label className="text-sm">{basis === "year" ? "積立終了年（西暦）(任意)" : "積立終了年齢(任意)"}<NumberField name="to" min={basis === "year" ? 1900 : 0} max={basis === "year" ? 2400 : 120} placeholder="以降ずっと" value={investTo} onChange={e => setInvestTo(e.target.value)} className={input} /></label></div><label className="block text-sm">毎月の積立額（万円）<input name="monthly" type="number" required min="0" max="10000" step="0.0001" defaultValue={defaults?.kind === "investment" ? defaults.monthly / 10000 : 0} className={input} /></label><label className="block text-sm">想定利回り（年率%）<input name="rate" type="number" required min="-99" max="100" step="any" defaultValue={defaults?.kind === "investment" ? defaults.rate : 0} className={input} /></label><label className="block text-sm">現在の投資残高（万円）(任意)<input name="initial" type="number" min="0" max="100000000" step="0.0001" defaultValue={defaults?.kind === "investment" ? defaults.initial / 10000 : 0} className={input} /></label><p className="text-[11px] leading-5 text-muted-foreground">積立終了後も想定利回りで運用を続けます。税・手数料は計算に含めません。</p></>}
+        {kind === "event" && <><p className="text-[11px] leading-5 text-muted-foreground">住宅・車をローンで購入する場合は、ここには頭金や諸費用を入力し、返済額は「ローン返済」のルールに設定してください。購入後の資産価値や借入残高は自動計算しません。</p><label className="block text-sm">{basis === "year" ? "何年に使うか（西暦）" : "何歳のときに使うか"}<NumberField name="age" required min={basis === "year" ? 1900 : 0} max={basis === "year" ? 2400 : 120} value={pointAt} onChange={e => setPointAt(e.target.value)} className={input} /></label><label className="block text-sm">金額（万円）<input name="amount" type="number" required min="0" max="100000000" step="0.0001" defaultValue={defaults?.kind === "event" ? defaults.amount / 10000 : ""} placeholder="例：100" className={input} /></label></>}
       </fieldset>{editorError && <p className="text-sm text-destructive" role="alert">{editorError}</p>}<div className="flex justify-end gap-3"><button type="button" disabled={saving} onClick={() => dialog.current?.close()} className="rounded-lg border border-border px-4 py-2 text-sm">キャンセル</button><button className={primary} disabled={saving}>{saving ? "保存中…" : "保存する"}</button></div></form>
     </dialog>
   </div>;

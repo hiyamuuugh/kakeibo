@@ -1,10 +1,12 @@
+import { japanToday } from "./cash-flow";
+import { parsePredictionSettings, type PredictionSettings } from "./cash-flow-prediction-settings";
 export type AgeRange = { from: number; to: number | null; amount: number };
-type RuleBase = { id: string; name: string };
+type RuleBase = { id: string; name: string; basis?: "year" };
 export type AnnualRule = RuleBase & { kind: "annual"; ageAtStart: number | null; flow: "expense" | "income"; frequency?: "monthly" | "yearly"; ranges: AgeRange[] };
 export type InvestmentRule = RuleBase & { kind: "investment"; from: number; to: number | null; monthly: number; rate: number; initial: number };
 export type EventRule = RuleBase & { kind: "event"; ageAtStart: number | null; age: number; amount: number };
 export type PlanRule = AnnualRule | InvestmentRule | EventRule;
-export type CashPlan = { version: 1; startAge: number | null; endAge: number; initialCash: number; initialOtherAssets: number; monthlyNet: number | null; rules: PlanRule[] };
+export type CashPlan = { version: 1; startYear?: number; predictionSettings?: PredictionSettings; startAge: number | null; endAge: number; initialCash: number; initialOtherAssets: number; monthlyNet: number | null; rules: PlanRule[] };
 export const defaultCashPlan = (): CashPlan => ({ version: 1, startAge: null, endAge: 90, initialCash: 0, initialOtherAssets: 0, monthlyNet: null, rules: [] });
 const record = (value: unknown): Record<string, unknown> => { if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("入力内容を確認してください。"); return value as Record<string, unknown>; };
 function number(value: unknown, label: string, min: number, max: number, integer = true) {
@@ -19,33 +21,39 @@ export function parseCashPlan(input: unknown): CashPlan {
   if (data.version !== 1 || !Array.isArray(data.rules) || data.rules.length > 100) throw new Error("ルールは100件以内で設定してください。");
   const startAge = optionalAge(data.startAge), endAge = age(data.endAge);
   if (startAge !== null && endAge < startAge) throw new Error("終了年齢は開始年齢以降にしてください。");
+  const startYear = data.startYear === undefined ? undefined : number(data.startYear, "開始年", 1900, 2200);
+  const predictionSettings = data.predictionSettings === undefined ? undefined : parsePredictionSettings(data.predictionSettings);
   const seen = new Set<string>();
   const rules: PlanRule[] = data.rules.map(item => {
     const rule = record(item);
     if (typeof rule.id !== "string" || !/^[a-zA-Z0-9-]{1,80}$/.test(rule.id) || seen.has(rule.id)) throw new Error("ルールの識別情報を確認してください。");
     seen.add(rule.id);
     if (typeof rule.name !== "string" || !rule.name.trim() || rule.name.trim().length > 80) throw new Error("ルール名は80文字以内で入力してください。");
-    const base = { id: rule.id, name: rule.name.trim() };
+    if (rule.basis !== undefined && rule.basis !== "year") throw new Error("年齢・西暦の基準を確認してください。");
+    const base = { id: rule.id, name: rule.name.trim(), ...(rule.basis === "year" ? { basis: "year" as const } : {}) };
+    const coordinate = rule.basis === "year" ? (value: unknown) => number(value, "西暦", 1900, 2400) : age;
+    const optionalCoordinate = (value: unknown) => value === null ? null : coordinate(value);
     if (rule.kind === "annual") {
       if (rule.flow !== "income" && rule.flow !== "expense") throw new Error("収入・支出を選択してください。");
       if (!Array.isArray(rule.ranges) || !rule.ranges.length || rule.ranges.length > 20) throw new Error("年齢区分は1〜20件で設定してください。");
       if (rule.frequency !== undefined && rule.frequency !== "monthly" && rule.frequency !== "yearly") throw new Error("金額の単位を確認してください。");
-      const ranges = rule.ranges.map(item => { const range = record(item); const from = age(range.from), to = optionalAge(range.to); if (to !== null && to < from) throw new Error("年齢区分の終了を確認してください。"); return { from, to, amount: money(range.amount) }; }).sort((a, b) => a.from - b.from);
-      if (ranges.some((range, i) => i > 0 && range.from <= (ranges[i - 1].to ?? 120))) throw new Error("同じルールの年齢区分を重複させないでください。");
+      const ranges = rule.ranges.map(item => { const range = record(item); const from = coordinate(range.from), to = optionalCoordinate(range.to); if (to !== null && to < from) throw new Error("年齢区分の終了を確認してください。"); return { from, to, amount: money(range.amount) }; }).sort((a, b) => a.from - b.from);
+      if (ranges.some((range, i) => i > 0 && range.from <= (ranges[i - 1].to ?? Infinity))) throw new Error("同じルールの年齢区分を重複させないでください。");
       return { ...base, kind: "annual", ageAtStart: optionalAge(rule.ageAtStart), flow: rule.flow, ...(rule.frequency === "monthly" ? { frequency: "monthly" as const } : {}), ranges };
     }
     if (rule.kind === "investment") {
-      const from = age(rule.from), to = optionalAge(rule.to);
+      const from = coordinate(rule.from), to = optionalCoordinate(rule.to);
       if (to !== null && to < from) throw new Error("積立の終了年齢を確認してください。");
       return { ...base, kind: "investment", from, to, monthly: number(rule.monthly, "毎月の積立額", 0, 100000000), rate: number(rule.rate, "想定年率", -99, 100, false), initial: money(rule.initial) };
     }
-    if (rule.kind === "event") return { ...base, kind: "event", ageAtStart: optionalAge(rule.ageAtStart), age: age(rule.age), amount: money(rule.amount) };
+    if (rule.kind === "event") return { ...base, kind: "event", ageAtStart: optionalAge(rule.ageAtStart), age: coordinate(rule.age), amount: money(rule.amount) };
     throw new Error("ルールの種類を選択してください。");
   });
-  return { version: 1, startAge, endAge, initialCash: money(data.initialCash), initialOtherAssets: money(data.initialOtherAssets === undefined ? 0 : data.initialOtherAssets), monthlyNet: data.monthlyNet === null ? null : number(data.monthlyNet, "毎月の基本収支", -100000000, 100000000), rules };
+  return { version: 1, ...(startYear !== undefined ? { startYear } : {}), ...(predictionSettings ? { predictionSettings } : {}), startAge, endAge, initialCash: money(data.initialCash), initialOtherAssets: money(data.initialOtherAssets === undefined ? 0 : data.initialOtherAssets), monthlyNet: data.monthlyNet === null ? null : number(data.monthlyNet, "毎月の基本収支", -100000000, 100000000), rules };
 }
 export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number, monthlyNetAt?: (age: number, month: number) => number) {
   if (plan.startAge === null) return [];
+  const startYear = planStartYear(plan);
   const monthlyNet = plan.monthlyNet ?? ledgerMonthlyNet;
   let cash = plan.initialCash;
   const investmentRules = plan.rules.filter((r): r is InvestmentRule => r.kind === "investment");
@@ -62,10 +70,10 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number, month
     let annualNet = 0, expenses = 0, contributions = 0, gain = 0;
     for (const rule of plan.rules) {
       if (rule.kind === "investment") continue;
-      const targetAge = (rule.ageAtStart ?? plan.startAge) + offset;
+      const targetAge = rule.basis === "year" ? startYear + offset : (rule.ageAtStart ?? plan.startAge) + offset;
       if (rule.kind === "event" && targetAge === rule.age) { annualNet -= rule.amount; expenses += rule.amount; }
       if (rule.kind === "annual") {
-        const range = rule.ranges.find(range => targetAge >= range.from && targetAge <= (range.to ?? 120));
+        const range = rule.ranges.find(range => targetAge >= range.from && targetAge <= (range.to ?? Infinity));
         if (range) { const amount = range.amount * (rule.frequency === "monthly" ? 12 : 1); annualNet += rule.flow === "income" ? amount : -amount; if (rule.flow === "expense") expenses += amount; }
       }
     }
@@ -75,7 +83,8 @@ export function simulateCashPlan(plan: CashPlan, ledgerMonthlyNet: number, month
       for (const rule of investmentRules) {
         const balance = investments.get(rule.id)!;
         const profit = balance * ((1 + rule.rate / 100) ** (1 / 12) - 1);
-        const contribution = currentAge >= rule.from && currentAge <= (rule.to ?? 120) ? rule.monthly : 0;
+        const contributionAge = rule.basis === "year" ? startYear + offset : currentAge;
+        const contribution = contributionAge >= rule.from && contributionAge <= (rule.to ?? Infinity) ? rule.monthly : 0;
         investments.set(rule.id, balance + profit + contribution);
         cash -= contribution; contributions += contribution; gain += profit;
       }
@@ -98,6 +107,8 @@ export function cashRuleTemplate(key: string, startAge: number | null): PlanRule
   const base = { id: "template", name };
   if (key === "investment") return { ...base, kind: "investment", from, to: null, monthly: 0, rate: 0, initial: 0 };
   if (["home", "car", "trip"].includes(key)) return { ...base, kind: "event", ageAtStart: null, age: from, amount: 0 };
-  if (key === "education") return { ...base, kind: "annual", ageAtStart: 0, flow: "expense", ranges: [{ from: 0, to: 5, amount: 0 }, { from: 6, to: null, amount: 0 }] };
+  if (key === "education") return { ...base, kind: "annual", ageAtStart: 0, flow: "expense", ranges: [{ from: 0, to: null, amount: 0 }] };
   return { ...base, kind: "annual", ageAtStart: null, flow: key === "salary" || key === "pension" ? "income" : "expense", frequency: "monthly", ranges: [{ from, to: null, amount: 0 }] };
 }
+
+export const planStartYear = (plan: CashPlan) => plan.startYear ?? Number(japanToday().slice(0, 4));

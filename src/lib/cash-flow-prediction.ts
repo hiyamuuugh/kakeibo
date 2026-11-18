@@ -1,11 +1,13 @@
+import { defaultPredictionSettings, parsePredictionSettings, type PredictionSettings } from "./cash-flow-prediction-settings";
 import type { CashFlowHistory } from "./cash-flow-history";
 import { simulateCashPlan, type CashPlan } from "./cash-flow-plan";
 const monthNumber = (month: string) => Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) - 1;
 const monthLabel = (number: number) => `${Math.floor(number / 12)}-${String(number % 12 + 1).padStart(2, "0")}`;
 /** Local ridge regression; no external service, generated text, or invented return assumptions. */
-export function learnCashFlowPrediction(history: CashFlowHistory) {
-  const months = history.months.slice(-24);
+export function learnCashFlowPrediction(history: CashFlowHistory, input: PredictionSettings = defaultPredictionSettings()) {
+  const settings = parsePredictionSettings(input);
   const start = monthNumber(history.asOf.slice(0, 7));
+  const months = history.months.filter(month => monthNumber(month.month) >= start - settings.lookbackMonths && monthNumber(month.month) < start);
   if (months.length < 3) return { available: false as const, reason: "学習予測には、今月より前の記録がある月が3か月以上必要です。" };
   if (start - monthNumber(months.at(-1)!.month) > 3) return { available: false as const, reason: "最新の記録が3か月を超えて前のため、予測を表示していません。最近の家計簿を取り込んでください。" };
   const x = months.map(month => monthNumber(month.month) - start);
@@ -24,12 +26,12 @@ export function learnCashFlowPrediction(history: CashFlowHistory) {
   }
   const income = fit("income"), expense = fit("expense");
   const forecast = Array.from({ length: 12 }, (_, i) => {
-    const incomeValue = income.predict(i), expenseValue = expense.predict(i);
+    const incomeValue = Math.round(income.predict(i) * (1 + settings.incomeChange / 100)), expenseValue = Math.round(expense.predict(i) * (1 + settings.expenseChange / 100));
     return { month: monthLabel(start + i), income: incomeValue, expense: expenseValue, net: incomeValue - expenseValue };
   });
   const averageIncome = Math.round(forecast.reduce((sum, month) => sum + month.income, 0) / 12);
   const averageExpense = Math.round(forecast.reduce((sum, month) => sum + month.expense, 0) / 12);
-  return { available: true as const, method: "local-ridge-regression" as const, months, forecast, averageIncome, averageExpense, averageNet: averageIncome - averageExpense,
+  return { available: true as const, method: "local-ridge-regression" as const, settings, months, forecast, averageIncome, averageExpense, averageNet: averageIncome - averageExpense,
     income: { intercept: income.intercept, slope: income.slope, ceiling: income.ceiling }, expense: { intercept: expense.intercept, slope: expense.slope, ceiling: expense.ceiling } };
 }
 export type CashFlowPrediction = ReturnType<typeof learnCashFlowPrediction>;
